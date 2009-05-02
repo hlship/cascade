@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.howardlewisship.wafer</groupId>
-    <artifactId>wafer-core</artifactId>
-    <name>wafer-core</name>
+    <artifactId>cascade-core</artifactId>
+    <name>cascade-core</name>
     <version>0.0.1-SNAPSHOT</version>
 
-    <description>Wafer-thin web framework for Clojure.</description>
+    <description>Template based web framework for Clojure.</description>
 
     <dependencies>
         <dependency>

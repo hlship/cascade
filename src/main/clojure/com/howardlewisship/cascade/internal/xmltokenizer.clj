@@ -1,7 +1,7 @@
 ; Uses a SAX parser to tokenize an XML document into
 ; a stream of token structures.
 
-(ns com.howardlewisship.wafer.internal.xmltokenizer
+(ns com.howardlewisship.cascade.internal.xmltokenizer
     (:import (org.xml.sax ContentHandler Attributes Locator)
              (org.xml.sax.helpers DefaultHandler)
              (clojure.lang Keyword)

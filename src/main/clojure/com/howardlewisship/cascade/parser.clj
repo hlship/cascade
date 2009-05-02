@@ -1,4 +1,4 @@
-(ns com.howardlewisship.wafer.parser
+(ns com.howardlewisship.cascade.parser
     (:use clojure.xml)
     (:import (clojure.lang ISeq IPersistentMap)))
 

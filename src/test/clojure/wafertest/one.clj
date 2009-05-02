@@ -1,5 +1,5 @@
 (ns wafertest.one
-    (:use com.howardlewisship.wafer com.howardlewisship.wafer.parser clojure.xml))
+    (:use com.howardlewisship.cascade com.howardlewisship.cascade.parser clojure.xml))
 
 (set! *warn-on-reflection* true)
 
