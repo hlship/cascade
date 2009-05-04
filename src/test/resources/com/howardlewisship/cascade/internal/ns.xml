@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<c:fragment id="biff" c:value="bar" xmlns:c="clojure">
+    <default-ns-element id="dne"/>
+    <z:zeta xmlns:z="zeta/1.0"/>
+</c:fragment>
