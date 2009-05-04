@@ -35,13 +35,13 @@
   })
 
 ; Until there's a native (monadic?) XML parser, we use the SAX parser. Its model
-; doesn't fit well into our world, so we have to have some thread-local mutable state.
+; doesn't fit well into the functional world, so we have to have some thread-local mutable state.
 
-(def *tokens)
-(def *buffer)
-(def *resource)
-(def *text-location)
-(def *locator)
+(def *tokens*)
+(def *buffer*)
+(def *resource*)
+(def *text-location*)
+(def *locator*)
 
 (defn- to-keyword
   "Converts a string into a keyword."
@@ -51,14 +51,14 @@
 (defn- add-token
   "Adds a token to the *tokens var."
   [token]
-  (set! *tokens (conj *tokens token)))
+  (set! *tokens* (conj *tokens* token)))
 
 (defn- current-location
   "Current location."
   []
   ; TODO: this is invoked far more often than the line number changes,
   ; so do some caching.
-  (struct location *resource (.getLineNumber *locator)))
+  (struct location *resource* (.getLineNumber *locator*)))
 
 (defn- add-attribute-tokens
   "Adds a token for each attribute."
@@ -79,17 +79,17 @@
 (defn- flush-text
   "Adds a text token if there's any text."
   []
-  (when (pos? (.length *buffer))
-        (add-token (struct-map xml-token :type :text :value (.toString *buffer) :location *text-location))
-        (set! *text-location nil)
-        (.setLength *buffer 0)))
+  (when (pos? (.length *buffer*))
+        (add-token (struct-map xml-token :type :text :value (.toString *buffer*) :location *text-location*))
+        (set! *text-location* nil)
+        (.setLength *buffer* 0)))
 
 (defn- add-text
   "Adds text to the buffer and manages the *text-location var."
   [ch start length]
-  (.append *buffer ch start length)
-  (when (nil? *text-location)
-        (set! *text-location (current-location))))
+  (.append *buffer* ch start length)
+  (when (nil? *text-location*)
+        (set! *text-location* (current-location))))
 
 (def sax-handler
   (proxy [DefaultHandler] []
@@ -112,19 +112,21 @@
          (characters [ch start length]
                      (add-text ch start length))
 
+         ; This gets invoked once, early. The provided Locator is mutable.
+
          (setDocumentLocator [#^Locator locator]
-                             (set! *locator locator))))
+                             (set! *locator* locator))))
 
 (defn tokenize-xml
   "Parses an XML file using a standard source (file, path, URL, etc.) into a collection
   of xml-token struct-maps."
   [src]
-  (binding [*tokens []
-            *buffer (StringBuilder.)
-            *resource src
-            *locator nil
-            *text-location nil]
+  (binding [*tokens* []
+            *buffer* (StringBuilder.)
+            *resource* src
+            *locator* nil
+            *text-location* nil]
            (let [factory (SAXParserFactory/newInstance)]
                 (.setNamespaceAware factory true)
                 (.. factory newSAXParser (parse src sax-handler))
-                *tokens)))
+                *tokens*)))
