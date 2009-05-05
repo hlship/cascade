@@ -94,7 +94,7 @@
 
 (defn- add-text
   "Adds text to the buffer and manages the *text-location* var."
-  [ch start length]
+  [#^chars ch start length]
   (.append *buffer* ch start length)
   (when (nil? *text-location*)
         (set! *text-location* (current-location))))
