@@ -1,9 +1,0 @@
-<div xmlns:w="wafer">
-
-    <span>Hello</span>
-
-    <div w:fragment="foo">
-        <bar/>
-    </div>
-
-</div>

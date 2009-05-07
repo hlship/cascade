@@ -3,7 +3,7 @@
 (ns com.howardlewisship.cascade.internal.test-xml-tokenizer
     (:use clojure.contrib.test-is com.howardlewisship.cascade.internal.xmltokenizer))
 
-(def base "src/test/resources/com/howardlewisship/cascade/internal/")
+(def #^{:private true} base "src/test/resources/com/howardlewisship/cascade/internal/")
 
 (defn expect
   [f tokens expected]

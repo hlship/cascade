@@ -1,56 +1,123 @@
 (ns com.howardlewisship.cascade.parser
-    (:use clojure.xml)
-    (:import (clojure.lang ISeq IPersistentMap)))
+    (:use clojure.contrib.monads
+          com.howardlewisship.cascade.dom
+          com.howardlewisship.cascade.internal.xmltokenizer))
+
+(def cascade-uri "cascade")
+
+; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
+; a rendering function takes a map (its environment) and returns a list of DOM nodes that can be rendered, or
+; nil. At render time the env will have keys for many values, and special keys:
+; :token - the token of the referencing fragment
+; :body - a rendering function that renders contents of the fragment
+; :parameters - map of parameters in the referencing fragment
+; :attributes - map of attributes in the referencing fragment
+
+(defstruct element-node :token :body :attributes)
+
+; the parsing functions
+
+(defn- fail
+  [token msg]
+  (throw (RuntimeException. (format "Failure for token %s: %s" token msg))))
+
+; Let's parse the XML stream to an intermdiate DOM-like structure.
+; Thus our monadic values will be functions that take a state
+; and return a DOM node.  The state will always be the remaining vector
+; of tokens.
+
+; This is supposed to be the same as (state-t maybe-m) and we'll try that later.
+; I'm calling the monadic values "actions", as that seems to fit ... they perform
+; a delta on the current state and return the new result.
+
+(defmonad parser-m
+          [m-result (fn [x]
+                        (fn [tokens]
+                            (list x tokens)))
+
+           m-bind (fn [parser action]
+                      (fn [tokens]
+                          (let [result (parser tokens)]
+                               (when-not (nil? result)
+                                         ((action (first result)) (second result))))))
+
+           m-zero (fn [strn]
+                      nil)
+
+           m-plus (fn [& parsers]
+                      (fn [tokens]
+                          (first
+                            (drop-while nil?
+                                        (map #(% tokens) parsers)))))])
 
 
+(defn any-token
+  "Returns [first, rest] if tokens is not empty, nil otherwise."
+  [tokens]
+  (if (empty? tokens)
+      nil
+      ; This is what actually "consumes" the tokens seq
+      (list (first tokens) (rest tokens))))
 
-; To be renamed and shifted elsewhere.
+(defn token-test
+  "Parser factory using a predicate."
+  [pred]
+  (domonad parser-m
+           [t any-token :when (pred t)]
+           ; return the matched token
+           t))
 
-(defn sniff
-  "Sniffs the DOM object to identify how it should be converted to a function."
-  [o]
-  (cond (map? o) :element
-        (vector? o) :children
-        (seq? o) :children
-        (string? o) :string
-        true (throw (Exception. (format "Can't sniff %s" o)))))
+(defn match-type
+  "Parser that matches a particular token type or returns nil."
+  [type]
+  (token-test #(= (% :type) type)))
 
-(defmulti parsed-dom-to-function sniff)
+(defn add-to-key-list
+  "Updates the map adding the value to the list stored in the indicated key."
+  [map key value]
+  (update-in map [key] #(conj (or % []) value)))
 
-; A string is a kind of pass-thru. The function ignores the parameters and returns the fixed string value.
-(defmethod parsed-dom-to-function :string [s]
-  (fn string [node] s))
+(defn add-to-key-list-action
+  [element key value]
+  (fn [state]
+      (list (add-to-key-list element key value) state)))
 
-(defmethod parsed-dom-to-function :element [e]
-  (let [tag (e :tag)
-        attrs (or (e :attrs) nil)
-        children (if (e :content) (parsed-dom-to-function (e :content)))]
-       (fn element [node]
-           {:tag tag
-            :attrs attrs
-            :content (if children (children node))})))
-
-; A sequence is the content children of an element. The children are recursively converted into
-; functions, and the collection of DOM nodes is replaced with a collection of view fragment functions.
-(defmethod parsed-dom-to-function :children [seq]
-  (let [parsed (map parsed-dom-to-function seq)]
-       (fn children [node]
-           (map #(% node) parsed))))
-
-(defn parse-view-fragment-template
-  "Parses a template file from a source (as per clojure.xml/parse), returning a template fragment function."
-  [source]
-  (parsed-dom-to-function (clojure.xml/parse source)))
+(defn set-result
+  "Creates an action that forces the result to some value."
+  [v]
+  (fn action [state]
+      [v state]))
 
 
+(def element
+  (domonad parser-m
+           [token (match-type :start-element)
+            tree-node (set-result {:tag (token :tag)})
+             ; todo ... handle the body, including element attributes
+            _ (match-type :end-element)]
+           tree-node))
 
-(defmulti dom-to-string sniff)
+(defn parse-template
+  [src]
+  ; Assumes the first token is the outer element, need
+  ; to tweak this.
+  (let [tokens (tokenize-xml src)
 
-(defmethod dom-to-string :string [s] [s])
-(defmethod dom-to-string :children [c] (apply str (map dom-to-string c)))
-(defmethod dom-to-string :element [e]
-  (let [tag-name (name (e :tag))
-        attrs (apply str (map (fn [[key value]] (format " %s='%s'" (name key) value)) (e :attrs)))
-        children (if (e :content) (dom-to-string (e :content)) "")]
-       (apply str "<" tag-name attrs ">" children "</" tag-name ">")))
+    ; I know this isn't right, but why is it null?
 
+        result (element tokens)]
+
+       (if (nil? result)
+           (fail "Stream did not parse."))
+
+       (let [[tree remaining-tokens] result]
+            (when-not (empty? remaining-tokens)
+                      (fail "Not all tokens were parsed."))
+            tree)))
+
+; (let [tokens (tokenize-xml "/Users/Howard/work/clojure/cascade/src/test/resources/com/howardlewisship/cascade/internal/root-only.xml")
+
+(time
+  (let [tree (parse-template "src/test/resources/com/howardlewisship/cascade/internal/root-only.xml")]
+       (pr tree)
+       (println)))
