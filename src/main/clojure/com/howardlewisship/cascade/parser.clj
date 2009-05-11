@@ -8,18 +8,21 @@
 ; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
 ; a rendering function takes a map (its environment) and returns a list of DOM nodes that can be rendered, or
 ; nil. At render time the env will have keys for many values, and special keys:
+; :type :element
 ; :token - the token of the referencing fragment
-; :body - a rendering function that renders contents of the fragment
+; :body - text and element nodes
 ; :parameters - map of parameters in the referencing fragment
 ; :attributes - map of attributes in the referencing fragment
 
-(defstruct element-node :token :body :attributes)
+(defstruct element-node :type :token :body :attributes)
+(defstruct text-node :type :token)
+
 
 ; the parsing functions
 
 (defn- fail
-  [token msg]
-  (throw (RuntimeException. (format "Failure for token %s: %s" token msg))))
+  [#^String msg]
+  (throw (RuntimeException. msg)))
 
 ; Let's parse the XML stream to an intermdiate DOM-like structure.
 ; Thus our monadic values will be functions that take a state
@@ -29,6 +32,8 @@
 ; This is supposed to be the same as (state-t maybe-m) and we'll try that later.
 ; I'm calling the monadic values "actions", as that seems to fit ... they perform
 ; a delta on the current state and return the new result.
+
+; TODO: change back to (def parser-m (state-t maybe-m)
 
 (defmonad parser-m
           [m-result (fn [x]
@@ -41,7 +46,7 @@
                                (when-not (nil? result)
                                          ((action (first result)) (second result))))))
 
-           m-zero (fn [strn]
+           m-zero (fn [tokens]
                       nil)
 
            m-plus (fn [& parsers]
@@ -50,74 +55,116 @@
                             (drop-while nil?
                                         (map #(% tokens) parsers)))))])
 
+; And some actions and parser generators
 
 (defn any-token
-  "Returns [first, rest] if tokens is not empty, nil otherwise."
+  "Fundamental parser action: returns [first, rest] if tokens is not empty, nil otherwise."
   [tokens]
   (if (empty? tokens)
       nil
       ; This is what actually "consumes" the tokens seq
       (list (first tokens) (rest tokens))))
 
-(defn token-test
-  "Parser factory using a predicate."
-  [pred]
-  (domonad parser-m
-           [t any-token :when (pred t)]
-           ; return the matched token
-           t))
 
-(defn match-type
-  "Parser that matches a particular token type or returns nil."
-  [type]
-  (token-test #(= (% :type) type)))
+
+
+; Utilities that will likely move elsewhere
 
 (defn add-to-key-list
   "Updates the map adding the value to the list stored in the indicated key."
   [map key value]
   (update-in map [key] #(conj (or % []) value)))
 
-(defn add-to-key-list-action
-  [element key value]
-  (fn [state]
-      (list (add-to-key-list element key value) state)))
+(with-monad
+  parser-m
 
-(defn set-result
-  "Creates an action that forces the result to some value."
-  [v]
-  (fn action [state]
-      [v state]))
+  (defn token-test
+    "Parser factory using a predicate. When a token matches the predicate, it becomes
+  the new result."
+    [pred]
+    (domonad
+      [t any-token :when (pred t)]
+      ; return the matched token
+      t))
+
+  (defn match-type
+    "Parser factory that matches a particular token type (making the matched
+token the result), or returns nil."
+    [type]
+    (token-test #(= (% :type) type)))
+
+  (defn optional [parser]
+    (m-plus parser (m-result nil)))
+
+  (declare element one-or-more)
+
+  (defn none-or-more [parser]
+    (optional (one-or-more parser)))
+
+  (defn one-or-more [parser]
+    (domonad [a parser
+              as (none-or-more parser)]
+             (cons a as)))
+
+  (defn attribute
+    "Parser generator that matches attribute tokens, adding them to
+    :attributes key of the element-node, and returning the new
+    element-node."
+    [element-node]
+    (domonad [attribute-token (match-type :attribute)]
+             (add-to-key-list element-node :attributes attribute-token)))
+
+  (defn text
+    "Parser generator that matches text tokens, adding them to the :body
+key of the element-node, and returning the new element-node."
+    [element-node]
+    (domonad [text-token (match-type :text)]
+             (add-to-key-list element-node :body text-token)))
+
+  (def match-first m-plus)
+
+  (defn body-token
+    [element-node]
+    (match-first
+      (attribute element-node)
+      (text element-node)
+      (element element-node)))
+
+  (defn process-body
+    [element-node]
+    (domonad [modified-element (optional (body-token element-node))
+      ; final-result (process-body modified-element)
+              ]
+             (or modified-element element-node)))
+
+  (defn element
+    "Parses an element token into an element-node, and then adds the fully constructed element-node to the
+:body of the containing element node."
+    [container-element-node]
+    (domonad [token (match-type :start-element)
+              element-node (m-result (struct element-node :element token))
+              assembled-node (process-body element-node)
+              _ (match-type :end-element)]
+             (add-to-key-list container-element-node :body assembled-node)))
 
 
-(def element
-  (domonad parser-m
-           [token (match-type :start-element)
-            tree-node (set-result {:tag (token :tag)})
-             ; todo ... handle the body, including element attributes
-            _ (match-type :end-element)]
-           tree-node))
+  (def template
+    ; Creates a psuedo-element (an empty map) and parses the root element into it, then extracts the root element.
+    ; Will eventually have to expand to support text and comments, etc., around the root element."
+    (domonad [root (element {})]
+             (first (root :body))))
+
+  ) ; with-monad parser-m
 
 (defn parse-template
   [src]
-  ; Assumes the first token is the outer element, need
-  ; to tweak this.
   (let [tokens (tokenize-xml src)
-
-    ; I know this isn't right, but why is it null?
-
-        result (element tokens)]
+        result (template tokens)]
 
        (if (nil? result)
-           (fail "Stream did not parse."))
+           (fail "Parse completed with no result."))
 
-       (let [[tree remaining-tokens] result]
+       (let [[root-element remaining-tokens] result]
             (when-not (empty? remaining-tokens)
-                      (fail "Not all tokens were parsed."))
-            tree)))
-
-; (let [tokens (tokenize-xml "/Users/Howard/work/clojure/cascade/src/test/resources/com/howardlewisship/cascade/internal/root-only.xml")
-
-(time
-  (let [tree (parse-template "src/test/resources/com/howardlewisship/cascade/internal/root-only.xml")]
-       (pr tree)
-       (println)))
+                      (fail (format "Not all XML tokens were parsed, %s remain, starting with %s." (count result) (first result))))
+            root-element)))

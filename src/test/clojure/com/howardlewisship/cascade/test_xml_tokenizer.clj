@@ -1,6 +1,6 @@
 (set! *warn-on-reflection* true)
 
-(ns com.howardlewisship.cascade.internal.test-xml-tokenizer
+(ns com.howardlewisship.cascade.test-xml-tokenizer
     (:use clojure.contrib.test-is com.howardlewisship.cascade.internal.xmltokenizer))
 
 (def #^{:private true} base "src/test/resources/com/howardlewisship/cascade/internal/")
