@@ -13,11 +13,15 @@
 ; :body - text and element nodes
 ; :parameters - map of parameters in the referencing fragment
 ; :attributes - map of attributes in the referencing fragment
+; :ns-uri-to-prefix - map from namespace URI to namespace prefix
 
-(defstruct element-node :type :token :body :attributes)
+(defstruct element-node :type :token :body :attributes :ns-uri-to-prefix)
 (defstruct text-node :type :token)
 
-; the parsing functions
+(defn- build-uri-to-prefix
+  "Converts a list of :begin-ns-prefix tokens into a map from URI to prefix."
+  [tokens]
+  (reduce (fn [map token] (assoc map (token :ns-uri) (token :ns-prefix))) {} tokens))
 
 (defn- fail
   [#^String msg]
@@ -34,7 +38,8 @@
 
 ; TODO: change back to (def parser-m (state-t maybe-m)
 
-(defmonad parser-m
+(defmonad parser-m ; (state-t maybe-m))
+
           [m-result (fn [x]
                         (fn [tokens]
                             (list x tokens)))
@@ -63,16 +68,6 @@
       nil
       ; This is what actually "consumes" the tokens seq
       (list (first tokens) (rest tokens))))
-
-
-
-
-; Utilities that will likely move elsewhere
-
-(defn add-to-key-list
-  "Updates the map adding the value to the list stored in the indicated key."
-  [map key value]
-  (update-in map [key] #(conj (or % []) value)))
 
 (with-monad
   parser-m
@@ -105,9 +100,6 @@ token the result), or returns nil."
               as (none-or-more parser)]
              (cons a as)))
 
-  (def parse-attribute
-    (domonad [token (match-type :attribute)]
-             token))
 
   (def parse-text
     (domonad [text-token (match-type :text)]
@@ -124,16 +116,21 @@ token the result), or returns nil."
     (match-first parse-text parse-element))
 
   (def parse-element
-    (domonad [token (match-type :start-element)
+    (domonad [ns-begin-tokens (none-or-more (match-type :begin-ns-prefix))
+              token (match-type :start-element)
       ; attributes immediately follow the start-element token
-              attribute-tokens (none-or-more parse-attribute)
+              attribute-tokens (none-or-more (match-type :attribute))
       ; after which, there may be the tokens for the body
       ; (including text and recursive elements)
               body-elements (none-or-more (parse-body))
       ; and matched by an end element token
-              _ (match-type :end-element)]
+              _ (match-type :end-element)
+      ; Trust that the XML tokenizer balances each :begin-ns-prefix with an :end-ns-prefix
+              _ (none-or-more (match-type :end-ns-prefix))
+              ]
              ; Package everything together
-             (struct element-node :element token body-elements attribute-tokens)))
+             (struct element-node :element token body-elements attribute-tokens
+                     (build-uri-to-prefix ns-begin-tokens))))
 
 
   (def parse-template-root

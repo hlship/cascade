@@ -1,0 +1,4 @@
+<c:root xmlns:c="cascade">
+    <plain/>
+    <c:nested1 x="20" c:y="30"/>
+</c:root>

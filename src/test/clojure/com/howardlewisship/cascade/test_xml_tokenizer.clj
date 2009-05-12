@@ -45,10 +45,10 @@
 
               (expect :ns-uri (by-type :begin-ns-prefix tokens) ["clojure" "zeta/1.0"])
 
-              (expect :ns-prefix (by-type :begin-ns-prefix tokens) [:c :z])
+              (expect :ns-prefix (by-type :begin-ns-prefix tokens) ["c" "z"])
 
-              (expect :ns-prefix (by-type :end-ns-prefix tokens) [:z :c])
-
+              (expect :ns-prefix (by-type :end-ns-prefix tokens) ["z" "c"])
+              
               (expect :ns-uri (by-type :start-element tokens) ["clojure" "" "zeta/1.0"])
 
               (expect :ns-uri (by-type :attribute tokens) ["" "clojure" ""])

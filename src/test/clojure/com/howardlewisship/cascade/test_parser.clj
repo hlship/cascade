@@ -1,5 +1,6 @@
 (ns com.howardlewisship.cascade.test-parser
     (:use clojure.contrib.test-is
+          clojure.contrib.pprint
           com.howardlewisship.cascade.parser))
 
 (def #^{:private true} base "src/test/resources/com/howardlewisship/cascade/internal/")
@@ -10,15 +11,19 @@
                {}
                attrs)))
 
+(defn- extract-ns-attributes [element-node]
+  (let [attrs (element-node :attributes)]
+       (reduce (fn combine [map attr-token] (assoc map {:ns-uri (attr-token :ns-uri)
+                                                        :name (attr-token :name)}
+                                                   (attr-token :value)))
+               {}
+               attrs)))
+
 (defn expect-attributes [element-node attr-map]
   (is (= (extract-attributes element-node) attr-map)))
 
-(deftest test-add-to-key-list
-         (let [initial {}
-               first-add (add-to-key-list initial :foo 1)
-               second-add (add-to-key-list first-add :foo 2)]
-              (is (= first-add {:foo [1]}))
-              (is (= second-add {:foo [1 2]}))))
+(defn expect-ns-attributes [element-node attr-map]
+  (is (= (extract-ns-attributes element-node) attr-map)))
 
 (deftest trival-document
          ; parse template may eventually return a list of nodes
@@ -27,6 +32,7 @@
               (is (= (root :type) :element))
               (is (not (nil? (root :token))))
               (is (= (-> root :token :tag) :root-node))
+              (is (= (-> root :token :ns-uri) ""))
               (is (nil? (root :attributes)))
               (is (nil? (root :body)))))
 
@@ -53,3 +59,22 @@
                 (map #(is (= (.trim (-> %1 :token :value)) %2))
                      [pre-text inner-text post-text]
                      ["Pre-nested text", "Inner nested text", "Post-nested text"]))))
+
+(deftest namespaced-elements
+         (let [root (parse-template (str base "namespaced-elements.xml"))
+               body (root :body)
+               plain (nth body 1)
+               nested1 (nth body 3)
+               ]
+              (is (nil? (root :attributes)))
+              (is (= (-> root :token :ns-uri) "cascade"))
+              (is (= (root :ns-uri-to-prefix) {"cascade" "c"}))
+
+              (is (= (-> plain :token :ns-uri) ""))
+
+              (is (= (-> nested1 :token :ns-uri) "cascade"))
+
+              (expect-ns-attributes nested1 {
+                {:name :x :ns-uri ""} "20"
+                {:name :y :ns-uri "cascade"} "30"
+                })))
