@@ -1,0 +1,7 @@
+<root x="20" y="30">
+    Pre-nested text
+    <nested z="40">
+        Inner nested text
+    </nested>
+    Post-nested text
+</root>

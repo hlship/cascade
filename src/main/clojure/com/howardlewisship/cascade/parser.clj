@@ -17,7 +17,6 @@
 (defstruct element-node :type :token :body :attributes)
 (defstruct text-node :type :token)
 
-
 ; the parsing functions
 
 (defn- fail
@@ -96,7 +95,7 @@ token the result), or returns nil."
   (defn optional [parser]
     (m-plus parser (m-result nil)))
 
-  (declare element one-or-more)
+  (declare parse-element one-or-more)
 
   (defn none-or-more [parser]
     (optional (one-or-more parser)))
@@ -106,60 +105,48 @@ token the result), or returns nil."
               as (none-or-more parser)]
              (cons a as)))
 
-  (defn attribute
-    "Parser generator that matches attribute tokens, adding them to
-    :attributes key of the element-node, and returning the new
-    element-node."
-    [element-node]
-    (domonad [attribute-token (match-type :attribute)]
-             (add-to-key-list element-node :attributes attribute-token)))
+  (def parse-attribute
+    (domonad [token (match-type :attribute)]
+             token))
 
-  (defn text
-    "Parser generator that matches text tokens, adding them to the :body
-key of the element-node, and returning the new element-node."
-    [element-node]
+  (def parse-text
     (domonad [text-token (match-type :text)]
-             (add-to-key-list element-node :body text-token)))
+             (struct text-node :text text-token)))
 
   (def match-first m-plus)
 
-  (defn body-token
-    [element-node]
-    (match-first
-      (attribute element-node)
-      (text element-node)
-      (element element-node)))
+  ; This needs to be a parser generator, not a parser, to
+  ; work around a chicken-and-the-egg issue: parse-body and parse-element
+  ; are mutually dependent and need full definitions of each; making this a function
+  ; defers the need for parse-element to be constructed.
+  (defn parse-body
+    []
+    (match-first parse-text parse-element))
 
-  (defn process-body
-    [element-node]
-    (domonad [modified-element (optional (body-token element-node))
-      ; final-result (process-body modified-element)
-              ]
-             (or modified-element element-node)))
-
-  (defn element
-    "Parses an element token into an element-node, and then adds the fully constructed element-node to the
-:body of the containing element node."
-    [container-element-node]
+  (def parse-element
     (domonad [token (match-type :start-element)
-              element-node (m-result (struct element-node :element token))
-              assembled-node (process-body element-node)
+      ; attributes immediately follow the start-element token
+              attribute-tokens (none-or-more parse-attribute)
+      ; after which, there may be the tokens for the body
+      ; (including text and recursive elements)
+              body-elements (none-or-more (parse-body))
+      ; and matched by an end element token
               _ (match-type :end-element)]
-             (add-to-key-list container-element-node :body assembled-node)))
+             ; Package everything together
+             (struct element-node :element token body-elements attribute-tokens)))
 
 
-  (def template
-    ; Creates a psuedo-element (an empty map) and parses the root element into it, then extracts the root element.
-    ; Will eventually have to expand to support text and comments, etc., around the root element."
-    (domonad [root (element {})]
-             (first (root :body))))
+  (def parse-template-root
+    ; For the moment, parsing a template is exactly the same as parsing the root element.
+    ; Later we'll support doctypes, text and comments before and after the root element.
+    parse-element)
 
   ) ; with-monad parser-m
 
 (defn parse-template
   [src]
   (let [tokens (tokenize-xml src)
-        result (template tokens)]
+        result (parse-template-root tokens)]
 
        (if (nil? result)
            (fail "Parse completed with no result."))

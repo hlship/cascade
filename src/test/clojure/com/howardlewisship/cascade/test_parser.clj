@@ -37,3 +37,19 @@
 (deftest multiple-attributes
          (let [root (parse-template (str base "multiple-attributes.xml"))]
               (expect-attributes root {:x "20" :y "30"})))
+
+(deftest nested-elements
+         (let [root (parse-template (str base "nested-elements.xml"))
+               body (root :body)
+               pre-text (nth body 0)
+               nested (nth body 1)
+               post-text (nth body 2)
+               nested-body (nested :body)
+               inner-text (nth nested-body 0)]
+              (expect-attributes root {:x "20" :y "30"})
+              (is (= (-> nested :token :tag) :nested))
+              (expect-attributes nested {:z "40"})
+              (dorun
+                (map #(is (= (.trim (-> %1 :token :value)) %2))
+                     [pre-text inner-text post-text]
+                     ["Pre-nested text", "Inner nested text", "Post-nested text"]))))
