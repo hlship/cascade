@@ -1,9 +1,7 @@
-(ns com.howardlewisship.cascade.parser
+(ns com.howardlewisship.cascade.internal.parser
     (:use clojure.contrib.monads
           com.howardlewisship.cascade.dom
           com.howardlewisship.cascade.internal.xmltokenizer))
-
-(def cascade-uri "cascade")
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
 ; a rendering function takes a map (its environment) and returns a list of DOM nodes that can be rendered, or
@@ -32,32 +30,7 @@
 ; and return a DOM node.  The state will always be the remaining vector
 ; of tokens.
 
-; This is supposed to be the same as (state-t maybe-m) and we'll try that later.
-; I'm calling the monadic values "actions", as that seems to fit ... they perform
-; a delta on the current state and return the new result.
-
-; TODO: change back to (def parser-m (state-t maybe-m)
-
-(defmonad parser-m ; (state-t maybe-m))
-
-          [m-result (fn [x]
-                        (fn [tokens]
-                            (list x tokens)))
-
-           m-bind (fn [parser action]
-                      (fn [tokens]
-                          (let [result (parser tokens)]
-                               (when-not (nil? result)
-                                         ((action (first result)) (second result))))))
-
-           m-zero (fn [tokens]
-                      nil)
-
-           m-plus (fn [& parsers]
-                      (fn [tokens]
-                          (first
-                            (drop-while nil?
-                                        (map #(% tokens) parsers)))))])
+(def parser-m (state-t maybe-m))
 
 ; And some actions and parser generators
 

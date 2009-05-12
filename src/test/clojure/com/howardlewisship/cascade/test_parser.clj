@@ -1,7 +1,7 @@
 (ns com.howardlewisship.cascade.test-parser
     (:use clojure.contrib.test-is
           clojure.contrib.pprint
-          com.howardlewisship.cascade.parser))
+          com.howardlewisship.cascade.internal.parser))
 
 (def #^{:private true} base "src/test/resources/com/howardlewisship/cascade/internal/")
 
