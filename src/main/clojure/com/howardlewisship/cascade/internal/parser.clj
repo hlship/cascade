@@ -1,6 +1,5 @@
 (ns com.howardlewisship.cascade.internal.parser
     (:use clojure.contrib.monads
-          com.howardlewisship.cascade.dom
           com.howardlewisship.cascade.internal.xmltokenizer))
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
