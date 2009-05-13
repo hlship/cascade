@@ -6,8 +6,17 @@
 
 (def #^{:private true} base "src/test/resources/")
 
-(deftest simple-view
-         (let [view (parse-and-create-view (str base "simple-view.xml"))
-               dom (view {})
-               output (with-out-str (render-xml dom *out*))]
-              (print output)))
+
+(defn- execute-view-test
+  [name]
+  (let [input-path (str base name ".xml")
+        expected-path (str base name "-expected.xml")
+        view (parse-and-create-view input-path)
+        dom (view {})
+        output (with-out-str (render-xml dom *out*))
+        expected (slurp expected-path)]
+       (is (= output expected))))
+
+(deftest simple-view (execute-view-test "simple-view"))
+
+(deftest basic-namespaces (execute-view-test "basic-namespaces"))

@@ -10,9 +10,10 @@
   "Combines a number of render functions together to form a composite render function. "
   [funcs]
   (fn combined [env]
-      (remove nil? (apply concat
-        (for [f funcs]
-             (f env))))))
+      (remove nil?
+              (apply concat
+                     (for [f funcs]
+                          (f env))))))
 
 (defn- construct-attributes
   "Convert attribute tokens into attribute DOM nodes."
@@ -42,6 +43,7 @@
            [(struct-map dom-node
                         :type :element
                         :ns-uri (token :ns-uri)
+                        :ns-uri-to-prefix (parsed-node :ns-uri-to-prefix)
                         :name (token :tag)
                         ; currently assuming that attributes are "static" but
                         ; that will change ... though we should seperate "static" from "dynamic"

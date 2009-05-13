@@ -64,8 +64,8 @@
          (let [root (parse-template (str base "namespaced-elements.xml"))
                body (root :body)
                plain (nth body 1)
-               nested1 (nth body 3)
-               ]
+               nested1 (nth body 3)]
+              
               (is (nil? (root :attributes)))
               (is (= (-> root :token :ns-uri) "cascade"))
               (is (= (root :ns-uri-to-prefix) {"cascade" "c"}))

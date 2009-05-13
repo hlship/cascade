@@ -1,5 +1,6 @@
 (ns com.howardlewisship.cascade.internal.parser
     (:use clojure.contrib.monads
+          [clojure.contrib.pprint :only (pprint)]
           com.howardlewisship.cascade.internal.xmltokenizer))
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
@@ -117,8 +118,9 @@ token the result), or returns nil."
   (let [tokens (tokenize-xml src)
         result (parse-template-root tokens)]
 
-       (if (nil? result)
-           (fail "Parse completed with no result."))
+       (when (nil? result)
+             (pprint tokens)
+             (fail "Parse completed with no result."))
 
        (let [[root-element remaining-tokens] result]
             (when-not (empty? remaining-tokens)

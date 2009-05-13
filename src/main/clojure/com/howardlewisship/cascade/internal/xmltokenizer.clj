@@ -97,9 +97,11 @@
                      (add-text ch start length))
 
          (startPrefixMapping [prefix uri]
+                             (flush-text)
                              (add-token (struct begin-ns-prefix-token :begin-ns-prefix (current-location) uri prefix)))
 
          (endPrefixMapping [prefix]
+                           (flush-text)
                            (add-token (struct end-ns-prefix-token :end-ns-prefix (current-location) prefix)))
 
          ; This gets invoked once, early. The provided Locator is mutable.

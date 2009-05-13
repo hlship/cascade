@@ -40,7 +40,7 @@
          (let [tokens (tokenize-xml (str base "ns.xml"))]
 
               (expect :type tokens [:begin-ns-prefix :start-element :attribute :attribute :text :start-element
-                                    :attribute :end-element :begin-ns-prefix :text :start-element :end-element
+                                    :attribute :end-element :text :begin-ns-prefix :start-element :end-element
                                     :end-ns-prefix :text :end-element :end-ns-prefix])
 
               (expect :ns-uri (by-type :begin-ns-prefix tokens) ["clojure" "zeta/1.0"])
