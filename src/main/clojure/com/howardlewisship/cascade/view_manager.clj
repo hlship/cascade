@@ -10,7 +10,9 @@
   "Combines a number of render functions together to form a composite render function. "
   [funcs]
   (fn combined [env]
-      (remove nil? (concat (for [f funcs] (f env))))))
+      (remove nil? (apply concat
+        (for [f funcs]
+             (f env))))))
 
 (defn- construct-attributes
   "Convert attribute tokens into attribute DOM nodes."
@@ -22,8 +24,7 @@
                    :name (token :name)
                    :value (token :value))))
 
-(defmulti to-render-func :type
-  "Converts a parsed template node into a function that will render some number of DOM nodes.")
+(defmulti to-render-func :type)
 
 (defmethod to-render-func :text [parsed-node]
   (fn [env] [(struct-map dom-node
@@ -36,12 +37,12 @@
         token (parsed-node :token)
         body-as-funcs (map to-render-func body)
         body-combined (combine-render-funcs body-as-funcs)
-        attributes (construct-attributes (node :attributes))]
+        attributes (construct-attributes (parsed-node :attributes))]
        (fn element-node-renderer [env]
            [(struct-map dom-node
                         :type :element
                         :ns-uri (token :ns-uri)
-                        :name (token :token)
+                        :name (token :tag)
                         ; currently assuming that attributes are "static" but
                         ; that will change ... though we should seperate "static" from "dynamic"
                         :attributes attributes
@@ -50,7 +51,7 @@
                         :content (body-combined env))])))
 
 
-(defn create-view
+(defn parse-and-create-view
   "Parses a source file and creates a view function from it."
   [src]
   (let [root-node (parse-template src)]

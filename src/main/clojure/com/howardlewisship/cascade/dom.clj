@@ -1,7 +1,7 @@
-(ns com.howardlewisship.cascade.dom)
+(ns com.howardlewisship.cascade.dom
+    (:import (java.io Writer)))
 
 
-(declare render-xml)
 
 ; Somewhat similar to the DOM parsed by clojure.xml/parse, but
 ; it includes extra support for namespaces.
@@ -9,32 +9,35 @@
 (defstruct dom-node
   :type ; :element, :attribute, :text
   :ns-uri ; namespace of element or attribute (often empty string)
-  :name ; element tag or attribute name
+  :name ; element tag or attribute name (as a keyword)
   :value ; attribute value or literal text
   :attributes ; attribute dom-nodes within element dom-nodes
   :content) ; dom-nodes for any children
 
 (defn- write
-  [out & strings]
+  [#^Writer out & strings]
   (doseq [#^String s strings]
          (.write out s)))
 
 (defmulti render-node-xml :type)
+
 (defmethod render-node-xml :text
   [text-node out]
   ; TODO: entity filtering
-  (.write out (text-node :value)))
+  (write out (text-node :value)))
+
+(declare render-xml)
 
 (defmethod render-node-xml :element
   [element-node out]
-  (let [element-name (element-node :name)
+  (let [element-name (name (element-node :name))
         content (element-node :content)]
        ; TODO: namespace support
        (write out "<" element-name)
 
-       (doseq [{name :name value :value} (element-node :attributes)]
+       (doseq [{attr-name :name attr-value :value} (element-node :attributes)]
               ; TODO: URL escaping
-              (write out " " name "=\"" value "\""))
+              (write out " " (name attr-name) "=\"" attr-value "\""))
 
        (if (empty? content)
            (write out "/>")
