@@ -29,7 +29,7 @@
          (.write out s)))
 
 (defn- blank?
-  [string]
+  [#^String string]
   (or (nil? string) (= 0 (.. string trim length))))
 
 (defn- qualify-name

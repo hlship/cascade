@@ -1,5 +1,3 @@
-(set! *warn-on-reflection* true)
-
 (ns com.howardlewisship.cascade.test-xml-tokenizer
     (:use clojure.contrib.test-is com.howardlewisship.cascade.internal.xmltokenizer))
 
