@@ -1,7 +1,8 @@
 (ns com.howardlewisship.cascade.internal.parser
-    (:use clojure.contrib.monads
-          [clojure.contrib.pprint :only (pprint)]
-          com.howardlewisship.cascade.internal.xmltokenizer))
+  (:use
+   clojure.contrib.monads
+   [clojure.contrib.pprint :only (pprint)]
+   com.howardlewisship.cascade.internal.xmltokenizer))
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
 ; a rendering function takes a map (its environment) and returns a list of DOM nodes that can be rendered, or
@@ -38,9 +39,9 @@
   "Fundamental parser action: returns [first, rest] if tokens is not empty, nil otherwise."
   [tokens]
   (if (empty? tokens)
-      nil
-      ; This is what actually "consumes" the tokens seq
-      (list (first tokens) (rest tokens))))
+    nil
+    ; This is what actually "consumes" the tokens seq
+    (list (first tokens) (rest tokens))))
 
 (with-monad
   parser-m
@@ -71,12 +72,12 @@ token the result), or returns nil."
   (defn one-or-more [parser]
     (domonad [a parser
               as (none-or-more parser)]
-             (cons a as)))
+      (cons a as)))
 
 
   (def parse-text
     (domonad [text-token (match-type :text)]
-             (struct text-node :text text-token)))
+      (struct text-node :text text-token)))
 
   (def match-first m-plus)
 
@@ -91,19 +92,19 @@ token the result), or returns nil."
   (def parse-element
     (domonad [ns-begin-tokens (none-or-more (match-type :begin-ns-prefix))
               token (match-type :start-element)
-      ; attributes immediately follow the start-element token
+              ; attributes immediately follow the start-element token
               attribute-tokens (none-or-more (match-type :attribute))
-      ; after which, there may be the tokens for the body
-      ; (including text and recursive elements)
+              ; after which, there may be the tokens for the body
+              ; (including text and recursive elements)
               body-elements (none-or-more (parse-body))
-      ; and matched by an end element token
+              ; and matched by an end element token
               _ (match-type :end-element)
-      ; Trust that the XML tokenizer balances each :begin-ns-prefix with an :end-ns-prefix
+              ; Trust that the XML tokenizer balances each :begin-ns-prefix with an :end-ns-prefix
               _ (none-or-more (match-type :end-ns-prefix))
               ]
-             ; Package everything together
-             (struct element-node :element token body-elements attribute-tokens
-                     (build-uri-to-prefix ns-begin-tokens))))
+      ; Package everything together
+      (struct element-node :element token body-elements attribute-tokens
+                           (build-uri-to-prefix ns-begin-tokens))))
 
 
   (def parse-template-root
@@ -118,11 +119,13 @@ token the result), or returns nil."
   (let [tokens (tokenize-xml src)
         result (parse-template-root tokens)]
 
-       (when (nil? result)
-             (pprint tokens)
-             (fail "Parse completed with no result."))
+    (when (nil? result)
+      (pprint tokens)
+      (fail "Parse completed with no result."))
 
-       (let [[root-element remaining-tokens] result]
-            (when-not (empty? remaining-tokens)
-                      (fail (format "Not all XML tokens were parsed, %s remain, starting with %s." (count result) (first result))))
-            root-element)))
+    (let [[root-element remaining-tokens] result]
+      (when-not (empty? remaining-tokens)
+        (fail (format "Not all XML tokens were parsed, %s remain, starting with %s."
+          (count result)
+          (first result))))
+      root-element)))

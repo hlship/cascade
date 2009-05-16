@@ -2,10 +2,14 @@
 ; a stream of token structures.
 
 (ns com.howardlewisship.cascade.internal.xmltokenizer
-    (:import (org.xml.sax ContentHandler Attributes Locator)
-             (org.xml.sax.helpers DefaultHandler)
-             (clojure.lang Keyword)
-             (javax.xml.parsers SAXParserFactory)))
+  (:use
+   clojure.contrib.duck-streams)
+  (:import
+   (java.io BufferedReader)
+   (org.xml.sax ContentHandler Attributes Locator InputSource)
+   (org.xml.sax.helpers DefaultHandler)
+   (clojure.lang Keyword)
+   (javax.xml.parsers SAXParserFactory)))
 
 
 (defstruct start-element-token :type :location :ns-uri :tag)
@@ -49,65 +53,68 @@
   ; A little optimization here, to reuse *location* if the line number has not changed since the
   ; last call.
   (let [line (.getLineNumber *locator*)]
-       (when (or (nil? *location*) (not= (*location* :line) line))
-             (set! *location* (struct location *resource* line))))
+    (when (or (nil? *location*) (not= (*location* :line) line))
+      (set! *location* (struct location *resource* line))))
   *location*)
 
 (defn- add-attribute-tokens
   "Adds a token for each attribute."
   [#^Attributes attrs]
   (doseq [#^Integer x (range (.getLength attrs))]
-         (let [uri (.getURI attrs x)
-               name (.getLocalName attrs x)
-               value (.getValue attrs x)
-               token (struct attribute-token :attribute (current-location) uri (to-keyword name) value)]
-              (add-token token))))
+    (let [uri (.getURI attrs x)
+          name (.getLocalName attrs x)
+          value (.getValue attrs x)
+          token (struct attribute-token :attribute (current-location) uri (to-keyword name) value)]
+      (add-token token))))
 
 
 (defn- flush-text
   "Adds a text token if there's any text."
   []
   (when (pos? (.length *buffer*))
-        (add-token (struct text-token :text *text-location* (.toString *buffer*)))
-        (set! *text-location* nil)
-        (.setLength *buffer* 0)))
+    (add-token (struct text-token :text *text-location* (.toString *buffer*)))
+    (set! *text-location* nil)
+    (.setLength *buffer* 0)))
 
 (defn- add-text
   "Adds text to the buffer and manages the *text-location* var."
   [#^chars ch #^Integer start #^Integer length]
   (.append *buffer* ch start length)
   (when (nil? *text-location*)
-        (set! *text-location* (current-location))))
+    (set! *text-location* (current-location))))
 
-(def sax-handler
-  (proxy [DefaultHandler] []
-         (startElement [uri local-name q-name #^Attributes attrs]
-                       (flush-text)
-                       (add-token (struct start-element-token :start-element (current-location) uri (to-keyword local-name)))
-                       (add-attribute-tokens attrs))
+(def #^DefaultHandler sax-handler
+  (proxy
+    [DefaultHandler]
+    []
 
-         (endElement [uri local-name q-name]
-                     (flush-text)
-                     (add-token (struct end-element-token :end-element (current-location))))
+    (startElement [uri local-name q-name #^Attributes attrs]
+      (flush-text)
+      (add-token (struct start-element-token :start-element (current-location) uri (to-keyword local-name)))
+      (add-attribute-tokens attrs))
 
-         (ignorableWhitespace [ch start length]
-                              (add-text ch start length))
+    (endElement [uri local-name q-name]
+      (flush-text)
+      (add-token (struct end-element-token :end-element (current-location))))
 
-         (characters [ch start length]
-                     (add-text ch start length))
+    (ignorableWhitespace [ch start length]
+      (add-text ch start length))
 
-         (startPrefixMapping [prefix uri]
-                             (flush-text)
-                             (add-token (struct begin-ns-prefix-token :begin-ns-prefix (current-location) uri prefix)))
+    (characters [ch start length]
+      (add-text ch start length))
 
-         (endPrefixMapping [prefix]
-                           (flush-text)
-                           (add-token (struct end-ns-prefix-token :end-ns-prefix (current-location) prefix)))
+    (startPrefixMapping [prefix uri]
+      (flush-text)
+      (add-token (struct begin-ns-prefix-token :begin-ns-prefix (current-location) uri prefix)))
 
-         ; This gets invoked once, early. The provided Locator is mutable.
+    (endPrefixMapping [prefix]
+      (flush-text)
+      (add-token (struct end-ns-prefix-token :end-ns-prefix (current-location) prefix)))
 
-         (setDocumentLocator [#^Locator locator]
-                             (set! *locator* locator))))
+    ; This gets invoked once, early. The provided Locator is mutable.
+
+    (setDocumentLocator [locator]
+      (set! *locator* locator))))
 
 (defn tokenize-xml
   "Parses an XML file using a standard source (file, path, URL, etc.) into a collection
@@ -120,7 +127,9 @@
             *text-location* nil
             *line* nil
             *location* nil]
-           (let [factory (SAXParserFactory/newInstance)]
-                (.setNamespaceAware factory true)
-                (.. factory newSAXParser (parse src sax-handler))
-                *tokens*)))
+    (let [
+      #^InputSource inputSource (InputSource. #^BufferedReader (reader src))
+      factory (SAXParserFactory/newInstance)]
+      (.setNamespaceAware factory true)
+      (.. factory newSAXParser (parse inputSource sax-handler))
+      *tokens*)))

@@ -1,0 +1,5 @@
+<div xmlns:c="cascade">
+    Pre fragment content.
+    <c:first/>
+    Post fragment content.
+</div>

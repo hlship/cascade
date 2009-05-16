@@ -8,5 +8,5 @@
                     'com.howardlewisship.cascade.test-parser
                     'com.howardlewisship.cascade.test-views
                     'com.howardlewisship.cascade.test-utils]]
-           (apply use spaces)
-           (apply run-tests (map find-ns spaces))))
+  (apply use spaces)
+  (apply run-tests (map find-ns spaces))))

@@ -1,9 +1,9 @@
 (ns com.howardlewisship.cascade.test-utils
   (:use
-    clojure.contrib.test-is
-    clojure.contrib.pprint
-    clojure.contrib.duck-streams
-    com.howardlewisship.cascade.internal.utils))
+   clojure.contrib.test-is
+   clojure.contrib.pprint
+   clojure.contrib.duck-streams
+   com.howardlewisship.cascade.internal.utils))
 
 
 (deftest classpath-resource-does-not-exist

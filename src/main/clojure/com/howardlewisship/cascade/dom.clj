@@ -1,5 +1,5 @@
 (ns com.howardlewisship.cascade.dom
-    (:import (java.io Writer)))
+  (:import (java.io Writer)))
 
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
@@ -26,7 +26,7 @@
 (defn- write
   [#^Writer out & strings]
   (doseq [#^String s strings]
-         (.write out s)))
+    (.write out s)))
 
 (defn- blank?
   [#^String string]
@@ -36,11 +36,11 @@
   "Qualifies a name based on a namespace URI and a mapping from URI to prefix"
   [name ns-uri ns-uri-to-prefix]
   (if (blank? ns-uri)
-      name
-      (let [prefix (get ns-uri-to-prefix ns-uri)]
-           (if (blank? prefix)
-               name
-               (str prefix ":" name)))))
+    name
+    (let [prefix (get ns-uri-to-prefix ns-uri)]
+      (if (blank? prefix)
+        name
+        (str prefix ":" name)))))
 
 (defmulti render-node-xml (fn [node & rest] (node :type)))
 
@@ -59,46 +59,46 @@
         element-qname (qualify-name element-name (element-node :ns-uri) element-ns-uri-to-prefix)
         content (element-node :content)]
 
-       ; TODO: When Ajax is supported, we may need to create artificial namespace URI mappings
-       ; to account for
+    ; TODO: When Ajax is supported, we may need to create artificial namespace URI mappings
+    ; to account for
 
-       (write out "<" element-qname)
+    (write out "<" element-qname)
 
-       ; Write out normal attributes
+    ; Write out normal attributes
 
-       (doseq [{attr-name :name attr-value :value ns-uri :ns-uri} (element-node :attributes)]
-              (let [attr-qname (qualify-name (name attr-name) ns-uri element-ns-uri-to-prefix)]
-                   ; TODO: URL escaping
-                   (write out " " attr-qname "=\"" attr-value "\"")))
+    (doseq [{attr-name :name attr-value :value ns-uri :ns-uri} (element-node :attributes)]
+      (let [attr-qname (qualify-name (name attr-name) ns-uri element-ns-uri-to-prefix)]
+        ; TODO: URL escaping
+        (write out " " attr-qname "=\"" attr-value "\"")))
 
-       ; Write out namespace mappings for this element
-       ; TODO: handle default namespace (prefix is "").
+    ; Write out namespace mappings for this element
+    ; TODO: handle default namespace (prefix is "").
 
-       (doseq [ns-uri (keys node-ns-uri-to-prefix)]
-              (let [prefix (get node-ns-uri-to-prefix ns-uri)]
-                   (write out " xmlns")
-                   (when-not (blank? prefix)
-                             (write out ":" prefix))
-                   (write out "=\"" ns-uri "\"")))
+    (doseq [ns-uri (keys node-ns-uri-to-prefix)]
+      (let [prefix (get node-ns-uri-to-prefix ns-uri)]
+        (write out " xmlns")
+        (when-not (blank? prefix)
+          (write out ":" prefix))
+        (write out "=\"" ns-uri "\"")))
 
-       ; TODO: ugly gotchas about rendering HTML: can't always close an empty tag (i.e., <script>), etc.
+    ; TODO: ugly gotchas about rendering HTML: can't always close an empty tag (i.e., <script>), etc.
 
-       (if (empty? content)
-           (write out "/>")
-           (do
-             (write out ">")
+    (if (empty? content)
+      (write out "/>")
+      (do
+        (write out ">")
 
-             ; Render children recursively; they inherit the namespace mappings from this element
-             ; and its containers.
+        ; Render children recursively; they inherit the namespace mappings from this element
+        ; and its containers.
 
-             (render-xml-with-ns content element-ns-uri-to-prefix out)
+        (render-xml-with-ns content element-ns-uri-to-prefix out)
 
-             (write out "</" element-qname ">")))))
+        (write out "</" element-qname ">")))))
 
 (defn- render-xml-with-ns
   [dom-nodes ns-uri-to-prefix out]
   (doseq [node dom-nodes]
-         (render-node-xml node ns-uri-to-prefix out)))
+    (render-node-xml node ns-uri-to-prefix out)))
 
 (defn render-xml
   "Renders a seq of DOM nodes representing a complete document (generally the list will include just
