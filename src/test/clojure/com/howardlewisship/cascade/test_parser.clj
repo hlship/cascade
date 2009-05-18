@@ -28,7 +28,7 @@
 (deftest trival-document
   ; parse template may eventually return a list of nodes
   ; to reflect stuff besides the root element
-  (let [root (parse-template (str base "root-only.xml"))]
+  (let [[root] (parse-template (str base "root-only.xml"))]
     (is (= (root :type) :element))
     (is (not (nil? (root :token))))
     (is (= (-> root :token :tag) :root-node))
@@ -37,15 +37,15 @@
     (is (nil? (root :body)))))
 
 (deftest single-attribute
-  (let [root (parse-template (str base "single-attribute.xml"))]
+  (let [[root] (parse-template (str base "single-attribute.xml"))]
     (expect-attributes root {:wife "suzy"})))
 
 (deftest multiple-attributes
-  (let [root (parse-template (str base "multiple-attributes.xml"))]
+  (let [[root] (parse-template (str base "multiple-attributes.xml"))]
     (expect-attributes root {:x "20" :y "30"})))
 
 (deftest nested-elements
-  (let [root (parse-template (str base "nested-elements.xml"))
+  (let [[root] (parse-template (str base "nested-elements.xml"))
         body (root :body)
         pre-text (nth body 0)
         nested (nth body 1)
@@ -61,7 +61,7 @@
         ["Pre-nested text", "Inner nested text", "Post-nested text"]))))
 
 (deftest namespaced-elements
-  (let [root (parse-template (str base "namespaced-elements.xml"))
+  (let [[root] (parse-template (str base "namespaced-elements.xml"))
         body (root :body)
         plain (nth body 1)
         nested1 (nth body 3)]

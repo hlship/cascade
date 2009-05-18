@@ -16,6 +16,7 @@
 
 (defstruct element-node :type :token :body :attributes :ns-uri-to-prefix)
 (defstruct text-node :type :token)
+(defstruct comment-node :type :text)
 
 (defn- build-uri-to-prefix
   "Converts a list of :begin-ns-prefix tokens into a map from URI to prefix."
@@ -75,11 +76,21 @@ token the result), or returns nil."
       (cons a as)))
 
 
+  (def parse-comment
+    (domonad [token (match-type :comment)]
+      (struct comment-node :comment (token :value))))
+
   (def parse-text
     (domonad [text-token (match-type :text)]
       (struct text-node :text text-token)))
 
   (def match-first m-plus)
+
+  (def parse-text-or-comments
+    (none-or-more
+      (match-first
+        parse-text
+        parse-comment)))
 
   ; This needs to be a parser generator, not a parser, to
   ; work around a chicken-and-the-egg issue: parse-body and parse-element
@@ -87,7 +98,7 @@ token the result), or returns nil."
   ; defers the need for parse-element to be constructed.
   (defn parse-body
     []
-    (match-first parse-text parse-element))
+    (match-first parse-text parse-comment parse-element))
 
   (def parse-element
     (domonad [ns-begin-tokens (none-or-more (match-type :begin-ns-prefix))
@@ -108,13 +119,18 @@ token the result), or returns nil."
 
 
   (def parse-template-root
-    ; For the moment, parsing a template is exactly the same as parsing the root element.
-    ; Later we'll support doctypes, text and comments before and after the root element.
-    parse-element)
+    (domonad [pre-amble parse-text-or-comments
+              root-element parse-element
+              post-amble parse-text-or-comments]
+      ; collapse the pre-amble and post-amble lists,
+      ; and remove (the likely) nils
+      (remove nil? (concat pre-amble [root-element] post-amble))))
 
   ) ; with-monad parser-m
 
 (defn parse-template
+  "Parses a template into a list of parsed-node structs represented the root element, plus and pre-amble or
+  post-amble (text and comments) around the root element."
   [src]
   (let [tokens (tokenize-xml src)
         result (parse-template-root tokens)]
@@ -123,9 +139,9 @@ token the result), or returns nil."
       (pprint tokens)
       (fail "Parse completed with no result."))
 
-    (let [[root-element remaining-tokens] result]
+    (let [[nodes remaining-tokens] result]
       (when-not (empty? remaining-tokens)
         (fail (format "Not all XML tokens were parsed, %s remain, starting with %s."
           (count result)
           (first result))))
-      root-element)))
+      nodes)))

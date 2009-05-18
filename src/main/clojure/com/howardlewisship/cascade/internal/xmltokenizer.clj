@@ -6,10 +6,10 @@
    clojure.contrib.duck-streams)
   (:import
    (java.io BufferedReader)
-   (org.xml.sax ContentHandler Attributes Locator InputSource)
-   (org.xml.sax.helpers DefaultHandler)
-   (clojure.lang Keyword)
-   (javax.xml.parsers SAXParserFactory)))
+   (org.xml.sax ContentHandler Attributes Locator InputSource XMLReader)
+   (org.xml.sax.ext DefaultHandler2)
+   (org.xml.sax.helpers XMLReaderFactory)
+   (clojure.lang Keyword)))
 
 
 (defstruct start-element-token :type :location :ns-uri :tag)
@@ -83,9 +83,9 @@
   (when (nil? *text-location*)
     (set! *text-location* (current-location))))
 
-(def #^DefaultHandler sax-handler
+(def #^DefaultHandler2 sax-handler
   (proxy
-    [DefaultHandler]
+    [DefaultHandler2]
     []
 
     (startElement [uri local-name q-name #^Attributes attrs]
@@ -111,6 +111,11 @@
       (flush-text)
       (add-token (struct end-ns-prefix-token :end-ns-prefix (current-location) prefix)))
 
+    (comment [#^chars ch #^Integer start #^Integer length]
+      (flush-text)
+      (add-token (struct comment-token :comment (current-location)
+                                       (String. ch start length))))
+
     ; This gets invoked once, early. The provided Locator is mutable.
 
     (setDocumentLocator [locator]
@@ -129,7 +134,9 @@
             *location* nil]
     (let [
       #^InputSource inputSource (InputSource. #^BufferedReader (reader src))
-      factory (SAXParserFactory/newInstance)]
-      (.setNamespaceAware factory true)
-      (.. factory newSAXParser (parse inputSource sax-handler))
+      #^XMLReader reader (XMLReaderFactory/createXMLReader)]
+      (doto reader
+        (.setContentHandler sax-handler)
+        (.setProperty "http://xml.org/sax/properties/lexical-handler" sax-handler)
+        (.parse inputSource))
       *tokens*)))

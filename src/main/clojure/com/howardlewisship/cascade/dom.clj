@@ -51,6 +51,10 @@
 
 (declare render-xml-with-ns)
 
+(defmethod render-node-xml :comment
+  [comment-node ns-uri-to-prefix out]
+  (write out "<!--" (comment-node :value) "-->"))
+
 (defmethod render-node-xml :element
   [element-node ns-uri-to-prefix out]
   (let [node-ns-uri-to-prefix (element-node :ns-uri-to-prefix)

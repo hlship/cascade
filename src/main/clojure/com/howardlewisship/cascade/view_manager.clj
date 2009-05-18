@@ -44,7 +44,7 @@
 
 (defn- create-render-body-fn
   "Creates a function that takes a single env parameter and invokes the provided function
-  to render the body, using the params of the encloding/invoking fragment function."
+  to render the body, using the params of the enclosing/invoking fragment function."
   [body-combined container-params]
   (fn [env]
     (body-combined env container-params)))
@@ -58,6 +58,10 @@
 (defmethod to-fragment-fn :text
   [parsed-node]
   (fn [env params] [(struct-map dom-node :type :text :value (-> parsed-node :token :value))]))
+
+(defmethod to-fragment-fn :comment
+  [parsed-node]
+  (fn [env params] [(struct-map dom-node :type :comment :value (parsed-node :text))]))
 
 (defmethod to-fragment-fn :element
   [parsed-node]
@@ -110,10 +114,9 @@
 (defn parse-and-create-fragment
   "Parses a cascade template file and creates a fragment function from it."
   [src]
-  (let [root-node (parse-template src)]
-    ; root-node is currently a single element, will become a list in the future.
-    (let [result (to-fragment-fn root-node)]
-      result)))
+  (let [nodes (parse-template src)
+        funcs (map to-fragment-fn nodes)]
+    (combine-render-funcs funcs)))
 
 (defn parse-and-create-view
   "Parses a cascade template file and creates a view function from it."
