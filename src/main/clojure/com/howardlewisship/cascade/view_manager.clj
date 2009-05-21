@@ -1,3 +1,17 @@
+; Copyright 2009 Howard M. Lewis Ship
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;   http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+; implied. See the License for the specific language governing permissions
+; and limitations under the License.
+
 (ns com.howardlewisship.cascade.view-manager
   (:use
    com.howardlewisship.cascade.internal.utils
@@ -53,15 +67,31 @@
   [ns-uri-to-prefix]
   (dissoc ns-uri-to-prefix fragment-uri))
 
+(defn- wrap-fn-as-fragment-fn
+  "Convert a function of no parameters into a function that accepts fragment parameters (env and parameters)."
+  [f]
+  (fn [env params] (f)))
+
+(defn- wrap-dom-node-as-fragment-fn
+  "Wraps a static DOM node as a fragment function (returning the DOM node in a vector)."
+  [dom-node]
+  (let [fn-result [dom-node]]
+    (wrap-fn-as-fragment-fn (fn [] fn-result))))
+
+
+; to-fragment-fn exists to convert parsed nodes (from the parser namespace) into fragment rendering functions.
+; Many of these functions ignore thier env and params arguments and return fixed DOM node values. Others are
+; more involved and dynamic.
+
 (defmulti to-fragment-fn :type)
 
 (defmethod to-fragment-fn :text
   [parsed-node]
-  (fn [env params] [(struct-map dom-node :type :text :value (-> parsed-node :token :value))]))
+  (wrap-dom-node-as-fragment-fn (struct-map dom-node :type :text :value (-> parsed-node :token :value))))
 
 (defmethod to-fragment-fn :comment
   [parsed-node]
-  (fn [env params] [(struct-map dom-node :type :comment :value (parsed-node :text))]))
+  (wrap-dom-node-as-fragment-fn (struct-map dom-node :type :comment :value (parsed-node :text))))
 
 (defmethod to-fragment-fn :element
   [parsed-node]

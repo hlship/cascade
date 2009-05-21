@@ -1,3 +1,16 @@
+; Copyright 2009 Howard M. Lewis Ship
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;   http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+; implied. See the License for the specific language governing permissions
+; and limitations under the License.
+
 (ns com.howardlewisship.cascade.internal.utils
   (:use
    clojure.contrib.str-utils))
@@ -34,3 +47,17 @@
   "Returns the first non-nil value from the collection."
   [coll]
   (first (remove nil? coll)))
+
+; hiredman on IRC doesn't think this is correct, but using (intern)
+; doesn't fit my needs. Need to evaluated the expression in the context
+; of the namespace, not just bind the value into the namespace.
+
+(defmacro using-namespace
+  "Switches to a namespace (identified by the ns symbol) to evaluate the given forms."
+  [ns & forms]
+  `(let [initial-ns# (ns-name *ns*)]
+    (try
+      (require ~ns)
+      (in-ns ~ns)
+      ~@(for [f forms] (list 'eval (list 'quote f)))
+      (finally (in-ns initial-ns#)))))
