@@ -13,7 +13,7 @@
 
 (ns com.howardlewisship.cascade.internal.utils
   (:use
-   clojure.contrib.str-utils))
+    clojure.contrib.str-utils))
 
 (declare find-namespace-resource)
 
@@ -21,10 +21,10 @@
   "Finds a resource on the classpath (as a URL) or returns nil if not found. Optionally takes
   a symbol and evaluates the path relative to the symbol's namespace."
   ([path]
-   (.. (Thread/currentThread) getContextClassLoader (getResource path)))
+    (.. (Thread/currentThread) getContextClassLoader (getResource path)))
   ([symbol path]
-   (let [ns (:ns (meta (resolve symbol)))]
-     (find-namespace-resource ns path))))
+    (let [ns (:ns (meta (resolve symbol)))]
+      (find-namespace-resource ns path))))
 
 (defn find-namespace-resource
   "Given a namespace (or a symbol identifying a namespace),
@@ -52,7 +52,7 @@
 ; doesn't fit my needs. Need to evaluated the expression in the context
 ; of the namespace, not just bind the value into the namespace.
 
-(defmacro using-namespace
+(defmacro eval-in-namespace
   "Switches to a namespace (identified by the ns symbol) to evaluate the given forms."
   [ns & forms]
   `(let [initial-ns# (ns-name *ns*)]

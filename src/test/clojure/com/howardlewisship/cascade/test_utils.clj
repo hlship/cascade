@@ -14,11 +14,11 @@
 
 (ns com.howardlewisship.cascade.test-utils
   (:use
-   app1.fragments
-   clojure.contrib.test-is
-   clojure.contrib.pprint
-   clojure.contrib.duck-streams
-   com.howardlewisship.cascade.internal.utils))
+    app1.fragments
+    clojure.contrib.test-is
+    clojure.contrib.pprint
+    clojure.contrib.duck-streams
+    com.howardlewisship.cascade.internal.utils))
 
 
 (deftest classpath-resource-does-not-exist
@@ -36,6 +36,6 @@
 ; (pprint (macroexpand-1 '(using-namespace 'app1.fragments (fn [string] (double-talk string)))))
 
 (deftest define-function-using-namespace
-  (let [f (using-namespace 'app1.fragments (fn [string] (double-talk string)))]
+  (let [f (eval-in-namespace 'app1.fragments (fn [string] (double-talk string)))]
     (is (= (f "cascade") "cascade cascade"))))
 
