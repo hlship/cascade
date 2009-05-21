@@ -14,10 +14,10 @@
 
 (ns com.howardlewisship.cascade.view-manager
   (:use
-   com.howardlewisship.cascade.internal.utils
-   com.howardlewisship.cascade.dom
-   com.howardlewisship.cascade.config
-   com.howardlewisship.cascade.internal.parser))
+    com.howardlewisship.cascade.internal.utils
+    com.howardlewisship.cascade.dom
+    com.howardlewisship.cascade.config
+    com.howardlewisship.cascade.internal.parser))
 
 ; OK, so now a fragment function takes two parameters: env and params.  A view function is simply a wrapper
 ; around a fragment function that takes just the env and supplys nil for the params.
@@ -93,53 +93,62 @@
   [parsed-node]
   (wrap-dom-node-as-fragment-fn (struct-map dom-node :type :comment :value (parsed-node :text))))
 
-(defmethod to-fragment-fn :element
-  [parsed-node]
-  ; TODO: handle elements in the cascade namespace specially
-  ; TODO: check for cascade namespace attributes
-  (let [body (parsed-node :body)
-        token (parsed-node :token)
+(defn- create-fragment-renderer
+  [element-node]
+  (let [body (element-node :body)
+        token (element-node :token)
         element-uri (token :ns-uri)
         element-name (token :tag)
-        element-ns-uri-to-prefix (parsed-node :ns-uri-to-prefix)
+        element-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
         body-as-funcs (map to-fragment-fn body)
         body-combined (combine-render-funcs body-as-funcs)
-        attributes (construct-attributes (parsed-node :attributes))]
+        attributes (construct-attributes (element-node :attributes))]
 
-    ; TODO: as similar as these two options (static element vs. fragment) are,
-    ; it would probably be better to split this into two functions.
+    ; The fragment-renderer is responsible for providing parameters
+    ; to the included fragment. Parameters aren't implemented yet.
+
+    (fn fragment-renderer [env params]
+      ; TODO: Error if a fragment element defines any namespace besides cascade.
+      (let [frag-func (get-fragment (name element-name))
+            inner-params [] ; TODO: evaluate parameters
+            body-renderer (create-render-body-fn body-combined params)
+            ; TODO: rebuild token, stripping from :attributes any parameters
+            frag-env (merge env {:element-token token
+                                 :render-body body-renderer})]
+        (frag-func frag-env inner-params)))))
+
+(defn- create-static-element-renderer
+  [element-node]
+  (let [body (element-node :body)
+        token (element-node :token)
+        element-uri (token :ns-uri)
+        element-name (token :tag)
+        element-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
+        body-as-funcs (map to-fragment-fn body)
+        body-combined (combine-render-funcs body-as-funcs)
+        attributes (construct-attributes (element-node :attributes))]
+    (fn static-element-renderer [env params]
+      [(struct-map dom-node
+        :type :element
+        :ns-uri element-uri
+        :ns-uri-to-prefix (remove-cascade-namespaces element-ns-uri-to-prefix)
+        :name element-name
+        ; currently assuming that attributes are "static" but
+        ; that will change ... though we should seperate "static" from "dynamic"
+        :attributes attributes
+        ; TODO: there might be a way to identify that a static element has only static
+        ; content, in which case the body can itself be computed statically
+        :content (body-combined env params))])))
+
+(defmethod to-fragment-fn :element
+  [element-node]
+  ; TODO: handle elements in the cascade namespace specially
+  ; TODO: check for cascade namespace attributes
+  (let [element-uri (-> element-node :token :ns-uri)]
 
     (if (= fragment-uri element-uri)
-
-
-      ; The fragment-renderer is responsible for providing parameters
-      ; to the included fragment. Parameters aren't implemented yet.
-
-      (fn fragment-renderer [env params]
-                            ; TODO: Error if a fragment element defines any namespace besides cascade.
-                            (let [frag-func (get-fragment (name element-name))
-                                  inner-params [] ; TODO: evaluate parameters
-                                  body-renderer (create-render-body-fn body-combined params)
-                                  ; TODO: rebuild token, stripping from :attributes any parameters
-                                  frag-env (merge env {:element-token token
-                                                       :render-body body-renderer})]
-                              (frag-func frag-env inner-params)))
-
-      ; otherwise, a static element node
-      ; TODO: handle dynamic attributes
-      (fn static-element-renderer [env params]
-                                  [(struct-map dom-node
-                                    :type :element
-                                    :ns-uri element-uri
-                                    :ns-uri-to-prefix (remove-cascade-namespaces element-ns-uri-to-prefix)
-                                    :name element-name
-                                    ; currently assuming that attributes are "static" but
-                                    ; that will change ... though we should seperate "static" from "dynamic"
-                                    :attributes attributes
-                                    ; TODO: there might be a way to identify that a static element has only static
-                                    ; content, in which case the body can itself be computed statically
-                                    :content (body-combined env params))]))))
-
+      (create-fragment-renderer element-node)
+      (create-static-element-renderer element-node))))
 
 (defn parse-and-create-fragment
   "Parses a cascade template file and creates a fragment function from it."
@@ -168,7 +177,7 @@
 
 (defn- create-from-template
   "Searches for a template file as a classpath resource in one of the namespaces, creating a function (using the factory)
-  if found. If not found, throws RuntimeException."
+if found. If not found, throws RuntimeException."
   [name namespaces factory-fn]
   (let [path (str name ".cml")
         match (first-non-nil (map #(find-namespace-resource % path) namespaces))]
