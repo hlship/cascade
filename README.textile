@@ -6,7 +6,7 @@ inspired by "Tapestry":http://tapestry.apache.org/, at least as far as templates
 Our motto is "one part Tapestry template goodness and nine parts Clojure awesomeness"; in other words,
 a truly functional environment for implementing web applications.
 
-In Cascade, XML view templates are XML files transmuted into Clojure functions. Templates can reference
+In Cascade, views are XML template files transmuted into Clojure functions. Templates can reference
 fragments, which are the same (XML templates transmuted into functions). 
 
 Rendering views and fragments is functional (that is, side-effect free) and lazy; it may also be deferred (that is,
