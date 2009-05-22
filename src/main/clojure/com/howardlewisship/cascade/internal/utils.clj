@@ -61,3 +61,13 @@
       (in-ns ~ns)
       ~@(for [f forms] (list 'eval (list 'quote f)))
       (finally (in-ns initial-ns#)))))
+
+(defn divide-collection
+  "Divides a collection into two parts, the first part all items that match the predicate,
+   the second part all other items. Either part may be nil. Order may not be maintained."
+  [p coll]
+  (let [apply-predicate (fn [[matches nonmatches] item]
+    (if (p item)
+      (list (conj matches item) nonmatches)
+      (list matches (conj nonmatches item))))]
+    (reduce apply-predicate (list nil nil) coll)))
