@@ -33,7 +33,7 @@
   (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
     (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt")))
 
-; (pprint (macroexpand-1 '(using-namespace 'app1.fragments (fn [string] (double-talk string)))))
+; (pprint (macroexpand-1 '(eval-in-namespace 'app1.fragments (fn [string] (double-talk string)))))
 
 (deftest define-function-using-namespace
   (let [f (eval-in-namespace 'app1.fragments (fn [string] (double-talk string)))]

@@ -59,7 +59,7 @@
     (try
       (require ~ns)
       (in-ns ~ns)
-      ~@(for [f forms] (list 'eval (list 'quote f)))
+      ~@(for [f forms] `(eval '~f))
       (finally (in-ns initial-ns#)))))
 
 (defn divide-collection
