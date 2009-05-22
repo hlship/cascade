@@ -1,0 +1,28 @@
+h1. Cascade
+
+Welcome to Cascade!  Cascade is a web framework for "Clojure":http://clojure.org/. It is somewhat
+inspired by "Tapestry":http://tapestry.apache.org/, at least as far as templates are concerned.
+
+Our motto is "one part Tapestry template goodness and nine parts Clojure awesomeness"; in other words,
+a truly functional environment for implementing web applications.
+
+In Cascade, XML view templates are XML files transmuted into Clojure functions. Templates can reference
+fragments, which are the same (XML templates transmuted into functions). 
+
+Rendering views and fragments is functional (that is, side-effect free) and lazy; it may also be deferred (that is,
+spread across threads). I expect that Cascade will be lightning quick ... we'll see once implemented.
+
+See the "Cascade Wiki":http://wiki.github.com/hlship/cascade/ for more information.
+
+h1. Authors
+
+Cascade is a itty-bitty side project of Howard M. Lewis Ship, who should be spending more time
+on Tapestry.
+
+Care to contribute?  Drop me a line!
+
+h1. License
+
+Cascade is released under the terms of the Apache Software License 2.0.
+
+
