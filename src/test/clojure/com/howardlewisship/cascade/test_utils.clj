@@ -14,11 +14,11 @@
 
 (ns com.howardlewisship.cascade.test-utils
   (:use
-    app1.fragments
-    clojure.contrib.test-is
-    clojure.contrib.pprint
-    clojure.contrib.duck-streams
-    com.howardlewisship.cascade.internal.utils))
+   app1.fragments
+   clojure.contrib.test-is
+   clojure.contrib.pprint
+   clojure.contrib.duck-streams
+   com.howardlewisship.cascade.internal.utils))
 
 
 (deftest classpath-resource-does-not-exist
@@ -39,22 +39,6 @@
   (let [f (eval-in-namespace 'app1.fragments (fn [string] (double-talk string)))]
     (is (= (f "cascade") "cascade cascade"))))
 
-; Some tests for divide-collection
-
-(deftest divide-empty
-  (let [empty '(nil nil)]
-    (is (= (divide-collection odd? nil) empty))
-    (is (= (divide-collection even? []) empty))))
-
-(deftest divide-collection-mixed
-  (let [[matches nonmatches] (divide-collection odd? (range 5))]
-    (is (= (set matches) #{1 3}))
-    (is (= (set nonmatches) #{0 2 4}))))
-
-(deftest divide-collection-uniform
-  (let [[matches nonmatches] (divide-collection #(<= 0 %) (range 5))]
-    (is (nil? nonmatches))
-    (is (= (set matches) (set (range 5))))))
 
 
 

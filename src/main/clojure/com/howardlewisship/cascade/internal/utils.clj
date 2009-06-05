@@ -13,7 +13,7 @@
 
 (ns com.howardlewisship.cascade.internal.utils
   (:use
-    clojure.contrib.str-utils))
+   clojure.contrib.str-utils))
 
 (declare find-namespace-resource)
 
@@ -21,10 +21,10 @@
   "Finds a resource on the classpath (as a URL) or returns nil if not found. Optionally takes
   a symbol and evaluates the path relative to the symbol's namespace."
   ([path]
-    (.. (Thread/currentThread) getContextClassLoader (getResource path)))
+   (.. (Thread/currentThread) getContextClassLoader (getResource path)))
   ([symbol path]
-    (let [ns (:ns (meta (resolve symbol)))]
-      (find-namespace-resource ns path))))
+   (let [ns (:ns (meta (resolve symbol)))]
+     (find-namespace-resource ns path))))
 
 (defn find-namespace-resource
   "Given a namespace (or a symbol identifying a namespace),
@@ -61,13 +61,3 @@
       (in-ns ~ns)
       ~@(for [f forms] `(eval '~f))
       (finally (in-ns initial-ns#)))))
-
-(defn divide-collection
-  "Divides a collection into two parts, the first part all items that match the predicate,
-   the second part all other items. Either part may be nil. Order may not be maintained."
-  [p coll]
-  (let [apply-predicate (fn [[matches nonmatches] item]
-    (if (p item)
-      (list (conj matches item) nonmatches)
-      (list matches (conj nonmatches item))))]
-    (reduce apply-predicate (list nil nil) coll)))

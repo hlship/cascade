@@ -34,7 +34,7 @@
   [name]
   (let [input-path (str base name ".xml")
         expected-path (str base name "-expected.xml")
-        view (parse-and-create-view input-path)
+        view (parse-and-create-view (namespace 'render) input-path)
         dom (view {})
         output (render dom)
         expected (slurp expected-path)]
