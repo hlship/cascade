@@ -48,12 +48,14 @@
 (add-to-config :fragment-namespaces 'app1.fragments)
 
 (defn test-view
-  [view-name expected-output-file]
-  (let [view (get-view view-name)
-        dom (view {})
-        output (render dom)
-        expected (slurp* (find-classpath-resource expected-output-file))]
-    (is (= output expected))))
+  ([view-name expected-output-file]
+   (test-view view-name expected-output-file {}))
+  ([view-name expected-output-file env]
+   (let [view (get-view view-name)
+         dom (view env)
+         output (render dom)
+         expected (slurp* (find-classpath-resource expected-output-file))]
+     (is (= output expected)))))
 
 
 (deftest simple-view-and-fragment
@@ -64,3 +66,6 @@
 
 (deftest pass-parameter-into-fragment
   (test-view "use-echo" "use-echo-expected.txt"))
+
+(deftest compute-params
+  (test-view "calculate-value-passed-as-param" "calculate-value-passed-as-param-expected.txt" {:count 99}))

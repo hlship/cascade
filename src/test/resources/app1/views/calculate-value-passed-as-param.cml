@@ -1,0 +1,4 @@
+<div xmlns:c="cascade">
+    Count:
+    <c:echo c:value="(inc (env :count))"/>
+</div>
