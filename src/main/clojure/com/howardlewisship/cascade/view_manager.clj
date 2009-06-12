@@ -98,8 +98,8 @@
     (fn provide-tokens [env params] static-attribute-tokens)))
 
 (defn to-value-fn
-  "Converts a string expression into a function. The function will take two parameters
-  defined by the symbols and return a single value."
+  "Converts a string expression into a function. The function will take two parameters,
+  env and paramas, return a single value."
   [namespace expression-string]
   (let [expression-form (read-single-form expression-string)]
     ; TODO: control over parameter names
