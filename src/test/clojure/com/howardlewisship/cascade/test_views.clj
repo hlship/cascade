@@ -61,3 +61,6 @@
 
 (deftest comments
   (test-view "commentsview" "comments-expected.txt"))
+
+(deftest pass-parameter-into-fragment
+  (test-view "use-echo" "use-echo-expected.txt"))

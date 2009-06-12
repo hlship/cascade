@@ -17,7 +17,8 @@
    com.howardlewisship.cascade.internal.utils
    com.howardlewisship.cascade.dom
    com.howardlewisship.cascade.config
-   com.howardlewisship.cascade.internal.parser))
+   com.howardlewisship.cascade.internal.parser
+   clojure.contrib.with-ns))
 
 ; A fragment function takes two parameters: env and params.  A view function is simply a wrapper
 ; around a fragment function that takes just the env and supplys nil for the params.
@@ -85,11 +86,49 @@
     (wrap-fn-as-fragment-fn (fn [] fn-result))))
 
 
+; TODO: is this needed?
+(defn- wrap-static-attributes-as-attribute-nodes-fn
+  "Given some parsed attribute nodes, create a function that returns a seq of attribute DOM nodes."
+  [tokens]
+  (let [static-attribute-tokens (remove-matches :ns-uri fragment-uri tokens)
+        static-attribute-nodes (construct-attributes static-attribute-tokens)]
+    ; Return a function that provides the attribute tokens
+    ; TODO look for expansions inside otherwise static values
+    ; TODO optimize for no nodes/tokens
+    (fn provide-tokens [env params] static-attribute-tokens)))
+
+(defn to-value-fn
+  "Converts a string expression into a function. The function will take two parameters
+  defined by the symbols and return a single value."
+  [namespace expression-string]
+  (let [expression-form (read-single-form expression-string)]
+    ; TODO: control over parameter names
+    ; TODO: eval in correct namespace!
+    (eval (list 'fn ['env 'params] expression-form))))
+
+(defn- convert-dynamic-attributes-to-param-gen-fn
+  "Converts the tokens into a function that accepts env and params and produces a new params (that can be passed
+  to a subordinate fragment)."
+  [namespace tokens]
+  (let [name-fn-pairs
+        (for [token (filter-matches :ns-uri fragment-uri tokens)]
+          (let [{name :name value :value} token]
+            (list name (to-value-fn namespace value))))]
+    (fn provide-subordinate-params
+      [env params]
+      ; Invoke each function using the provided env and params
+      (let [invoked-pairs (for [[name value-fn] name-fn-pairs] (list name (value-fn env params)))]
+        ; Then build up the final params map
+        (reduce (fn [map [key value]] (assoc map key value)) {} invoked-pairs)))))
+
 ; to-fragment-fn exists to convert parsed nodes (from the parser namespace) into fragment rendering functions.
 ; Many of these functions ignore their env and params arguments and return fixed DOM node values. Others are
 ; more involved and dynamic.
 
-(defmulti to-fragment-fn #(:type %2))
+(defmulti to-fragment-fn
+  "Converts any kind of parsed DOM node into a fragment function (which takes env and params and returns
+  a collection of renderable DOM nodes)."
+  #(:type %2))
 
 (defmethod to-fragment-fn :text
   [namespace parsed-node]
@@ -108,20 +147,23 @@
         element-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
         body-as-funcs (map (partial to-fragment-fn namespace) body)
         body-combined (combine-render-funcs body-as-funcs)
-        attributes (construct-attributes (element-node :attributes))]
+        params-gen-fn (convert-dynamic-attributes-to-param-gen-fn namespace (element-node :attributes))]
 
     ; The fragment-renderer is responsible for providing parameters
-    ; to the included fragment. Parameters aren't implemented yet.
+    ; to the encapsulated fragment. The fragment renderer receives its containers
+    ; environment and parameters and uses those to build an environment and parameters
+    ; for the fragment.
 
-    (fn fragment-renderer [env params]
-                          ; TODO: Error if a fragment element defines any namespace besides cascade.
-                          (let [frag-func (get-fragment (name element-name))
-                                inner-params [] ; TODO: evaluate parameters
-                                body-renderer (create-render-body-fn body-combined params)
-                                ; TODO: rebuild token, stripping from :attributes any parameters
-                                frag-env (merge env {:element-token token
-                                                     :render-body body-renderer})]
-                            (frag-func frag-env inner-params)))))
+    (fn fragment-renderer
+      [container-env container-params]
+      ; TODO: Error if a fragment element defines any namespace besides cascade.
+      (let [fragment-fn (get-fragment (name element-name))
+            frag-params (params-gen-fn container-env container-params)
+            body-renderer (create-render-body-fn body-combined container-params)
+            ; TODO: rebuild token, stripping from :attributes any parameters
+            frag-env (merge container-env {:element-token token
+                                           :render-body body-renderer})]
+        (fragment-fn frag-env frag-params)))))
 
 (defn- create-static-element-renderer
   [namespace element-node]
@@ -171,7 +213,8 @@
 
 (defn- find-name-in-namespace
   [name namespace]
-  (let [found (get (ns-interns (the-ns namespace)) name)]
+  (let [mappings (ns-interns (the-ns namespace))
+        found (get mappings (symbol name))]
     ; what may be found is a Var wrapping a function, we want
     ; the function
     (and found (deref found))))
@@ -193,9 +236,11 @@ creating a function (using the factory) if found. If not found, throws RuntimeEx
 
     (or
       template-fn
-      (throw (RuntimeException. (format "Could not locate template '%s' in any of namespaces %s."
-        file
-        (to-str-list (map ns-name namespaces))))))))
+      (throw (RuntimeException.
+        (format "Could not locate function %s or template '%s' in %s %s."
+          name file
+          (if (= 1 (count namespaces)) "namespace" "namespaces")
+          (to-str-list (map ns-name namespaces))))))))
 
 (defn- find-or-create-fn
   "Searches for an existing function in any of the namespaces, or creates a function from a bare template."

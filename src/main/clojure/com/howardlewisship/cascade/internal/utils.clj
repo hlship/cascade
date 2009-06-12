@@ -61,3 +61,27 @@
       (in-ns ~ns)
       ~@(for [f forms] `(eval '~f))
       (finally (in-ns initial-ns#)))))
+
+(defn remove-matches
+  "Lazily removes from the seq (of maps) where the key matches the value."
+  [key value seq]
+  (remove #(= (get % key) value) seq))
+
+(defn filter-matches
+  "Lazily filters from the seq (of maps) where the key matches the value."
+  [key value seq]
+  (filter #(= (get % key) value) seq))
+
+
+(defn read-single-form
+  "Reads a single form from a string. Throws a RuntimeException if the string contains more than a single form."
+  [expression-string]
+  (with-in-str expression-string
+    (let [eof-marker (Object.)
+          read-once #(read *in* false eof-marker)
+          result (read-once)
+          extra (read-once)]
+      ; The first read should exhaust the input, and the extra should be the marker.
+      (if (= extra eof-marker)
+        result
+        (throw (RuntimeException. (format "Input expression '%s' should contain only a single form." expression-string)))))))

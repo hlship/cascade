@@ -1,0 +1,3 @@
+<div xmlns:c="cascade">
+    <c:echo c:value='"First Cascade Parameter"'/>
+</div>

@@ -12,7 +12,15 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns app1.fragments)
+(ns app1.fragments
+  (:use com.howardlewisship.cascade.dom))
 
 (defn- double-talk [string]
   (str string " " string))
+
+
+(defn echo
+  [env params]
+  ; TODO: Allow a fragment function to return a single dom-node, not an array of dom-nodes
+  [(struct-map dom-node :type :text
+                        :value (str (params :value)))])
