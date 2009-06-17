@@ -69,3 +69,6 @@
 
 (deftest compute-params
   (test-view "calculate-value-passed-as-param" "calculate-value-passed-as-param-expected.txt" {:count 99}))
+
+(deftest access-private-fns
+  (test-view "access-private-fns" "access-private-fns-expected.txt" {:user-input "clojure"}))

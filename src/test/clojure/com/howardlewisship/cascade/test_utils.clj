@@ -34,7 +34,7 @@
     (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt"))))
 
 (deftest define-function-using-namespace
-  (let [f (eval-in-namespace 'app1.fragments (fn [string] (double-talk string)))]
+  (let [f (eval-in-namespace 'app1.views (fn [string] (double-talk string)))]
     (is (= (f "cascade") "cascade cascade"))))
 
 

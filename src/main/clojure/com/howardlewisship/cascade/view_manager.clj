@@ -29,9 +29,18 @@
 ; Note: we use "namespace" when refering to a Clojure namepace (usually represented as a symbol), and
 ; "ns" to refer to a XML namespace (ns-uri and ns-prefix, typically).
 
+; This module is getting somewhat large and perhaps needs to be split into sub-modules.
+
+; We currently have two different DOMs and they should be merged; thus template XML -> XML tokens
+; -> DOM nodes -> Clojure function -> DOM nodes -> markup stream 
+
 ; The URI for a fragment
 
 (def fragment-uri "cascade")
+
+; TODO: Eventually, when we have (defview) and (deffragment), we may need two levels of cache:
+; for the fragment & view functions derived from templates, and for the fragment & view functions
+; defined by the (defview) and (deffragment) macros.
 
 (def fragment-cache (atom {}))
 (def view-cache (atom {}))
@@ -86,7 +95,9 @@
     (wrap-fn-as-fragment-fn (fn [] fn-result))))
 
 
-; TODO: is this needed?
+; TODO: is this needed?  ... yes, because we make the fragment's element token and its non-parameter attributes
+; as part of the env passed to the fragment.
+
 (defn- wrap-static-attributes-as-attribute-nodes-fn
   "Given some parsed attribute nodes, create a function that returns a seq of attribute DOM nodes."
   [tokens]
@@ -102,9 +113,9 @@
   env and paramas, return a single value."
   [namespace expression-string]
   (let [expression-form (read-single-form expression-string)]
-    ; TODO: control over parameter names
-    ; TODO: eval in correct namespace!
-    (eval (list 'fn ['env 'params] expression-form))))
+    ; TODO: control over function's parameter names
+    (binding [*ns* (the-ns namespace)]
+      (eval (list 'fn ['env 'params] expression-form)))))
 
 (defn- convert-dynamic-attributes-to-param-gen-fn
   "Converts the tokens into a function that accepts env and params and produces a new params (that can be passed

@@ -15,10 +15,6 @@
 (ns app1.fragments
   (:use com.howardlewisship.cascade.dom))
 
-(defn- double-talk [string]
-  (str string " " string))
-
-
 (defn echo
   [env params]
   ; TODO: Allow a fragment function to return a single dom-node, not an array of dom-nodes

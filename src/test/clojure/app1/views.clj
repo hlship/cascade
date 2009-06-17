@@ -13,3 +13,6 @@
 ; and limitations under the License.
 
 (ns app1.views)
+
+(defn- double-talk [string]
+  (str string " " string))
