@@ -17,6 +17,6 @@
 
 (defn echo
   [env params]
-  ; TODO: Allow a fragment function to return a single dom-node, not an array of dom-nodes
-  [(struct-map dom-node :type :text
-                        :value (str (params :value)))])
+  (struct-map dom-node
+    :type :text
+    :value (str (params :value))))

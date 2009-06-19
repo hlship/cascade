@@ -14,11 +14,11 @@
 
 (ns com.howardlewisship.cascade.view-manager
   (:use
-   com.howardlewisship.cascade.internal.utils
-   com.howardlewisship.cascade.dom
-   com.howardlewisship.cascade.config
-   com.howardlewisship.cascade.internal.parser
-   clojure.contrib.with-ns))
+    com.howardlewisship.cascade.internal.utils
+    com.howardlewisship.cascade.dom
+    com.howardlewisship.cascade.config
+    com.howardlewisship.cascade.internal.parser
+    clojure.contrib.with-ns))
 
 ; A fragment function takes two parameters: env and params.  A view function is simply a wrapper
 ; around a fragment function that takes just the env and supplys nil for the params.
@@ -51,6 +51,20 @@
 ; of DOM nodes that can be transformed (not yet implemented) and then streamed. Any returned nil values
 ; are filtered out.
 
+(defn- to-dom-node-seq
+  [any]
+  "Converts the result of a render function to a seq as needed."
+  (cond
+    (nil? any) nil
+
+    (sequential? any) any
+    
+    (map? any) [any]
+
+    true (throw (RuntimeException. (format "A render function returned %s (%s). Render functions should return nil, a seq of DOM nodes, or a single DOM node."
+    (pr-str any)
+    (class any))))))
+
 (defn- combine-render-funcs
   "Combines a number of render functions together to form a composite render function. "
   [funcs]
@@ -60,7 +74,7 @@
     (remove nil?
       (apply concat
         (for [f funcs]
-          (f env params))))))
+          (to-dom-node-seq (f env params)))))))
 
 (defn- construct-attributes
   "Convert attribute tokens into attribute DOM nodes."
@@ -116,6 +130,7 @@
     ; TODO: control over function's parameter names
     (binding [*ns* (the-ns namespace)]
       (eval (list 'fn ['env 'params] expression-form)))))
+
 
 (defn- convert-dynamic-attributes-to-param-gen-fn
   "Converts the tokens into a function that accepts env and params and produces a new params (that can be passed
@@ -186,18 +201,19 @@
         body-as-funcs (map (partial to-fragment-fn namespace) body)
         body-combined (combine-render-funcs body-as-funcs)
         attributes (construct-attributes (element-node :attributes))]
-    (fn static-element-renderer [env params]
-                                [(struct-map dom-node
-                                  :type :element
-                                  :ns-uri element-uri
-                                  :ns-uri-to-prefix (remove-cascade-namespaces element-ns-uri-to-prefix)
-                                  :name element-name
-                                  ; currently assuming that attributes are "static" but
-                                  ; that will change ... though we should seperate "static" from "dynamic"
-                                  :attributes attributes
-                                  ; TODO: there might be a way to identify that a static element has only static
-                                  ; content, in which case the body can itself be computed statically
-                                  :content (body-combined env params))])))
+    (fn static-element-renderer
+      [env params]
+      [(struct-map dom-node
+        :type :element
+        :ns-uri element-uri
+        :ns-uri-to-prefix (remove-cascade-namespaces element-ns-uri-to-prefix)
+        :name element-name
+        ; currently assuming that attributes are "static" but
+        ; that will change ... though we should seperate "static" from "dynamic"
+        :attributes attributes
+        ; TODO: there might be a way to identify that a static element has only static
+        ; content, in which case the body can itself be computed statically
+        :content (body-combined env params))])))
 
 (defmethod to-fragment-fn :element
   [namespace element-node]

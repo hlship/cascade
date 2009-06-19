@@ -56,7 +56,9 @@
         name
         (str prefix ":" name)))))
 
-(defmulti render-node-xml (fn [node & rest] (node :type)))
+(defmulti render-node-xml 
+  (fn [node & rest] 
+    (node :type)))
 
 (defmethod render-node-xml :text
   [text-node ns-uri-to-prefix out]
@@ -78,7 +80,7 @@
         content (element-node :content)]
 
     ; TODO: When Ajax is supported, we may need to create artificial namespace URI mappings
-    ; to account for
+    ; to account for partial rendering.
 
     (write out "<" element-qname)
 
