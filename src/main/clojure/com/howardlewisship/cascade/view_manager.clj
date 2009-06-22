@@ -58,12 +58,11 @@
     (nil? any) nil
 
     (sequential? any) any
-    
+
     (map? any) [any]
 
-    true (throw (RuntimeException. (format "A render function returned %s (%s). Render functions should return nil, a seq of DOM nodes, or a single DOM node."
-    (pr-str any)
-    (class any))))))
+    true (throw (RuntimeException. (format "A render function returned %s. Render functions should return nil, a seq of DOM nodes, or a single DOM node."
+    (pr-str any))))))
 
 (defn- combine-render-funcs
   "Combines a number of render functions together to form a composite render function. "
@@ -71,10 +70,7 @@
   ; TODO: optimize for # of funcs (0, 1, many)
   (fn combined
     [env params]
-    (remove nil?
-      (apply concat
-        (for [f funcs]
-          (to-dom-node-seq (f env params)))))))
+    (remove nil? (apply concat (for [f funcs] (to-dom-node-seq (f env params)))))))
 
 (defn- construct-attributes
   "Convert attribute tokens into attribute DOM nodes."
@@ -100,7 +96,7 @@
 (defn- wrap-fn-as-fragment-fn
   "Convert a function of no parameters into a function that accepts fragment parameters (env and params)."
   [f]
-  (fn [env params] (f)))
+  (fn [_ _] (f)))
 
 (defn- wrap-dom-node-as-fragment-fn
   "Wraps a static DOM node as a fragment function (returning the DOM node in a vector)."
@@ -124,7 +120,7 @@
 
 (defn to-value-fn
   "Converts a string expression into a function. The function will take two parameters,
-  env and paramas, return a single value."
+  env and params, return a single value."
   [namespace expression-string]
   (let [expression-form (read-single-form expression-string)]
     ; TODO: control over function's parameter names
@@ -288,11 +284,11 @@ or uses the factory function to create it dynamically (from a template)."
       created)))
 
 (defn get-fragment
-  "Gets a fragment function with a given string name. Fragment functions expect an env and a params and return a seq of render nodes."
+  "Gets a fragment function with a given string name. Fragment functions expect an env and a params and return a seq of rendered DOM nodes."
   [name]
   (get-or-create-cached-fn name fragment-cache :fragment-namespaces parse-and-create-fragment))
 
 (defn get-view
-  "Gets a fragment function with a given string name. View functions expect an env and return a seq of render nodes."
+  "Gets a fragment function with a given string name. View functions expect an env and return a seq of rendered DOM nodes."
   [name]
   (get-or-create-cached-fn name view-cache :view-namespaces parse-and-create-view))

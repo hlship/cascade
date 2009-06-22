@@ -12,8 +12,9 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.internal.utils
+  (:import (java.util.regex Matcher MatchResult))
   (:use
-   clojure.contrib.str-utils))
+    clojure.contrib.str-utils))
 
 (declare find-namespace-resource)
 
@@ -21,10 +22,10 @@
   "Finds a resource on the classpath (as a URL) or returns nil if not found. Optionally takes
   a symbol and evaluates the path relative to the symbol's namespace."
   ([path]
-   (.. (Thread/currentThread) getContextClassLoader (getResource path)))
+    (.. (Thread/currentThread) getContextClassLoader (getResource path)))
   ([symbol path]
-   (let [ns (:ns (meta (resolve symbol)))]
-     (find-namespace-resource ns path))))
+    (let [ns (:ns (meta (resolve symbol)))]
+      (find-namespace-resource ns path))))
 
 (defn find-namespace-resource
   "Given a namespace (or a symbol identifying a namespace),
@@ -85,3 +86,37 @@
       (if (= extra eof-marker)
         result
         (throw (RuntimeException. (format "Input expression '%s' should contain only a single form." expression-string)))))))
+
+(defn re-partition-matches
+  "Partitions an input string using a regular expression. The result is a list of two element vectors (pairs).
+  Each pair consists of a text value (that is, non matching text) and a java.util.regex.MatchResult. In some cases,
+  one value inside a pair may be nil."
+  [re #^String s]
+  (let [#^Matcher matcher (re-matcher re s)]
+    (loop [#^Integer last-pos 0
+           result []]
+      (if (.find matcher)
+
+        (let [match-result (.toMatchResult matcher)
+              text (.substring s last-pos (.start match-result))]
+          (recur (.end match-result) (conj result [text match-result])))
+
+        ; Else, no match, add a final pair for any remaining text after
+        ; the last match.
+
+        (conj result [(.substring s last-pos) nil])))))
+
+(defn re-map
+  "Transforms a string by using a regular expression. The string is matched against the re. Matching sections have the
+MatchResult passed to the match-fn, non-matching sections have the non-matching text passed to the text-fn. The return value
+is the sequence of results from the two functions. Nil values
+ returned from the functions are ignored. If the text function is omitted, identity is used."
+  ([re s match-fn]
+    (re-map re s identity match-fn))
+  ([re s text-fn match-fn]
+    (let [partitioned (re-partition-matches re s)
+          invoker (fn [[text match-result]] [(and text (text-fn text)) (and match-result (match-fn match-result))])
+          processed (map invoker partitioned)]
+      (remove nil? (apply concat processed)))))
+
+

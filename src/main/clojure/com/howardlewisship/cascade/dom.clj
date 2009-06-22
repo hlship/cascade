@@ -56,7 +56,7 @@
         name
         (str prefix ":" name)))))
 
-(defmulti render-node-xml 
+(defmulti render-node-xml
   (fn [node & rest] 
     (node :type)))
 

@@ -14,19 +14,13 @@
 
 (ns com.howardlewisship.cascade.internal.parser
   (:use
-   clojure.contrib.monads
-   [clojure.contrib.pprint :only (pprint)]
-   com.howardlewisship.cascade.internal.xmltokenizer))
+    clojure.contrib.monads
+    [clojure.contrib.pprint :only (pprint)]
+    com.howardlewisship.cascade.internal.xmltokenizer))
 
-; We parse streams of xml-tokens (from the xmltokenizer) into rendering functions.
-; a rendering function takes a map (its environment) and returns a list of DOM nodes that can be rendered, or
-; nil. At render time the env will have keys for many values, and special keys:
-; :type :element
-; :token - the token of the referencing fragment
-; :body - text and element nodes
-; :parameters - map of parameters in the referencing fragment
-; :attributes - map of attributes in the referencing fragment
-; :ns-uri-to-prefix - map from namespace URI to namespace prefix
+; We parse streams of xml-tokens (from the xmltokenizer) into a variety of parsed DOM nodes.
+; This is something to be addressed, as there are two competing versions of the DOM, one the result
+; of parsing templates (parsed DOM nodes), the other the result of executing view and fragment functions (rendered DOM nodes).
 
 (defstruct element-node :type :token :body :attributes :ns-uri-to-prefix)
 (defstruct text-node :type :token)
@@ -58,8 +52,7 @@
     ; This is what actually "consumes" the tokens seq
     (list (first tokens) (rest tokens))))
 
-(with-monad
-  parser-m
+(with-monad parser-m
 
   (defn token-test
     "Parser factory using a predicate. When a token matches the predicate, it becomes
@@ -88,7 +81,6 @@ token the result), or returns nil."
     (domonad [a parser
               as (none-or-more parser)]
       (cons a as)))
-
 
   (def parse-comment
     (domonad [token (match-type :comment)]
@@ -129,7 +121,7 @@ token the result), or returns nil."
               ]
       ; Package everything together
       (struct element-node :element token body-elements attribute-tokens
-                           (build-uri-to-prefix ns-begin-tokens))))
+        (build-uri-to-prefix ns-begin-tokens))))
 
 
   (def parse-template-root
