@@ -72,3 +72,9 @@
 
 (deftest access-private-fns
   (test-view "access-private-fns" "access-private-fns-expected.txt" {:user-input "clojure"}))
+
+(deftest expansions
+  (test-view "expansions" "expansions-expected.txt"
+    {:time "A Fine Day to learn Cascade"
+     :message-class "dk-blue"
+     :message "No, this is not Tapestry 6."}))

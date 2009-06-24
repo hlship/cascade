@@ -107,10 +107,10 @@
         (conj result [(.substring s last-pos) nil])))))
 
 (defn re-map
-  "Transforms a string by using a regular expression. The string is matched against the re. Matching sections have the
+  "Transforms a string by using a regular expression. The string is matched against the expression. Matching sections have the
 MatchResult passed to the match-fn, non-matching sections have the non-matching text passed to the text-fn. The return value
 is the sequence of results from the two functions. Nil values
- returned from the functions are ignored. If the text function is omitted, identity is used."
+ returned from the functions are removed. If the text function is omitted, identity is used."
   ([re s match-fn]
     (re-map re s identity match-fn))
   ([re s text-fn match-fn]
@@ -120,3 +120,9 @@ is the sequence of results from the two functions. Nil values
       (remove nil? (apply concat processed)))))
 
 
+
+(defn blank?
+  "Is the provided string nil or the empty string?"
+  [#^String s]
+  (or (nil? s)
+      (= 0 (.length s))))

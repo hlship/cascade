@@ -13,6 +13,7 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.view-manager
+  (:import (java.util.regex MatchResult))
   (:use
     com.howardlewisship.cascade.internal.utils
     com.howardlewisship.cascade.dom
@@ -29,14 +30,17 @@
 ; Note: we use "namespace" when refering to a Clojure namepace (usually represented as a symbol), and
 ; "ns" to refer to a XML namespace (ns-uri and ns-prefix, typically).
 
-; This module is getting somewhat large and perhaps needs to be split into sub-modules.
+; This module is getting somewhat large and perhaps needs to be split into sub-modules. I think a module for the
+; building side (i.e., to-fragment-fn and everything related) can be split out.
 
 ; We currently have two different DOMs and they should be merged; thus template XML -> XML tokens
-; -> DOM nodes -> Clojure function -> DOM nodes -> markup stream 
+; -> parsed DOM nodes -> Clojure function -> rendered DOM nodes -> markup stream 
 
 ; The URI for a fragment
 
 (def fragment-uri "cascade")
+
+(def expansion-re #"\$\{(.*?)\}")
 
 ; TODO: Eventually, when we have (defview) and (deffragment), we may need two levels of cache:
 ; for the fragment & view functions derived from templates, and for the fragment & view functions
@@ -45,7 +49,7 @@
 (def fragment-cache (atom {}))
 (def view-cache (atom {}))
 
-(declare get-fragment)
+(declare get-fragment to-value-fn)
 
 ; A render function takes a single parameter (the environment) and returns a collection
 ; of DOM nodes that can be transformed (not yet implemented) and then streamed. Any returned nil values
@@ -72,19 +76,43 @@
     [env params]
     (remove nil? (apply concat (for [f funcs] (to-dom-node-seq (f env params)))))))
 
-(defn- construct-attributes
-  "Convert attribute tokens into attribute DOM nodes."
-  [attribute-tokens]
-  (for [token attribute-tokens]
-    (struct-map dom-node
+(defn- static-text-to-value-fn
+  [text]
+  (if (blank? text)
+    nil
+    (fn [_ _] text)))
+
+(defn- match-result-to-value-fn
+  [namespace #^MatchResult match-result]
+  (to-value-fn namespace (.group match-result 1)))
+
+(defn- to-attribute-fn
+  "Converts an attribute value (a string) into a function that generates the value for the attribute
+  (from env and params)."
+  [namespace attribute-value]
+  (let [match-fn (partial match-result-to-value-fn namespace)
+        value-fns (re-map expansion-re attribute-value static-text-to-value-fn match-fn)]
+    (fn attribute-fn [env params]
+      (apply str (map #(% env params) value-fns)))))
+
+(defn- create-attributes-gen-fn
+  "Creates a function that accepts env and params and returns a sequence of
+attribute dom-nodes. Handles expansions in each attribute value."
+  [namespace attribute-tokens]
+  (let [pairs (for [token attribute-tokens]
+    ; create a pair consisting of a dom-node skeleton,
+    ; plus a function to generate the attribute value
+    [(struct-map dom-node
       :type :attribute
       :ns-uri (token :ns-uri)
-      :name (token :name)
-      :value (token :value))))
+      :name (token :name)) (to-attribute-fn namespace (token :value))])]
+    (fn attributes-gen [env params]
+      (for [[dom-node-skel attribute-fn] pairs]
+        (assoc dom-node-skel :value (attribute-fn env params))))))
 
 (defn- create-render-body-fn
   "Creates a function that takes a single env parameter and invokes the provided function
-  to render the body, using the params of the enclosing/invoking fragment function."
+to render the body, using the params of the enclosing/invoking fragment function."
   [body-combined container-params]
   (fn [env]
     (body-combined env container-params)))
@@ -94,7 +122,7 @@
   (dissoc ns-uri-to-prefix fragment-uri))
 
 (defn- wrap-fn-as-fragment-fn
-  "Convert a function of no parameters into a function that accepts fragment parameters (env and params)."
+  "Convert a function of no parameters into a fragment function (that takes env and params)."
   [f]
   (fn [_ _] (f)))
 
@@ -104,23 +132,9 @@
   (let [fn-result [dom-node]]
     (wrap-fn-as-fragment-fn (fn [] fn-result))))
 
-
-; TODO: is this needed?  ... yes, because we make the fragment's element token and its non-parameter attributes
-; as part of the env passed to the fragment.
-
-(defn- wrap-static-attributes-as-attribute-nodes-fn
-  "Given some parsed attribute nodes, create a function that returns a seq of attribute DOM nodes."
-  [tokens]
-  (let [static-attribute-tokens (remove-matches :ns-uri fragment-uri tokens)
-        static-attribute-nodes (construct-attributes static-attribute-tokens)]
-    ; Return a function that provides the attribute tokens
-    ; TODO look for expansions inside otherwise static values
-    ; TODO optimize for no nodes/tokens
-    (fn provide-tokens [env params] static-attribute-tokens)))
-
 (defn to-value-fn
   "Converts a string expression into a function. The function will take two parameters,
-  env and params, return a single value."
+env and params, return a single value."
   [namespace expression-string]
   (let [expression-form (read-single-form expression-string)]
     ; TODO: control over function's parameter names
@@ -130,7 +144,7 @@
 
 (defn- convert-dynamic-attributes-to-param-gen-fn
   "Converts the tokens into a function that accepts env and params and produces a new params (that can be passed
-  to a subordinate fragment)."
+to a subordinate fragment)."
   [namespace tokens]
   (let [name-fn-pairs
         (for [token (filter-matches :ns-uri fragment-uri tokens)]
@@ -143,18 +157,37 @@
         ; Then build up the final params map
         (reduce (fn [map [key value]] (assoc map key value)) {} invoked-pairs)))))
 
+(defn- static-text-to-render-fn
+  "Converts simple static text to a render function."
+  [text]
+  (if (blank? text)
+    nil
+    (fn static-text [_ _]
+      (struct-map dom-node :type :text :value text))))
+
+(defn- expression-to-render-fn
+  "Converts an expression string and a namespace to a render function."
+  [namespace expression-str]
+  (let [value-fn (to-value-fn namespace expression-str)]
+    (fn expression-to-text [env params]
+      (struct-map dom-node :type :text :value (str (value-fn env params))))))
+
 ; to-fragment-fn exists to convert parsed nodes (from the parser namespace) into fragment rendering functions.
 ; Many of these functions ignore their env and params arguments and return fixed DOM node values. Others are
 ; more involved and dynamic.
 
 (defmulti to-fragment-fn
   "Converts any kind of parsed DOM node into a fragment function (which takes env and params and returns
-  a collection of renderable DOM nodes)."
+a collection of renderable DOM nodes)."
   #(:type %2))
 
 (defmethod to-fragment-fn :text
   [namespace parsed-node]
-  (wrap-dom-node-as-fragment-fn (struct-map dom-node :type :text :value (-> parsed-node :token :value))))
+  (let [text (-> parsed-node :token :value)
+        match-to-render-fn (fn [#^MatchResult match-result] (expression-to-render-fn namespace (.group match-result 1)))
+        render-fns (re-map expansion-re text static-text-to-render-fn match-to-render-fn)]
+    (fn combined [env params]
+      (for [f render-fns] (f env params)))))
 
 (defmethod to-fragment-fn :comment
   [namespace parsed-node]
@@ -196,20 +229,17 @@
         element-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
         body-as-funcs (map (partial to-fragment-fn namespace) body)
         body-combined (combine-render-funcs body-as-funcs)
-        attributes (construct-attributes (element-node :attributes))]
-    (fn static-element-renderer
-      [env params]
-      [(struct-map dom-node
+        attributes-gen-fn (create-attributes-gen-fn namespace (element-node :attributes))]
+    (fn static-element-renderer [env params]
+      (struct-map dom-node
         :type :element
         :ns-uri element-uri
         :ns-uri-to-prefix (remove-cascade-namespaces element-ns-uri-to-prefix)
         :name element-name
-        ; currently assuming that attributes are "static" but
-        ; that will change ... though we should seperate "static" from "dynamic"
-        :attributes attributes
+        :attributes (attributes-gen-fn env params)
         ; TODO: there might be a way to identify that a static element has only static
         ; content, in which case the body can itself be computed statically
-        :content (body-combined env params))])))
+        :content (body-combined env params)))))
 
 (defmethod to-fragment-fn :element
   [namespace element-node]

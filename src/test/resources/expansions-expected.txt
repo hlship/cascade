@@ -1,0 +1,5 @@
+<div>
+    The current date and time is A Fine Day to learn Cascade.
+
+    <span class="important dk-blue">No, this is not Tapestry 6.</span>
+</div>
