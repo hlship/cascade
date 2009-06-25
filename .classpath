@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/clojure"/>
+	<classpathentry kind="src" path="src/test/clojure"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/runtime/clojure-1.0.0.jar" sourcepath="lib/runtime-src/clojure-1.0.0-sources.zip"/>
+	<classpathentry kind="lib" path="lib/runtime/clojure-contrib-1.0-20090501.082310-18.jar"/>
+	<classpathentry kind="lib" path="src/test/resources"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
