@@ -57,7 +57,7 @@
   (. Keyword (intern (symbol string))))
 
 (defn- add-token
-  "Adds a token to the *tokens var."
+  "Adds a token to the *tokens* var."
   [token]
   (set! *tokens* (conj *tokens* token)))
 

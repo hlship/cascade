@@ -19,8 +19,8 @@
     com.howardlewisship.cascade.internal.xmltokenizer))
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into a variety of parsed DOM nodes.
-; This is something to be addressed, as there are two competing versions of the DOM, one the result
-; of parsing templates (parsed DOM nodes), the other the result of executing view and fragment functions (rendered DOM nodes).
+
+; :attributes is a seq of attribute-tokens
 
 (defstruct element-node :type :token :body :attributes :ns-uri-to-prefix)
 (defstruct text-node :type :token)
@@ -117,8 +117,7 @@ token the result), or returns nil."
               ; and matched by an end element token
               _ (match-type :end-element)
               ; Trust that the XML tokenizer balances each :begin-ns-prefix with an :end-ns-prefix
-              _ (none-or-more (match-type :end-ns-prefix))
-              ]
+              _ (none-or-more (match-type :end-ns-prefix))]
       ; Package everything together
       (struct element-node :element token body-elements attribute-tokens
         (build-uri-to-prefix ns-begin-tokens))))
@@ -135,7 +134,7 @@ token the result), or returns nil."
   ) ; with-monad parser-m
 
 (defn parse-template
-  "Parses a template into a list of parsed-node structs represented the root element, plus and pre-amble or
+  "Parses a template into a list of parsed-node structs represented the root element, plus any pre-amble or
   post-amble (text and comments) around the root element."
   [src]
   (let [tokens (tokenize-xml src)

@@ -33,7 +33,7 @@
 ; This module is getting somewhat large and perhaps needs to be split into sub-modules. I think a module for the
 ; building side (i.e., to-fragment-fn and everything related) can be split out.
 
-; We currently have two different DOMs and they should be merged; thus template XML -> XML tokens
+; We currently have two different DOMs; thus template XML -> XML tokens
 ; -> parsed DOM nodes -> Clojure function -> rendered DOM nodes -> markup stream 
 
 ; The URI for a fragment
@@ -64,6 +64,8 @@
     (sequential? any) any
 
     (map? any) [any]
+    
+    ; TODO: All a string or number to render as itself. Maybe convert this to a multifunction.
 
     true (throw (RuntimeException. (format "A render function returned %s. Render functions should return nil, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))

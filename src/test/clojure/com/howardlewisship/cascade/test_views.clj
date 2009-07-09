@@ -30,6 +30,10 @@
   [dom]
   (with-out-str (render-xml dom *out*)))
 
+(defn- minimize-ws [string]
+	(.replaceAll string "\\s+" " ")) 
+	
+
 (defn- execute-view-test
   [name]
   (let [input-path (str base name ".xml")
@@ -53,8 +57,8 @@
   ([view-name expected-output-file env]
    (let [view (get-view view-name)
          dom (view env)
-         output (render dom)
-         expected (slurp* (find-classpath-resource expected-output-file))]
+         output (minimize-ws (render dom))
+         expected (minimize-ws (slurp* (find-classpath-resource expected-output-file)))]
      (is (= output expected)))))
 
 
@@ -78,3 +82,10 @@
     {:time "A Fine Day to learn Cascade"
      :message-class "dk-blue"
      :message "No, this is not Tapestry 6."}))
+     
+(deftest simple-loop
+	(test-view "simple-loop" "simple-loop-expected.txt"))
+	     
+(deftest nested-loops
+	(test-view "nested-loops" "nested-loops-expected.txt"))
+	     

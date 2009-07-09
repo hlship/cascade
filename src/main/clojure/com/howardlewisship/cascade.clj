@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+1; Copyright 2009 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
+; Utility functions needed by views and fragments.
+
 (ns com.howardlewisship.cascade)
 
 
-; fragment function takes three arguments:
-; node - the DOM node representing the fragment in its container; used to control when (or if)
-; the node or its children are rendered
-; attributes - request "state" that may be passed (or modified and passed) to children
-; parameters - all parameters defined by the attributes (or special elements) of the fragment tag
-
+(defn render-body
+	"Utility that renders the body of a fragment (passed as the :render-body env key). Takes the current environment and 
+	returns a seq of DOM nodes."
+	[env]
+	((env :render-body) env))
+	
 

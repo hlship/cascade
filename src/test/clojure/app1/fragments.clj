@@ -13,10 +13,19 @@
 ; and limitations under the License.
 
 (ns app1.fragments
-  (:use com.howardlewisship.cascade.dom))
+  (:use com.howardlewisship.cascade
+  			com.howardlewisship.cascade.dom))
 
 (defn echo
   [env params]
   (struct-map dom-node
     :type :text
     :value (str (params :value))))
+    
+(defn tloop
+	"Loop fragment used in testing (so as not to conflict with an eventual framework loop fragment)."
+	[env params]
+	(let [source (params :source)
+			  value-key (params :value)]
+			  (apply concat (for [value source]
+			  								 (render-body (assoc env value-key value))))))  
