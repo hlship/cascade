@@ -21,15 +21,15 @@
 
 (def #^{:private true} base "src/test/resources/")
 
-(defn- render
+(defn render
   [dom]
   (with-out-str (render-xml dom *out*)))
 
-(defn- minimize-ws [string]
+(defn minimize-ws [string]
 	(.replaceAll string "\\s+" " ")) 
 	
 
-(defn- execute-view-test
+(defn execute-view-test
   [name]
   (let [input-path (str base name ".xml")
         expected-path (str base name "-expected.xml")

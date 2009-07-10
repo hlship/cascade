@@ -25,12 +25,12 @@
 (defstruct text-node :type :token)
 (defstruct comment-node :type :text)
 
-(defn- build-uri-to-prefix
+(defn build-uri-to-prefix
   "Converts a list of :begin-ns-prefix tokens into a map from URI to prefix."
   [tokens]
   (reduce (fn [map token] (assoc map (token :ns-uri) (token :ns-prefix))) {} tokens))
 
-(defn- fail
+(defn fail
   [#^String msg]
   (throw (RuntimeException. msg)))
 

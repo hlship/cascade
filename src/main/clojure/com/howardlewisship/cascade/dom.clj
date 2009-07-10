@@ -13,7 +13,8 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.dom
-  (:import (java.io Writer)))
+  (:import (java.io Writer))
+  (:use com.howardlewisship.cascade.internal.utils))
 
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
@@ -42,11 +43,7 @@
   (doseq [#^String s strings]
     (.write out s)))
 
-(defn- blank?
-  [#^String string]
-  (or (nil? string) (= 0 (.. string trim length))))
-
-(defn- qualify-name
+(defn qualify-name
   "Qualifies a name based on a namespace URI and a mapping from URI to prefix"
   [name ns-uri ns-uri-to-prefix]
   (if (blank? ns-uri)
@@ -115,7 +112,7 @@
 
         (write out "</" element-qname ">")))))
 
-(defn- render-xml-with-ns
+(defn render-xml-with-ns
   [dom-nodes ns-uri-to-prefix out]
   (doseq [node dom-nodes]
     (render-node-xml node ns-uri-to-prefix out)))

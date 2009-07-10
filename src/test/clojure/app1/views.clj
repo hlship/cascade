@@ -14,5 +14,5 @@
 
 (ns app1.views)
 
-(defn- double-talk [string]
+(defn double-talk [string]
   (str string " " string))

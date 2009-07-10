@@ -53,7 +53,7 @@
 ; of DOM nodes that can be transformed (not yet implemented) and then streamed. Any returned nil values
 ; are filtered out.
 
-(defn- to-dom-node-seq
+(defn to-dom-node-seq
   [any]
   "Converts the result of a render function to a seq as needed."
   (cond
@@ -68,7 +68,7 @@
     true (throw (RuntimeException. (format "A render function returned %s. Render functions should return nil, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))
 
-(defn- combine-render-funcs
+(defn combine-render-funcs
   "Combines a number of render functions together to form a composite render function. "
   [funcs]
   ; TODO: optimize for # of funcs (0, 1, many)
@@ -76,17 +76,17 @@
     [env params]
     (remove nil? (apply concat (for [f funcs] (to-dom-node-seq (f env params)))))))
 
-(defn- static-text-to-value-fn
+(defn static-text-to-value-fn
   [text]
   (if (blank? text)
     nil
     (fn [_ _] text)))
 
-(defn- match-result-to-value-fn
+(defn match-result-to-value-fn
   [namespace #^MatchResult match-result]
   (to-value-fn namespace (.group match-result 1)))
 
-(defn- to-attribute-fn
+(defn to-attribute-fn
   "Converts an attribute value (a string) into a function that generates the value for the attribute
   (from env and params)."
   [namespace attribute-value]
@@ -95,7 +95,7 @@
     (fn do-convert-attribute [env params]
       (apply str (map #(% env params) value-fns)))))
 
-(defn- create-attributes-gen-fn
+(defn create-attributes-gen-fn
   "Creates a function that accepts env and params and returns a sequence of
 attribute dom-nodes. Handles expansions in each attribute value."
   [namespace attribute-tokens]
@@ -110,7 +110,7 @@ attribute dom-nodes. Handles expansions in each attribute value."
       (for [[dom-node-skel attribute-fn] pairs]
         (assoc dom-node-skel :value (attribute-fn env params))))))
 
-(defn- create-render-body-fn
+(defn create-render-body-fn
   "Creates a function that takes a single env parameter and invokes the provided function
 to render the body, using the params of the enclosing/invoking fragment function."
   [body-combined container-env container-params]
@@ -120,16 +120,16 @@ to render the body, using the params of the enclosing/invoking fragment function
   (fn do-render-body [env]
     (body-combined (assoc env :render-body (container-env :render-body)) container-params)))
 
-(defn- remove-cascade-namespaces
+(defn remove-cascade-namespaces
   [ns-uri-to-prefix]
   (dissoc ns-uri-to-prefix cascade-namespace-uri))
 
-(defn- wrap-fn-as-fragment-fn
+(defn wrap-fn-as-fragment-fn
   "Convert a function of no parameters into a fragment function (that takes env and params)."
   [f]
   (fn [_ _] (f)))
 
-(defn- wrap-dom-node-as-fragment-fn
+(defn wrap-dom-node-as-fragment-fn
   "Wraps a static DOM node as a fragment function (returning the DOM node in a vector)."
   [dom-node]
   (let [fn-result [dom-node]]
@@ -145,7 +145,7 @@ env and params, return a single value."
       (eval (list 'fn ['env 'params] expression-form)))))
 
 
-(defn- convert-dynamic-attributes-to-param-gen-fn
+(defn convert-dynamic-attributes-to-param-gen-fn
   "Converts attribute tokens into a function that accepts env and params and produces a new params (that can be passed
 to a subordinate fragment)."
   [namespace tokens]
@@ -153,14 +153,14 @@ to a subordinate fragment)."
         (for [token (filter-matches :ns-uri cascade-namespace-uri tokens)]
           (let [{name :name value :value} token]
              [name (to-value-fn namespace value)]))]
-    (fn provide-subordinate-params
+    (fn do-provide-params
       [env params]
       ; Invoke each function using the provided env and params
       (let [invoked-pairs (for [[name value-fn] name-fn-pairs] [name (value-fn env params)])]
         ; Then build up the final params map
         (reduce (fn [map [key value]] (assoc map key value)) {} invoked-pairs)))))
 
-(defn- static-text-to-render-fn
+(defn static-text-to-render-fn
   "Converts simple static text to a render function."
   [text]
   (if (blank? text)
@@ -168,7 +168,7 @@ to a subordinate fragment)."
     (fn do-static-text [_ _]
       (struct-map dom-node :type :text :value text))))
 
-(defn- expression-to-render-fn
+(defn expression-to-render-fn
   "Converts an expression string and a namespace to a render function."
   [namespace expression-str]
   (let [value-fn (to-value-fn namespace expression-str)]
@@ -196,7 +196,7 @@ a collection of renderable DOM nodes)."
   [namespace parsed-node]
   (wrap-dom-node-as-fragment-fn (struct-map dom-node :type :comment :value (parsed-node :text))))
 
-(defn- create-fragment-renderer
+(defn create-fragment-renderer
   [namespace element-node]
   (let [body (element-node :body)
         token (element-node :token)
@@ -219,18 +219,17 @@ a collection of renderable DOM nodes)."
             body-renderer (create-render-body-fn body-combined container-env container-params)
             ; TODO: rebuild token, stripping from :attributes any parameters
             frag-env (merge container-env {:fragment-token token
-                                           :container-env container-env
                                            :render-body body-renderer})]
         (fragment-fn frag-env frag-params)))))
 
-(defn- create-render-body-renderer
+(defn create-render-body-renderer
 	"Creates a renderer for the render-body directive." 
 	[namespace element-node]
 	; TODO check that there are no attributes, no child nodes
 	(fn do-render-body [env params]
 		((env :render-body) env)))
 
-(defn- create-cascade-namespace-element-renderer
+(defn create-cascade-namespace-element-renderer
 	"Creates a renderer function from an element already determined to be in the cascade namespace; this is typically a fragment, 
 but may also be a built-in directive such as render-body."
 	[namespace element-node]
@@ -239,7 +238,7 @@ but may also be a built-in directive such as render-body."
 			(= element-name :render-body) (create-render-body-renderer namespace element-node)
 			true (create-fragment-renderer namespace element-node))))
 
-(defn- create-static-element-renderer
+(defn create-static-element-renderer
   [namespace element-node]
   (let [body (element-node :body)
         token (element-node :token)
@@ -262,10 +261,7 @@ but may also be a built-in directive such as render-body."
 
 (defmethod to-fragment-fn :element
   [namespace element-node]
-  ; TODO: handle elements in the cascade namespace specially
-  ; TODO: check for cascade namespace attributes
   (let [element-uri (-> element-node :token :ns-uri)]
-
     (if (= cascade-namespace-uri element-uri)
       (create-cascade-namespace-element-renderer namespace element-node)
       (create-static-element-renderer namespace element-node))))
@@ -283,7 +279,7 @@ but may also be a built-in directive such as render-body."
   (let [frag-func (parse-and-create-fragment namespace src)]
     (fn do-view-wrapper [env] (frag-func env nil))))
 
-(defn- find-name-in-namespace
+(defn find-name-in-namespace
   [name namespace]
   (let [mappings (ns-interns (the-ns namespace))
         found (get mappings (symbol name))]
@@ -291,12 +287,12 @@ but may also be a built-in directive such as render-body."
     ; the function
     (and found (deref found))))
 
-(defn- search-namespaces
+(defn search-namespaces
   [name namespaces]
   (first-non-nil (map (partial find-name-in-namespace name) namespaces)))
 
 
-(defn- create-from-template
+(defn create-from-template
   "Searches for a template file (with a .cml extension) as a classpath resource in one of the namespaces,
 creating a function (using the factory) if found. If not found, throws RuntimeException."
   [name namespaces factory-fn]
@@ -314,14 +310,14 @@ creating a function (using the factory) if found. If not found, throws RuntimeEx
           (if (= 1 (count namespaces)) "namespace" "namespaces")
           (to-str-list (map ns-name namespaces))))))))
 
-(defn- find-or-create-fn
+(defn find-or-create-fn
   "Searches for an existing function in any of the namespaces, or creates a function from a bare template."
   [name namespaces factory-fn]
   (or
     (search-namespaces name namespaces)
     (create-from-template name namespaces factory-fn)))
 
-(defn- get-or-create-cached-fn
+(defn get-or-create-cached-fn
   "Gets a view or fragment function from a cache, or finds it as a real function,
 or uses the factory function to create it dynamically (from a template)."
   [name cache config-key factory-fn]

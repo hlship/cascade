@@ -51,17 +51,17 @@
 (def *line*)
 (def *location*)
 
-(defn- to-keyword
+(defn to-keyword
   "Converts a string into a keyword."
   [string]
   (. Keyword (intern (symbol string))))
 
-(defn- add-token
+(defn add-token
   "Adds a token to the *tokens* var."
   [token]
   (set! *tokens* (conj *tokens* token)))
 
-(defn- current-location
+(defn current-location
   "Current location."
   []
   ; A little optimization here, to reuse *location* if the line number has not changed since the
@@ -71,7 +71,7 @@
       (set! *location* (struct location *resource* line))))
   *location*)
 
-(defn- add-attribute-tokens
+(defn add-attribute-tokens
   "Adds a token for each attribute."
   [#^Attributes attrs]
   (doseq [#^Integer x (range (.getLength attrs))]
@@ -82,7 +82,7 @@
       (add-token token))))
 
 
-(defn- flush-text
+(defn flush-text
   "Adds a text token if there's any text."
   []
   (when (pos? (.length *buffer*))
@@ -90,7 +90,7 @@
     (set! *text-location* nil)
     (.setLength *buffer* 0)))
 
-(defn- add-text
+(defn add-text
   "Adds text to the buffer and manages the *text-location* var."
   [#^chars ch #^Integer start #^Integer length]
   (.append *buffer* ch start length)

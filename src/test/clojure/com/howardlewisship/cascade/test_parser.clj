@@ -19,13 +19,13 @@
 
 (def #^{:private true} base "src/test/resources/com/howardlewisship/cascade/internal/")
 
-(defn- extract-attributes [element-node]
+(defn extract-attributes [element-node]
   (let [attrs (element-node :attributes)]
     (reduce (fn combine [map attr-token] (assoc map (attr-token :name) (attr-token :value)))
       {}
       attrs)))
 
-(defn- extract-ns-attributes [element-node]
+(defn extract-ns-attributes [element-node]
   (let [attrs (element-node :attributes)]
     (reduce (fn combine [map attr-token] (assoc map {:ns-uri (attr-token :ns-uri)
                                                      :name (attr-token :name)}
