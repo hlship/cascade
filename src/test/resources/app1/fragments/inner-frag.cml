@@ -1,0 +1,9 @@
+<p xmlns:c="cascade">
+
+INNER-FRAG TEMPLATE START
+
+<c:render-body/>
+
+INNER-FRAG TEMPLATE END
+
+</p>

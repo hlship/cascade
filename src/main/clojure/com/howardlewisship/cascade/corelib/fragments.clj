@@ -13,9 +13,4 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.corelib.fragments)
-	
-(defn render-body
-	"Renders the body of the containing fragment."
-	[env params]
-	((-> env :container-env :render-body) env))
-	
+

@@ -1,0 +1,13 @@
+<span xmlns:c="cascade">
+
+	OUTER-FRAG TEMPLATE START
+
+	<c:nested-frag>
+		NESTED-FRAG BODY START
+		<c:render-body />
+		NESTED-FRAG BODY END
+	</c:nested-frag>
+
+	OUTER-FRAG TEMPLATE END
+
+</span>

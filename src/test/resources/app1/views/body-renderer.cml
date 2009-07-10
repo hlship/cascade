@@ -1,0 +1,16 @@
+<div xmlns:c="cascade">
+
+	VIEW START
+
+	<c:outer-frag>
+		OUTER-FRAG BODY START
+
+		<c:inner-frag>
+			INNER-FRAG BODY
+		</c:inner-frag>
+
+		OUTER-FRAG BODY END
+	</c:outer-frag>
+
+	VIEW END
+</div>
