@@ -14,15 +14,10 @@
 
 (ns com.howardlewisship.cascade.test-views
   (:use
-   clojure.contrib.test-is
-   clojure.contrib.pprint
-   clojure.contrib.duck-streams
-   app1.views
-   app1.fragments
-   com.howardlewisship.cascade.internal.utils
-   com.howardlewisship.cascade.config
-   com.howardlewisship.cascade.dom
-   com.howardlewisship.cascade.view-manager))
+   (clojure.contrib test-is pprint duck-streams)
+   (app1 views fragments)
+   (com.howardlewisship.cascade config dom view-manager)
+   com.howardlewisship.cascade.internal.utils))
 
 (def #^{:private true} base "src/test/resources/")
 
@@ -88,4 +83,7 @@
 	     
 (deftest nested-loops
 	(test-view "nested-loops" "nested-loops-expected.txt"))
+	
+(deftest render-body-fragment
+	(test-view "body-renderer" "body-renderer-expected.txt"))
 	     

@@ -12,18 +12,20 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.config)
+(ns com.howardlewisship.cascade.config
+	(:require (com.howardlewisship.cascade.corelib fragments)))
 
 (def configuration {
   :view-namespaces []
-  :fragment-namespaces []
+  :fragment-namespaces ['com.howardlewisship.cascade.corelib.fragments]
   :action-namespaces []
   })
 
 (defn add-to-config
-  "Adds a value to a configuration list stored in the configuration var."
+  "Adds a value to a configuration list stored in the configuration var. The new value goes first in the identified configuration list."
   [key value]
-  (alter-var-root (var configuration) (fn [current] (update-in current [key] conj value))))
+  (alter-var-root (var configuration) (fn [current] (update-in current [key] #(cons value %1)))))
+   
 
 
 

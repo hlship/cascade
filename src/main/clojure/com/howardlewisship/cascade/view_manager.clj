@@ -15,10 +15,8 @@
 (ns com.howardlewisship.cascade.view-manager
   (:import (java.util.regex MatchResult))
   (:use
-    com.howardlewisship.cascade.internal.utils
-    com.howardlewisship.cascade.dom
-    com.howardlewisship.cascade.config
-    com.howardlewisship.cascade.internal.parser
+    (com.howardlewisship.cascade.internal utils parser)
+    (com.howardlewisship.cascade dom config)
     clojure.contrib.with-ns))
 
 ; A fragment function takes two parameters: env and params.  A view function is simply a wrapper
@@ -145,17 +143,17 @@ env and params, return a single value."
 
 
 (defn- convert-dynamic-attributes-to-param-gen-fn
-  "Converts the tokens into a function that accepts env and params and produces a new params (that can be passed
+  "Converts attribute tokens into a function that accepts env and params and produces a new params (that can be passed
 to a subordinate fragment)."
   [namespace tokens]
   (let [name-fn-pairs
         (for [token (filter-matches :ns-uri fragment-uri tokens)]
           (let [{name :name value :value} token]
-            (list name (to-value-fn namespace value))))]
+             [name (to-value-fn namespace value)]))]
     (fn provide-subordinate-params
       [env params]
       ; Invoke each function using the provided env and params
-      (let [invoked-pairs (for [[name value-fn] name-fn-pairs] (list name (value-fn env params)))]
+      (let [invoked-pairs (for [[name value-fn] name-fn-pairs] [name (value-fn env params)])]
         ; Then build up the final params map
         (reduce (fn [map [key value]] (assoc map key value)) {} invoked-pairs)))))
 
@@ -207,18 +205,19 @@ a collection of renderable DOM nodes)."
         params-gen-fn (convert-dynamic-attributes-to-param-gen-fn namespace (element-node :attributes))]
 
     ; The fragment-renderer is responsible for providing parameters
-    ; to the encapsulated fragment. The fragment renderer receives its containers
+    ; to the subordinate fragment. The fragment renderer receives its container's
     ; environment and parameters and uses those to build an environment and parameters
     ; for the fragment.
 
     (fn fragment-renderer
       [container-env container-params]
-      ; TODO: Error if a fragment element defines any namespace besides cascade.
+      ; TODO: Error if a fragment attribute defines any namespace besides cascade.
       (let [fragment-fn (get-fragment (name element-name))
             frag-params (params-gen-fn container-env container-params)
             body-renderer (create-render-body-fn body-combined container-params)
             ; TODO: rebuild token, stripping from :attributes any parameters
-            frag-env (merge container-env {:element-token token
+            frag-env (merge container-env {:fragment-token token
+                                           :container-env container-env
                                            :render-body body-renderer})]
         (fragment-fn frag-env frag-params)))))
 

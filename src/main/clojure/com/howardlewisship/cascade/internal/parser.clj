@@ -14,8 +14,7 @@
 
 (ns com.howardlewisship.cascade.internal.parser
   (:use
-    clojure.contrib.monads
-    [clojure.contrib.pprint :only (pprint)]
+    (clojure.contrib monads [pprint :only (pprint)])
     com.howardlewisship.cascade.internal.xmltokenizer))
 
 ; We parse streams of xml-tokens (from the xmltokenizer) into a variety of parsed DOM nodes.
