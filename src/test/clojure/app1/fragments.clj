@@ -33,6 +33,8 @@
 (defn mimic
   "Mimics an arbitrary element."
   [env params]
-  (let [element-name (symbol (params :element))
-        attributes (-> env :fragment-token :attributes)]
-        (struct-map dom-node :type :element :name element-name :attributes attributes :content (render-body env))))
+  (struct-map dom-node 
+    :type :element 
+    :name (keyword (params :element))
+    :attributes (-> env :fragment-token :attributes) 
+    :content (render-body env)))
