@@ -32,7 +32,7 @@
 ; building side (i.e., to-fragment-fn and everything related) can be split out.
 
 ; We currently have two different DOMs; thus template XML -> XML tokens
-; -> parsed DOM nodes -> Clojure function -> rendered DOM nodes -> markup stream 
+; -> parsed DOM nodes -> Clojure function -> rendered DOM nodes -> markup stream. 
 
 ; The URI for a fragment
 
@@ -61,9 +61,10 @@
 
     (sequential? any) any
 
+    ; A map is assumed to be a DOM node, wrap it in a vector
     (map? any) [any]
     
-    ; TODO: All a string or number to render as itself. Maybe convert this to a multifunction.
+    ; TODO: Allow a string or number to render as itself. Maybe convert this to a multifunction.
 
     true (throw (RuntimeException. (format "A render function returned %s. Render functions should return nil, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))
@@ -86,13 +87,14 @@
   [namespace #^MatchResult match-result]
   (to-value-fn namespace (.group match-result 1)))
 
-(defn to-attribute-fn
+(defn to-attribute-value-eval-fn
   "Converts an attribute value (a string) into a function that generates the value for the attribute
   (from env and params)."
   [namespace attribute-value]
   (let [match-fn (partial match-result-to-value-fn namespace)
         value-fns (re-map expansion-re attribute-value static-text-to-value-fn match-fn)]
     (fn do-convert-attribute [env params]
+     ; TODO: Exception catch & report, tie to a location.
       (apply str (map #(% env params) value-fns)))))
 
 (defn create-attributes-gen-fn
@@ -102,20 +104,23 @@ attribute dom-nodes. Handles expansions in each attribute value."
   (let [pairs (for [token attribute-tokens]
     ; create a pair consisting of a dom-node skeleton,
     ; plus a function to generate the attribute value
-    [(struct-map dom-node
+    [(struct-map dom-node ; dom-node skeleton for the attribute
       :type :attribute
       :ns-uri (token :ns-uri)
-      :name (token :name)) (to-attribute-fn namespace (token :value))])]
+      :name (token :name)) 
+      
+      ; function that generates the final :value
+      (to-attribute-value-eval-fn namespace (token :value))])]
     (fn do-create-attributes [env params]
-      (for [[dom-node-skel attribute-fn] pairs]
-        (assoc dom-node-skel :value (attribute-fn env params))))))
+      (for [[dom-node-skel value-fn] pairs]
+        (assoc dom-node-skel :value (value-fn env params))))))
 
 (defn create-render-body-fn
   "Creates a function that takes a single env parameter and invokes the provided function
 to render the body, using the params of the enclosing/invoking fragment function."
   [body-combined container-env container-params]
   ; Re-associate the :render-body function of the container, so that if we hit 
-  ; we render a body, it is the container's body that gets rendered, not the
+  ; another render-body directive, it is the container's body that gets rendered, not the
   ; fragment's.
   (fn do-render-body [env]
     (body-combined (assoc env :render-body (container-env :render-body)) container-params)))
@@ -172,7 +177,7 @@ to a subordinate fragment)."
   "Converts an expression string and a namespace to a render function."
   [namespace expression-str]
   (let [value-fn (to-value-fn namespace expression-str)]
-    (fn do-expression-to-string [env params]
+    (fn do-expression-to-dom-node [env params]
       (struct-map dom-node :type :text :value (str (value-fn env params))))))
 
 ; to-fragment-fn exists to convert parsed nodes (from the parser namespace) into fragment rendering functions.
@@ -204,7 +209,10 @@ a collection of renderable DOM nodes)."
         element-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
         body-as-funcs (map (partial to-fragment-fn namespace) body)
         body-combined (combine-render-funcs body-as-funcs)
-        params-gen-fn (convert-dynamic-attributes-to-param-gen-fn namespace (element-node :attributes))]
+        attributes (element-node :attributes)
+        params-gen-fn (convert-dynamic-attributes-to-param-gen-fn namespace attributes)
+        static-attributes (remove #(= cascade-namespace-uri (% :ns-uri)) attributes)
+        attributes-gen-fn (create-attributes-gen-fn namespace static-attributes)]
 
     ; The fragment-renderer is responsible for providing parameters
     ; to the subordinate fragment. The fragment renderer receives its container's
@@ -213,33 +221,33 @@ a collection of renderable DOM nodes)."
 
     (fn do-render-fragment
       [container-env container-params]
-      ; TODO: Error if a fragment attribute defines any namespace besides cascade.
       (let [fragment-fn (get-fragment (name element-name))
             frag-params (params-gen-fn container-env container-params)
+            frag-attributes (attributes-gen-fn container-env container-params)
             body-renderer (create-render-body-fn body-combined container-env container-params)
-            ; TODO: rebuild token, stripping from :attributes any parameters
-            frag-env (merge container-env {:fragment-token token
+            frag-env (merge container-env {:fragment-token (assoc token :attributes frag-attributes)
                                            :render-body body-renderer})]
         (fragment-fn frag-env frag-params)))))
 
 (defn create-render-body-renderer
-	"Creates a renderer for the render-body directive." 
-	[namespace element-node]
-	; TODO check that there are no attributes, no child nodes
-	(fn do-render-body [env params]
-		((env :render-body) env)))
+  "Creates a renderer for the render-body directive." 
+  [namespace element-node]
+  ; TODO check that there are no attributes, no child nodes
+  (fn do-render-body [env params]
+    ((env :render-body) env)))
 
 (defn create-cascade-namespace-element-renderer
-	"Creates a renderer function from an element already determined to be in the cascade namespace; this is typically a fragment, 
+  "Creates a renderer function from an element already determined to be in the cascade namespace; this is typically a fragment, 
 but may also be a built-in directive such as render-body."
-	[namespace element-node]
-	(let [element-name (-> element-node :token :tag)]
-		(cond
-			(= element-name :render-body) (create-render-body-renderer namespace element-node)
-			true (create-fragment-renderer namespace element-node))))
+  [namespace element-node]
+  (let [element-name (-> element-node :token :tag)]
+    (cond
+      (= element-name :render-body) (create-render-body-renderer namespace element-node)
+      true (create-fragment-renderer namespace element-node))))
 
 (defn create-static-element-renderer
   [namespace element-node]
+  ; TODO: Ensure that no attributes are in cascade namespace.
   (let [body (element-node :body)
         token (element-node :token)
         element-uri (token :ns-uri)

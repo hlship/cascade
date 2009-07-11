@@ -1,0 +1,5 @@
+<div>
+<a class="nav computed" onclick="javascript:return false;">
+click me
+</a>
+</div>

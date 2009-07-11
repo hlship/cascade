@@ -14,7 +14,7 @@
 
 (ns app1.fragments
   (:use com.howardlewisship.cascade
-  			com.howardlewisship.cascade.dom))
+        com.howardlewisship.cascade.dom))
 
 (defn echo
   [env params]
@@ -23,9 +23,16 @@
     :value (str (params :value))))
     
 (defn tloop
-	"Loop fragment used in testing (so as not to conflict with an eventual framework loop fragment)."
-	[env params]
-	(let [source (params :source)
-			  value-key (params :value)]
-			  (apply concat (for [value source]
-			  								 (render-body (assoc env value-key value))))))  
+  "Loop fragment used in testing (so as not to conflict with an eventual framework loop fragment)."
+  [env params]
+  (let [source (params :source)
+        value-key (params :value)]
+        (apply concat (for [value source]
+                         (render-body (assoc env value-key value))))))
+
+(defn mimic
+  "Mimics an arbitrary element."
+  [env params]
+  (let [element-name (symbol (params :element))
+        attributes (-> env :fragment-token :attributes)]
+        (struct-map dom-node :type :element :name element-name :attributes attributes :content (render-body env))))

@@ -86,4 +86,8 @@
 	
 (deftest render-body-fragment
 	(test-view "body-renderer" "body-renderer-expected.txt"))
+	
+(deftest expansions-in-attributes-passed-to-fragments
+	(test-view "attribute-expansions" "attribute-expansions-expected.xml" {:link-class "nav" :click "return false;"}))
+		
 	     

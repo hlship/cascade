@@ -1,0 +1,7 @@
+<div xmlns:c="cascade">
+
+	<c:mimic c:element='"a"' class="${(env :link-class)} computed" onclick="javascript:${(env :click)}">
+		click me
+	</c:mimic>
+
+</div>
