@@ -38,14 +38,12 @@
 
 (def cascade-namespace-uri "cascade")
 
-(def expansion-re #"\$((\{(.*?)\})|(\(.*?\)))")
+(def expansion-re #"\$((\(.*?\)))")
 
 (defn extract-matched-expression
 	"Extracts the expression string from a matched expansion."
 	[#^MatchResult match-result]
-	; Group 3 is ${...}
-	; Group 4 is $(...) (including the parens)
-  (or (.group match-result 3) (.group match-result 4))) 
+	(.group match-result 2)) 
 
 
 ; TODO: Eventually, when we have (defview) and (deffragment), we may need two levels of cache:
