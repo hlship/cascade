@@ -26,10 +26,10 @@
 ; the namespace and other details around.
 
 ; Note: we use "namespace" when refering to a Clojure namepace (usually represented as a symbol), and
-; "ns" to refer to a XML namespace (ns-uri and ns-prefix, typically).
+; "ns" to refer to a XML namespace (:ns-uri and :ns-prefix, typically).
 
-; This module is getting somewhat large and perhaps needs to be split into sub-modules. I think a module for the
-; building side (i.e., to-fragment-fn and everything related) can be split out.
+; This module is getting somewhat large and perhaps needs to be split into sub-modules. Unfortunately,
+; caching and building are tied together inside (create-fragment-fn).
 
 ; We currently have two different DOMs; thus template XML -> XML tokens
 ; -> parsed DOM nodes -> Clojure function -> rendered DOM nodes -> markup stream. 
@@ -38,7 +38,15 @@
 
 (def cascade-namespace-uri "cascade")
 
-(def expansion-re #"\$\{(.*?)\}")
+(def expansion-re #"\$((\{(.*?)\})|(\(.*?\)))")
+
+(defn extract-matched-expression
+	"Extracts the expression string from a matched expansion."
+	[#^MatchResult match-result]
+	; Group 3 is ${...}
+	; Group 4 is $(...) (including the parens)
+  (or (.group match-result 3) (.group match-result 4))) 
+
 
 ; TODO: Eventually, when we have (defview) and (deffragment), we may need two levels of cache:
 ; for the fragment & view functions derived from templates, and for the fragment & view functions
@@ -83,9 +91,10 @@
     nil
     (fn [_ _] text)))
 
+
 (defn match-result-to-value-fn
-  [namespace #^MatchResult match-result]
-  (to-value-fn namespace (.group match-result 1)))
+  [namespace match-result]
+  (to-value-fn namespace (extract-matched-expression match-result)))
 
 (defn to-attribute-value-eval-fn
   "Converts an attribute value (a string) into a function that generates the value for the attribute
@@ -173,10 +182,10 @@ to a subordinate fragment)."
     (fn do-static-text [_ _]
       (struct-map dom-node :type :text :value text))))
 
-(defn expression-to-render-fn
-  "Converts an expression string and a namespace to a render function."
-  [namespace expression-str]
-  (let [value-fn (to-value-fn namespace expression-str)]
+(defn match-result-to-render-fn
+  "Converts a match result for an expression string and a namespace to a render function."
+  [namespace match-result]
+  (let [value-fn (to-value-fn namespace (extract-matched-expression match-result))]
     (fn do-expression-to-dom-node [env params]
       (struct-map dom-node :type :text :value (str (value-fn env params))))))
 
@@ -192,7 +201,7 @@ a collection of renderable DOM nodes)."
 (defmethod to-fragment-fn :text
   [namespace parsed-node]
   (let [text (-> parsed-node :token :value)
-        match-to-render-fn (fn [#^MatchResult match-result] (expression-to-render-fn namespace (.group match-result 1)))
+        match-to-render-fn (partial match-result-to-render-fn namespace)
         render-fns (re-map expansion-re text static-text-to-render-fn match-to-render-fn)]
     (fn do-render-text-with-expansions [env params]
       (for [f render-fns] (f env params)))))
