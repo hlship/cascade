@@ -16,6 +16,20 @@
 
   <target name="compile" description="Compile Clojure sources.">
     <mkdir dir="${classes.dir}" />
+
+    <!-- Seek out the namespaces to compile. Note that this will fail if the actual name of a package includes an underscore, as
+         all underscores are converted to dashes. -->
+    <pathconvert pathsep=" " property="compile.namespaces">
+      <fileset dir="${src.dir}" includes="**/*.clj" />
+      <chainedmapper>
+        <packagemapper from="${basedir}/${src.dir}/*.clj" to="*" />
+        <filtermapper>
+          <replacestring from="_" to="-" />
+        </filtermapper>
+      </chainedmapper>
+    </pathconvert>
+
+
     <java classname="clojure.lang.Compile">
       <classpath>
         <path refid="libs.path" />
@@ -23,10 +37,9 @@
         <path location="${src.dir}" />
       </classpath>
       <sysproperty key="clojure.compile.path" value="${classes.dir}" />
-      <arg line="${cascade} ${cascade}.config ${cascade}.dom ${cascade}.view-manager" />
-      <arg line="${cascade}.corelib.fragments" />
-      <arg line="${cascade}.internal.parser ${cascade}.internal.utils ${cascade}.internal.xmltokenizer" />
+      <arg line="${compile.namespaces}" />
     </java>
+
   </target>
 
   <target name="jar" depends="compile" description="Create JAR of compiled sources and resources.">
