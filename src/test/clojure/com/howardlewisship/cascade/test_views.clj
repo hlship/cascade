@@ -13,6 +13,7 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.test-views
+  (:import (java.util Date))
   (:use
    (clojure.contrib test-is pprint duck-streams)
    (app1 views fragments)
@@ -26,8 +27,8 @@
   (with-out-str (render-xml dom *out*)))
 
 (defn minimize-ws [string]
-	(.replaceAll string "\\s+" " ")) 
-	
+  (.replaceAll string "\\s+" " ")) 
+  
 
 (defn execute-view-test
   [name]
@@ -79,15 +80,17 @@
      :message "No, this is not Tapestry 6."}))
      
 (deftest simple-loop
-	(test-view "simple-loop" "simple-loop-expected.txt"))
-	     
+  (test-view "simple-loop" "simple-loop-expected.txt"))
+       
 (deftest nested-loops
-	(test-view "nested-loops" "nested-loops-expected.txt"))
-	
+  (test-view "nested-loops" "nested-loops-expected.txt"))
+  
 (deftest render-body-fragment
-	(test-view "body-renderer" "body-renderer-expected.txt"))
-	
+  (test-view "body-renderer" "body-renderer-expected.txt"))
+  
 (deftest expansions-in-attributes-passed-to-fragments
-	(test-view "attribute-expansions" "attribute-expansions-expected.xml" {:link-class "nav" :click "return false;"}))
-		
-	     
+  (test-view "attribute-expansions" "attribute-expansions-expected.xml" {:link-class "nav" :click "return false;"}))
+
+; TODO: Make this locale and time zone insensitive
+(deftest call-fragment-fn
+  (test-view "call-fragment-fn" "call-fragment-fn-expected.xml" {:current-time (Date. 109 7 13, 9 27 32) }))

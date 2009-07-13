@@ -65,14 +65,16 @@
   (cond
     (nil? any) nil
 
+    ; TODO: But what if they want to return an vector of strings? Perhaps we should map
+    ; any through to-dom-node-seq.
     (sequential? any) any
 
     ; A map is assumed to be a DOM node, wrap it in a vector
     (map? any) [any]
     
-    ; TODO: Allow a string or number to render as itself. Maybe convert this to a multifunction.
-
-    true (throw (RuntimeException. (format "A render function returned %s. Render functions should return nil, a seq of DOM nodes, or a single DOM node."
+    (string? any) [(struct-map dom-node :type :text :value any)]
+    
+    true (throw (RuntimeException. (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))
 
 (defn combine-render-funcs
