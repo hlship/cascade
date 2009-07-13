@@ -13,6 +13,8 @@
 ; and limitations under the License.
 
 (ns app1.fragments
+  (:import (java.util Date)
+           (java.text DateFormat))
   (:use com.howardlewisship.cascade
         com.howardlewisship.cascade.dom))
 
@@ -38,3 +40,10 @@
     :name (keyword (params :element))
     :attributes (-> env :fragment-token :attributes) 
     :content (render-body env)))
+    
+(defn format-date
+  [env params]
+  (let [#^Date date (params :date)
+        #^DateFormat fmt (DateFormat/getDateTimeInstance DateFormat/MEDIUM DateFormat/MEDIUM)]
+        (.format fmt date)))
+    

@@ -12,12 +12,4 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.corelib.fragments
-  (:import (java.util Date)
-           (java.text DateFormat)))
-
-(defn format-date
-  [env params]
-  (let [#^Date date (params :date)
-        #^DateFormat fmt (DateFormat/getDateTimeInstance DateFormat/MEDIUM DateFormat/MEDIUM)]
-        (.format fmt date)))
+(ns com.howardlewisship.cascade.corelib.fragments)

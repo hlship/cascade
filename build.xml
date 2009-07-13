@@ -1,0 +1,46 @@
+<project name="cascade" default="jar">
+
+  <property name="target.dir" value="target" />
+  <property name="src.dir" value="src/main/clojure" />
+  <property name="classes.dir" value="${target.dir}/classes" />
+  <property name="cascade" value="com.howardlewisship.cascade" />
+  <property name="version" value="1.0.0-SNAPSHOT" />
+
+  <path id="libs.path">
+    <fileset dir="lib/runtime" includes="*.jar" />
+  </path>
+
+  <target name="clean" description="Delete all derived files.">
+    <delete dir="${target.dir}" quiet="true" />
+  </target>
+
+  <target name="compile" description="Compile Clojure sources.">
+    <mkdir dir="${classes.dir}" />
+    <java classname="clojure.lang.Compile">
+      <classpath>
+        <path refid="libs.path" />
+        <path location="${classes.dir}" />
+        <path location="${src.dir}" />
+      </classpath>
+      <sysproperty key="clojure.compile.path" value="${classes.dir}" />
+      <arg line="${cascade} ${cascade}.config ${cascade}.dom ${cascade}.view-manager" />
+      <arg line="${cascade}.corelib.fragments" />
+      <arg line="${cascade}.internal.parser ${cascade}.internal.utils ${cascade}.internal.xmltokenizer" />
+    </java>
+  </target>
+
+  <target name="jar" depends="compile" description="Create JAR of compiled sources and resources.">
+    <jar destfile="${target.dir}/cascade-${version}.jar">
+      <fileset dir="${classes.dir}" />
+      <fileset dir="${src.dir}" />
+      <!-- Once it exists:
+      <fileset dir="src/main/resources" />
+      -->
+      <fileset dir=".">
+        <include name="LICENSE*" />
+        <include name="README*" />
+      </fileset>
+    </jar>
+  </target>
+
+</project>
