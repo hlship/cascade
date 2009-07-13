@@ -33,11 +33,6 @@
   (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
     (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt"))))
 
-(deftest define-function-using-namespace
-  (let [f (eval-in-namespace 'app1.views (fn [string] (double-talk string)))]
-    (is (= (f "cascade") "cascade cascade"))))
-
-
 (deftest read-single-form-with-constant
   (is (= (read-single-form "5") 5)))
 
@@ -53,7 +48,6 @@
     (read-single-form "(first-form) (second-form)")
     (unreachable)
     (catch RuntimeException ex (is (= (.getMessage ex) "Input expression '(first-form) (second-form)' should contain only a single form.")))))
-
 
 (defn test-re-partition
   [re s expected]

@@ -35,11 +35,10 @@
         ns-path (.. ns-str (replace \. \/) (replace \- \_))]
     (find-classpath-resource (str ns-path "/" path))))
 
-
 (defn to-str-list
-  [coll]
   "Creates a comma-seperated list from the collection, or returns \"(none\")
-  if the collection is null or empty."
+if the collection is null or empty."
+  [coll]
   (if (empty? coll)
     "(none)"
     (str-join ", " coll)))
@@ -48,20 +47,6 @@
   "Returns the first non-nil value from the collection."
   [coll]
   (first (remove nil? coll)))
-
-; hiredman on IRC doesn't think this is correct, but using (intern)
-; doesn't fit my needs. Need to evaluated the expression in the context
-; of the namespace, not just bind the value into the namespace.
-
-(defmacro eval-in-namespace
-  "Switches to a namespace (identified by the ns symbol) to evaluate the given forms."
-  [ns & forms]
-  `(let [initial-ns# (ns-name *ns*)]
-    (try
-      (require ~ns)
-      (in-ns ~ns)
-      ~@(for [f forms] `(eval '~f))
-      (finally (in-ns initial-ns#)))))
 
 (defn remove-matches
   "Lazily removes from the seq (of maps) where the key matches the value."
@@ -72,7 +57,6 @@
   "Lazily filters from the seq (of maps) where the key matches the value."
   [key value seq]
   (filter #(= (get % key) value) seq))
-
 
 (defn read-single-form
   "Reads a single form from a string. Throws a RuntimeException if the string contains more than a single form."
@@ -118,8 +102,6 @@ is the sequence of results from the two functions. Nil values
           invoker (fn [[text match-result]] [(and text (text-fn text)) (and match-result (match-fn match-result))])
           processed (map invoker partitioned)]
       (remove nil? (apply concat processed)))))
-
-
 
 (defn blank?
   "Is the provided string nil or the empty string?"

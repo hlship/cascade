@@ -3,7 +3,6 @@
   <property name="target.dir" value="target" />
   <property name="src.dir" value="src/main/clojure" />
   <property name="classes.dir" value="${target.dir}/classes" />
-  <property name="cascade" value="com.howardlewisship.cascade" />
   <property name="version" value="1.0.0-SNAPSHOT" />
 
   <path id="libs.path">
@@ -28,8 +27,7 @@
         </filtermapper>
       </chainedmapper>
     </pathconvert>
-
-
+    
     <java classname="clojure.lang.Compile">
       <classpath>
         <path refid="libs.path" />
