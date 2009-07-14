@@ -17,7 +17,7 @@
   (:use
    (clojure.contrib test-is pprint duck-streams)
    (app1 views fragments)
-   (com.howardlewisship.cascade config dom view-manager)
+   (com.howardlewisship.cascade config dom view-manager (test-utils :only (unreachable)))
    com.howardlewisship.cascade.internal.utils))
 
 (def #^{:private true} base "src/test/resources/")
@@ -94,3 +94,19 @@
 ; TODO: Make this locale and time zone insensitive
 (deftest call-fragment-fn
   (test-view "call-fragment-fn" "call-fragment-fn-expected.xml" {:current-time (Date. 109 7 13, 9 27 32) }))
+  
+(deftest fragment-not-found
+	(try
+		(get-fragment 'not-here-not-there)
+		(unreachable)
+	(catch RuntimeException ex
+		(is (= (.getMessage ex) "Could not locate fragment function not-here-not-there or template 'not-here-not-there.cml' in namespaces app1.fragments, com.howardlewisship.cascade.corelib.fragments.")))))
+		
+(deftest view-not-found
+	(try
+		(get-view 'not-here-not-there)
+		(unreachable)
+	(catch RuntimeException ex
+		(is (= (.getMessage ex) "Could not locate view function not-here-not-there or template 'not-here-not-there.cml' in namespace app1.views.")))))
+		
+		  

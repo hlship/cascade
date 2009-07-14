@@ -12,16 +12,18 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Script that loads all tests for execution.
+(ns com.howardlewisship.cascade.test-view-manager
+	(:use 
+	  (com.howardlewisship.cascade view-manager)
+	  (clojure.contrib test-is)))
+	  
+(deftest empty-namespace-list
+	(is (= (namespaces-list []) "namespaces (none)")))  
+	
+(deftest single-namespace-list
+	(is (= (namespaces-list ['app1.fragments]) "namespace app1.fragments")))
+		
+(deftest non-empty-namespace-list
+	(is (= (namespaces-list ['app1.fragments 'core.fragments]) "namespaces app1.fragments, core.fragments")))
 
-(use 'clojure.contrib.test-is)
-
-(set! *warn-on-reflection* true)
-
-(time (let [spaces ['com.howardlewisship.cascade.test-xml-tokenizer
-                    'com.howardlewisship.cascade.test-parser
-                    'com.howardlewisship.cascade.test-views
-                    'com.howardlewisship.cascade.test-view-manager
-                    'com.howardlewisship.cascade.test-utils]]
-  (apply use spaces)
-  (apply run-tests (map find-ns spaces))))
+			
