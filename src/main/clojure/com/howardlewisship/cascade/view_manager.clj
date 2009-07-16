@@ -41,9 +41,9 @@
 (def expansion-re #"\$((\(.*?\)))")
 
 (defn extract-matched-expression
-	"Extracts the expression string from a matched expansion."
-	[#^MatchResult match-result]
-	(.group match-result 2)) 
+  "Extracts the expression string from a matched expansion."
+  [#^MatchResult match-result]
+  (.group match-result 2)) 
 
 
 ; TODO: Eventually, when we have (defview) and (deffragment), we may need two levels of cache:
@@ -70,7 +70,7 @@
     (sequential? any) any
 
     ; A map is assumed to be a DOM node, wrap it in a vector
-    (map? any) [any]
+    (map? any) [any
     
     (string? any) [(struct-map dom-node :type :text :value any)]
     
@@ -308,24 +308,14 @@ but may also be a built-in directive such as render-body."
   [name namespaces]
   (first-non-nil (map (partial find-name-in-namespace name) namespaces)))
 
-
 (defn create-from-template
   "Searches for a template file (with a .cml extension) as a classpath resource in one of the namespaces,
-creating a function (using the factory) if found. If not found, throws RuntimeException."
+creating a function (using the factory) if found, or nil."
   [name namespaces factory-fn]
-  (let [file (str name ".cml")
-        template-fn (first-non-nil
-      (for [namespace namespaces]
-        (if-let [src (find-namespace-resource namespace file)]
-          (factory-fn namespace src))))]
-
-    (or
-      template-fn
-      (throw (RuntimeException.
-        (format "Could not locate function %s or template '%s' in %s %s."
-          name file
-          (if (= 1 (count namespaces)) "namespace" "namespaces")
-          (to-str-list (map ns-name namespaces))))))))
+  (let [file (str name ".cml")]
+    (first-non-nil (for [namespace namespaces]
+                     (if-let [src (find-namespace-resource namespace file)]
+                       (factory-fn namespace src))))))
 
 (defn find-or-create-fn
   "Searches for an existing function in any of the namespaces, or creates a function from a bare template."
@@ -336,21 +326,39 @@ creating a function (using the factory) if found. If not found, throws RuntimeEx
 
 (defn get-or-create-cached-fn
   "Gets a view or fragment function from a cache, or finds it as a real function,
-or uses the factory function to create it dynamically (from a template)."
-  [name cache config-key factory-fn]
+or uses the factory function to create it dynamically (from a template). Returns nil
+if not found in cace and the factory-fn returns nil."
+  [name cache namespaces factory-fn]
   (if-let [existing (get @cache name)]
     existing
-    (let [namespaces (get configuration config-key)
-          created (find-or-create-fn name namespaces factory-fn)]
-      (swap! cache assoc name created)
-      created)))
+    (if-let [created (find-or-create-fn name namespaces factory-fn)]
+      (do (swap! cache assoc name created)
+          created))))
+
+(defn namespaces-list
+  "Converts a list of namespaces into a string describing the list (used for exception reporting)."
+  [namespaces]
+  (str (if (= 1 (count namespaces)) "namespace" "namespaces")
+       " "
+       (to-str-list (map name namespaces))))
 
 (defn get-fragment
   "Gets a fragment function with a given string name. Fragment functions expect an env and a params and return a seq of rendered DOM nodes."
   [name]
-  (get-or-create-cached-fn name fragment-cache :fragment-namespaces parse-and-create-fragment))
-
+  (let [namespaces (get configuration :fragment-namespaces)]
+    (or 
+      (get-or-create-cached-fn name fragment-cache namespaces parse-and-create-fragment)
+      (throw (RuntimeException.
+        (format "Could not locate fragment function %s or template '%<s.cml' in %s."
+          name (namespaces-list namespaces)))))))
+    
 (defn get-view
   "Gets a fragment function with a given string name. View functions expect an env and return a seq of rendered DOM nodes."
   [name]
-  (get-or-create-cached-fn name view-cache :view-namespaces parse-and-create-view))
+  (let [namespaces (get configuration :view-namespaces)]
+  (or
+    (get-or-create-cached-fn name view-cache namespaces parse-and-create-view)
+      (throw (RuntimeException.
+        (format "Could not locate view function %s or template '%<s.cml' in %s."
+          name (namespaces-list namespaces)))))))
+  
