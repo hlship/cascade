@@ -24,4 +24,9 @@
   ; TODO: add meta data
   (let [parsed (parse-embedded-template template)]
     `(defn ~fn-name ~fn-params ~parsed)))
+
+(defmacro inline
+  "Defines a block of template that renders inline."
+  [& template]
+  (parse-embedded-template template))
   

@@ -13,16 +13,21 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.test-cascade
-(:use 
-  com.howardlewisship.cascade
+  (:import
+    (java.io PrintWriter CharArrayWriter))
+  (:use 
+    com.howardlewisship.cascade
     (com.howardlewisship.cascade dom)
     (com.howardlewisship.cascade.internal utils)
-    (clojure.contrib test-is duck-streams)))
+    (clojure.contrib test-is duck-streams pprint)))
 
 (defn render
   [dom]
-  (with-out-str (render-xml dom *out*)))
- 
+  (let [caw (CharArrayWriter.)
+        out (PrintWriter. caw)]
+    (render-xml dom out)
+    (.toString caw)))
+  
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
   
@@ -33,6 +38,7 @@
         expected (slurp* (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
         dom (view-fn env)
+        ; _ (pprint dom)
         rendered (render dom)
         trimmed-render (minimize-ws rendered)]
       (is (= trimmed-render trimmed-expected))))
@@ -61,3 +67,26 @@
     :copyright "(c) 2009 HLS"
     :inner "frotz" }))
 	
+	
+(defn fetch-accounts
+  [env]
+  [{:name "Dewey" :id 595}
+   {:name "Cheatum" :id 1234}
+   {:name "Howe" :id 4328}])
+   
+(defview list-accounts
+  [env]
+  :html [
+    :head [ :title [ "List Accounts" ] ]
+    "\r"
+    :body [
+      :h1 [ "List of Accounts" ]
+      :ul [
+        (for [acct (fetch-accounts env)]
+          (inline :li [ (acct :name) ] "\r"))
+      ]
+    ]
+  ])
+
+(deftest inline-macro
+    (render-test list-accounts "inline-macro" nil))

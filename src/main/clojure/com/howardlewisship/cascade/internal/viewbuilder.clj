@@ -36,20 +36,15 @@ element DOM nodes."
                        :attributes (map-to-attribute-nodes attributes)                        
                        :content content))  
 
-(defn to-dom-node-seq
+(defn convert-render-result
   [any]
-  "Converts the result of a render function to a seq as needed."
+  "Checks the result of invoking a rending function or closure, to ensure that only
+   acceptible values are returned."
   (cond
-    (nil? any) nil
-
-    ; TODO: But what if they want to return an vector of strings? Perhaps we should map
-    ; any through to-dom-node-seq.
-    (sequential? any) any
-
-    ; A map is assumed to be a DOM node, wrap it in a vector
-    (map? any) [any]
+    ; A map is assumed to be a DOM node
+    (map? any) any
     
-    (string? any) [(struct-map dom-node :type :text :value any)]
+    (string? any) (struct-map dom-node :type :text :value any)
     
     true (throw (RuntimeException. 
       (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."
@@ -57,14 +52,18 @@ element DOM nodes."
      
 (defn combine
   "Given the results of rendering (where each step provides a render result), combine the results
-into a single sequence of DOM nodes."
+into a single sequence of DOM nodes. Each of the render results should be a DOM node,
+or a collection of DOM nodes (or a nested collection of DOM nodes, etc.). Strings are also allowed,
+which are converted into :text DOM nodes."
   [& render-results]
-  ; TODO: a bit of busy work here, to wrap nodes into a vector just so we can combine them into a overall list.
-  ; perhaps we should all to-dom-node-seq to leave maps bare and we write a reduce here to combine it all together, rather
-  ; than use apply concat.
-  (remove nil? (apply concat (map to-dom-node-seq render-results))))     
-
-; Parse a seq of forms into a sequence of ??
+  (loop [output []
+         queue render-results]
+    (let [current (first queue)
+          remainder (next queue)]
+      (cond
+        (nil? current) (if (empty? remainder) output (recur output remainder))
+        (sequential? current) (recur output (concat current remainder))
+        :otherwise (recur (conj output (convert-render-result current)) remainder)))))
 
 (def parser-m (state-t maybe-m))
 
@@ -136,11 +135,12 @@ into a single sequence of DOM nodes."
               body (optional parse-body)]
        `(element-node ~name ~attributes ~body)))
   
-  ; Accept a single form that will act as a rendering, returning a render
-  ; result.
+  ; Accept a single form that will act as a renderer, returning a render
+  ; result. Combine that result so that it can be combined with the other
+  ; elements in the body with the form.
   (def parse-form
        (domonad [form match-form]
-         form))     
+         `(combine ~form)))
       
   (def parse-single-form
     (match-first
