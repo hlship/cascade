@@ -28,77 +28,49 @@
 ; it may be necessary to sort attributes when rendering (but I'd rather not bother
 ; for production).
 
-; Somewhat similar to the DOM parsed by clojure.xml/parse, but
-; it includes extra support for namespaces.
-
 (defstruct dom-node
   :type ; :element, :attribute, :text
-  :ns-uri ; namespace of element or attribute (often empty string)
-  :ns-uri-to-prefix ; map from ns-uri to desired prefix (for elements)
+  ; TODO: :ns-prefix
   :name ; element tag or attribute name (as a keyword)
   :value ; attribute value or literal text
   :attributes ; attribute dom-nodes within element dom-nodes
   :content) ; dom-nodes for any children
-
+  
+(declare render-xml)
+  
 (defn- write
   [#^Writer out & strings]
   (doseq [#^String s strings]
     (.write out s)))
-
-(defn qualify-name
-  "Qualifies a name based on a namespace URI and a mapping from URI to prefix"
-  [name ns-uri ns-uri-to-prefix]
-  (if (blank? ns-uri)
-    name
-    (let [prefix (get ns-uri-to-prefix ns-uri)]
-      (if (blank? prefix)
-        name
-        (str prefix ":" name)))))
 
 (defmulti render-node-xml
   (fn [node & rest] 
     (node :type)))
 
 (defmethod render-node-xml :text
-  [text-node ns-uri-to-prefix out]
-  ; TODO: entity filtering
+  [text-node out]
+  ; TODO: entity filtering, also a :raw-text (for pre-filtered?)
   (write out (text-node :value)))
 
-(declare render-xml-with-ns)
-
 (defmethod render-node-xml :comment
-  [comment-node ns-uri-to-prefix out]
+  [comment-node out]
   (write out "<!--" (comment-node :value) "-->"))
 
 (defmethod render-node-xml :element
-  [element-node ns-uri-to-prefix out]
-  (let [node-ns-uri-to-prefix (element-node :ns-uri-to-prefix)
-        element-ns-uri-to-prefix (merge ns-uri-to-prefix node-ns-uri-to-prefix)
-        element-name (name (element-node :name))
-        element-qname (qualify-name element-name (element-node :ns-uri) element-ns-uri-to-prefix)
+  [element-node out]
+  (let [element-name (name (element-node :name))
         content (element-node :content)]
 
     ; TODO: When Ajax is supported, we may need to create artificial namespace URI mappings
     ; to account for partial rendering.
 
-    (write out "<" element-qname)
+    (write out "<" element-name)
 
     ; Write out normal attributes
 
-    (doseq [{attr-name :name attr-value :value ns-uri :ns-uri} (element-node :attributes)]
-      (let [attr-qname (qualify-name (name attr-name) ns-uri element-ns-uri-to-prefix)]
-        ; TODO: URL escaping
-        (write out " " attr-qname "=\"" attr-value "\"")))
-
-    ; Write out namespace mappings for this element
-    ; TODO: handle default namespace (prefix is "").
-
-    (doseq [ns-uri (keys node-ns-uri-to-prefix)]
-      (let [prefix (get node-ns-uri-to-prefix ns-uri)]
-        (write out " xmlns")
-        (when-not (blank? prefix)
-          (write out ":" prefix))
-        (write out "=\"" ns-uri "\"")))
+    (doseq [{attr-name :name attr-value :value} (element-node :attributes)]
+        ; TODO: URL escaping here, or elsewhere?
+        (write out " " (name attr-name) "=\"" attr-value "\""))
 
     ; TODO: ugly gotchas about rendering HTML: can't always close an empty tag (i.e., <script>), etc.
 
@@ -110,18 +82,14 @@
         ; Render children recursively; they inherit the namespace mappings from this element
         ; and its containers.
 
-        (render-xml-with-ns content element-ns-uri-to-prefix out)
+        (render-xml content out)
 
-        (write out "</" element-qname ">")))))
-
-(defn render-xml-with-ns
-  [dom-nodes ns-uri-to-prefix out]
-  (doseq [node dom-nodes]
-    (render-node-xml node ns-uri-to-prefix out)))
+        (write out "</" element-name ">")))))
 
 (defn render-xml
   "Renders a seq of DOM nodes representing a complete document (generally the list will include just
   a single root element node, but text and comments and the like may come into play as well)."
   [dom-nodes out]
   ; TODO: Render out the <?xml version="1.0"?> P.I.?
-  (render-xml-with-ns dom-nodes {} out))
+  (doseq [node dom-nodes]
+    (render-node-xml node out)))

@@ -23,10 +23,9 @@
 
 (defn render
   [dom]
-  (let [caw (CharArrayWriter.)
-        out (PrintWriter. caw)]
-    (render-xml dom out)
-    (.toString caw)))
+  (let [writer (CharArrayWriter.)]
+    (render-xml dom writer)
+    (.toString writer)))
   
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
