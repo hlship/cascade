@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.config
-	(:require (com.howardlewisship.cascade.corelib fragments)))
+  (:require (com.howardlewisship.cascade.corelib fragments)))
 
 (def configuration {
   })

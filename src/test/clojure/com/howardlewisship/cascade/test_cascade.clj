@@ -48,8 +48,8 @@
   :p [ (env :message) ])
 
 (deftest simple-defview
-	(render-test simple-view "simple-defview" {:message "Embedded Template"}))
-	
+  (render-test simple-view "simple-defview" {:message "Embedded Template"}))
+  
 (defview attributes-view
   [env]
   :p {:id "outer"} [
@@ -59,14 +59,14 @@
      "\r"
      :hr
      (env :copyright)
-  ])	
-	
+  ])  
+  
 (deftest attribute-rendering
-  (render-test	attributes-view "attribute-rendering" {:message "Nested Text" 
+  (render-test  attributes-view "attribute-rendering" {:message "Nested Text" 
     :copyright "(c) 2009 HLS"
     :inner "frotz" }))
-	
-	
+  
+  
 (defn fetch-accounts
   [env]
   [{:name "Dewey" :id 595}
