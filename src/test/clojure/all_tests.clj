@@ -18,6 +18,7 @@
 
 (set! *warn-on-reflection* true)
 
-(time (let [spaces ['com.howardlewisship.cascade.test-utils]]
+(time (let [spaces ['com.howardlewisship.cascade.test-utils
+                    'com.howardlewisship.cascade.test-cascade]]
   (apply use spaces)
   (apply run-tests (map find-ns spaces))))

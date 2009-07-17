@@ -12,7 +12,16 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade)
+(ns com.howardlewisship.cascade
+  (:use (com.howardlewisship.cascade.internal utils viewbuilder)))
 
+(defmacro defview
+  "Defines a Cascade view function, which uses an embedded template."
+  [fn-name fn-params & template]
+  ; TODO: support for a doc string
+  (fail-unless (vector? fn-params) "Must provide parameters (as with any function).")
+  (fail-unless (not (empty? fn-params)) "At least one parameter (for the environment) is required when defining a view function.")
+  ; TODO: add meta data
+  (let [parsed (parse-embedded-template template)]
+    `(defn ~fn-name ~fn-params ~parsed)))
   
-

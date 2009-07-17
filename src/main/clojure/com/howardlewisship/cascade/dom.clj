@@ -16,6 +16,8 @@
   (:import (java.io Writer))
   (:use com.howardlewisship.cascade.internal.utils))
 
+; TODO: Split out rendering (that may be internal).
+
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
 ; Need to be able to control quote character (single vs. double quote)

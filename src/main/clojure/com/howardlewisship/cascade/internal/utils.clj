@@ -21,6 +21,11 @@
   [#^String msg]
   (throw (RuntimeException. msg)))
 
+(defn fail-unless
+  "Throws a runtime exception if the condition is false."
+  [condition message]
+  (or condition (fail message)))
+
 (declare find-namespace-resource)
 
 (defn find-classpath-resource
