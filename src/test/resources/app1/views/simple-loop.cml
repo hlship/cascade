@@ -1,7 +1,0 @@
-<div xmlns:c="cascade">
-
-	<c:tloop c:source="(reverse (range 1 6))" c:value=":i">
-      $(env :i) ...
-	</c:tloop>
-
-</div>

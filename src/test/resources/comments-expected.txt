@@ -1,7 +1,0 @@
-<!-- prologue comment --><div>
-    <!-- pre comment -->
-    <!-- cf: one --><span>
-    <!-- cf: two -->
-</span><!-- cf: three -->
-    <!-- post comment -->
-</div><!-- postlogue comment -->

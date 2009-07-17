@@ -1,5 +1,0 @@
-<div xmlns:c="cascade">
-    The current date and time is $(env :time).
-
-    <span class="important $(env :message-class)">$(env :message)</span>
-</div>

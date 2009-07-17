@@ -1,7 +1,0 @@
-<div>
-    Pre fragment content.
-    <span>
-    First Fragment
-</span>
-    Post fragment content.
-</div>

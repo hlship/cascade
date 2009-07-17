@@ -18,10 +18,6 @@
 
 (set! *warn-on-reflection* true)
 
-(time (let [spaces ['com.howardlewisship.cascade.test-xml-tokenizer
-                    'com.howardlewisship.cascade.test-parser
-                    'com.howardlewisship.cascade.test-views
-                    'com.howardlewisship.cascade.test-view-manager
-                    'com.howardlewisship.cascade.test-utils]]
+(time (let [spaces ['com.howardlewisship.cascade.test-utils]]
   (apply use spaces)
   (apply run-tests (map find-ns spaces))))

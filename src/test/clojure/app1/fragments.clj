@@ -12,38 +12,5 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns app1.fragments
-  (:import (java.util Date)
-           (java.text DateFormat))
-  (:use com.howardlewisship.cascade
-        com.howardlewisship.cascade.dom))
-
-(defn echo
-  [env params]
-  (struct-map dom-node
-    :type :text
-    :value (str (params :value))))
-    
-(defn tloop
-  "Loop fragment used in testing (so as not to conflict with an eventual framework loop fragment)."
-  [env params]
-  (let [source (params :source)
-        value-key (params :value)]
-        (apply concat (for [value source]
-                         (render-body (assoc env value-key value))))))
-
-(defn mimic
-  "Mimics an arbitrary element."
-  [env params]
-  (struct-map dom-node 
-    :type :element 
-    :name (keyword (params :element))
-    :attributes (-> env :fragment-token :attributes) 
-    :content (render-body env)))
-    
-(defn format-date
-  [env params]
-  (let [#^Date date (params :date)
-        #^DateFormat fmt (DateFormat/getDateTimeInstance DateFormat/MEDIUM DateFormat/MEDIUM)]
-        (.format fmt date)))
+(ns app1.fragments)
     

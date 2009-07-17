@@ -1,3 +1,0 @@
-<div xmlns:c="cascade">
-    Message: <c:echo c:value="(double-talk (env :user-input))"/> !
-</div>

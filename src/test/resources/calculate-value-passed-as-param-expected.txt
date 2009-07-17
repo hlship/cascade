@@ -1,3 +1,0 @@
-<div>
-    Count: 100
-</div>

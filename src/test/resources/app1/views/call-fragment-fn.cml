@@ -1,6 +1,0 @@
-<html xmlns:c="cascade">
-  <body>
-    The current time is:
-    <c:format-date c:date="(env :current-time)" />
-  </body>
-</html>

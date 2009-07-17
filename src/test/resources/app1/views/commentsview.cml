@@ -1,7 +1,0 @@
-<!-- prologue comment -->
-<div xmlns:c="cascade">
-    <!-- pre comment -->
-    <c:comment-fragment/>
-    <!-- post comment -->
-</div>
-        <!-- postlogue comment -->        

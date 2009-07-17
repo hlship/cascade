@@ -14,10 +14,7 @@
 
 (ns com.howardlewisship.cascade.test-utils
   (:use
-    app1.fragments
-    clojure.contrib.test-is
-    clojure.contrib.pprint
-    clojure.contrib.duck-streams
+    (clojure.contrib test-is pprint duck-streams)
     com.howardlewisship.cascade.internal.utils))
 
 
@@ -42,12 +39,6 @@
 (defmacro unreachable
   []
   '(throw (RuntimeException. "This code should not be reachable.")))
-
-(deftest read-single-form-but-too-many-forms
-  (try
-    (read-single-form "(first-form) (second-form)")
-    (unreachable)
-    (catch RuntimeException ex (is (= (.getMessage ex) "Input expression '(first-form) (second-form)' should contain only a single form.")))))
 
 (defn test-re-partition
   [re s expected]

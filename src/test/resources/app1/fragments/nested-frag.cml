@@ -1,5 +1,0 @@
-<blockquote xmlns:c="cascade">
-	NESTED-FRAG TEMPLATE START
-	<c:render-body />
-	NESTED-FRAG TEMPLATE END
-</blockquote>

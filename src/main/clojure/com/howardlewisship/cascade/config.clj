@@ -16,9 +16,6 @@
 	(:require (com.howardlewisship.cascade.corelib fragments)))
 
 (def configuration {
-  :view-namespaces []
-  :fragment-namespaces ['com.howardlewisship.cascade.corelib.fragments]
-  :action-namespaces []
   })
 
 (defn add-to-config

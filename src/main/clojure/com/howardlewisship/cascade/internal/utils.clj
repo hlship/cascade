@@ -16,6 +16,11 @@
   (:use
     clojure.contrib.str-utils))
 
+(defn fail
+  "A quick way to throw a RuntimeException."
+  [#^String msg]
+  (throw (RuntimeException. msg)))
+
 (declare find-namespace-resource)
 
 (defn find-classpath-resource

@@ -1,6 +1,0 @@
-<root id="first" xmlns="default namespace" xmlns:z="foo">
-    Second test of<z:em>cascade</z:em>!
-    <div z:class="foo-class" id="foo" g:event="slide" xmlns:g="gobsmack">
-        You've been gobsmacked!
-    </div>
-</root>

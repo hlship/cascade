@@ -12,16 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Utility functions needed by views and fragments.
+(ns com.howardlewisship.cascade)
 
-(ns com.howardlewisship.cascade
-  (:require (com.howardlewisship.cascade.corelib.fragments))
-  (:gen-class))
-
-(defn render-body
-  "Utility that renders the body of a fragment (passed as the :render-body env key). Takes the current environment and 
-  returns a seq of DOM nodes."
-  [env]
-  ((env :render-body) env))
   
 
