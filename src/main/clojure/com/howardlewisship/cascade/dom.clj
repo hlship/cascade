@@ -61,9 +61,6 @@
   (let [element-name (name (element-node :name))
         content (element-node :content)]
 
-    ; TODO: When Ajax is supported, we may need to create artificial namespace URI mappings
-    ; to account for partial rendering.
-
     (write out "<" element-name)
 
     ; Write out normal attributes
