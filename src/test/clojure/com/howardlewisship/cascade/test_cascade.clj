@@ -56,7 +56,7 @@
     :em {:id (env :inner) } [
       (env :message)
      ]
-     "\r"
+     linebreak
      :hr
      (env :copyright)
   ])  
@@ -77,15 +77,68 @@
   [env]
   :html [
     :head [ :title [ "List Accounts" ] ]
-    "\r"
+    linebreak
     :body [
       :h1 [ "List of Accounts" ]
       :ul [
         (for [acct (fetch-accounts env)]
-          (inline :li [ (acct :name) ] "\r"))
+          (inline :li [ (acct :name) ] linebreak))
       ]
     ]
   ])
 
 (deftest inline-macro
     (render-test list-accounts "inline-macro" nil))
+    
+    
+; Ugh: all the good names are taken by clojure.core!
+
+(defn looper
+  "Loop fragment function. Iterates over its source and updates the env with the value key before
+  rendering its body (a block)."
+  [env source value-key body]
+  (for [value source]
+       (body (assoc env value-key value))))
+       
+(defview list-accounts-with-loop
+  [env]
+  :html [
+    :head [ :title [ "List Accounts" ] ]
+    linebreak
+    :body [
+      :h1 [ "List of Accounts using (block)" ]
+      :ul [
+        ; We'll have to see to what degree block is actually useful;
+        ; certainly the smple (for) version is easier. I think, ultimately,
+        ; block will be more about layout components than typical
+        ; dynamic rendering.
+        (looper env (fetch-accounts env) :acct (block [env]
+          :li [ (-> env :acct :name) ] linebreak))
+      ]
+    ]
+  ])            
+       
+(deftest block-macro
+  (render-test list-accounts-with-loop "block-macro" nil))
+  
+(defn symbol-view
+  [env]
+  (let [copyright (inline  
+    linebreak :hr :p [ 
+      "&copy; 2009 " 
+      :a {:href "mailto:hlship@gmail.com"} [ "Howard M. Lewis Ship" ]
+    ] linebreak)]
+    (inline
+      :html [ 
+        :head [ :title [ "Symbol Demo" ]]
+        :body [
+          copyright
+          :h1 [ "Symbol Demo" ]
+          copyright
+        ]
+      ]
+    )))
+
+(deftest use-of-symbol
+  (render-test symbol-view "use-of-symbol" nil))
+

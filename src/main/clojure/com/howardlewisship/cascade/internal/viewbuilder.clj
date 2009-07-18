@@ -15,6 +15,7 @@
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (com.howardlewisship.cascade dom)
         (com.howardlewisship.cascade.internal utils)))
+        
 (defn text-node
   [text]
   (struct-map dom-node :type :text :value text))
@@ -36,6 +37,7 @@ element DOM nodes."
                        :attributes (map-to-attribute-nodes attributes)                        
                        :content content))  
 
+; TODO: Turn this into a multimethod to make it more extensible.
 (defn convert-render-result
   [any]
   "Checks the result of invoking a rending function or closure, to ensure that only
@@ -97,9 +99,12 @@ which are converted into :text DOM nodes."
   (def match-vector
     (form-test vector?))
     
-  (def match-form
+  (def match-list
     (form-test list?))
-           
+    
+  (def match-symbol
+    (form-test symbol?))
+
   (defn optional 
     [parser]
     (m-plus parser (m-result nil)))
@@ -116,10 +121,13 @@ which are converted into :text DOM nodes."
     
   (def match-first m-plus)
                     
+  (def match-form
+    (match-first match-list match-symbol))
+                    
   (def parse-text
     (domonad [text match-string]
       `(text-node ~text)))
-      
+
   (def parse-name
     ; An attribute or element name is either a keyword or a form that yields a keyword.
     ; TODO: support for qualified names ([:prefix :name]).
@@ -136,23 +144,20 @@ which are converted into :text DOM nodes."
        `(element-node ~name ~attributes ~body)))
   
   ; Accept a single form that will act as a renderer, returning a render
-  ; result. Combine that result so that it can be combined with the other
-  ; elements in the body with the form.
+  ; result, which will be combined with other render results via the
+  ; parse-forms parser.
   (def parse-form
        (domonad [form match-form]
-         `(combine ~form)))
+         form))
       
   (def parse-single-form
-    (match-first
-      ; TODO: Parse a form
-      parse-text parse-element parse-form))
+    (match-first parse-text parse-element parse-form))
               
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      (if forms `(combine ~@forms)))) 
+      `(combine ~@forms))) 
   
 ) ; with-monad parser-m     
-
 
 (defn parse-embedded-template
   "Used as part of (defview) or (deffragment) to convert the a form, the embedded template, into
