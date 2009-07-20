@@ -15,6 +15,11 @@
 (ns com.howardlewisship.cascade
   (:use (com.howardlewisship.cascade.internal utils viewbuilder)))
   
+(defmacro inline
+  "Defines a block of template that renders inline."
+  [& template]
+  (parse-embedded-template template))
+    
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template."
   [fn-name fn-params & template]
@@ -22,8 +27,7 @@
   (fail-unless (vector? fn-params) "Must provide parameters (as with any function).")
   (fail-unless (not (empty? fn-params)) "At least one parameter (for the environment) is required when defining a view function.")
   ; TODO: add meta data
-  (let [parsed (parse-embedded-template template)]
-    `(defn ~fn-name ~fn-params ~parsed)))
+  `(defn ~fn-name ~fn-params (inline ~@template)))
 
 (defmacro inline
   "Defines a block of template that renders inline."
@@ -35,8 +39,7 @@
 that takes a single parameter (the env map)."
   [fn-params & template]
   (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")
-  (let [parsed (parse-embedded-template template)]
-    `(fn ~fn-params ~parsed)))
+    `(fn ~fn-params (inline ~@template)))
 
 (def linebreak
   (text-node "\r"))
