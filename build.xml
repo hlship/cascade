@@ -1,7 +1,8 @@
-<project name="cascade" default="jar">
+<project name="cascade" default="run-tests">
 
   <property name="target.dir" value="target" />
   <property name="src.dir" value="src/main/clojure" />
+  <property name="test-src.dir" value="src/test/clojure"/>
   <property name="classes.dir" value="${target.dir}/classes" />
   <property name="version" value="1.0.0-SNAPSHOT" />
 
@@ -40,9 +41,25 @@
 
   </target>
 
-  <target name="jar" depends="compile" description="Create JAR of compiled sources and resources.">
+  <target name="run-tests" depends="compile" description="Run unit tests.">
+    <!-- For some reason, fork="true" necessary to pick up changes after a compile. Don't understand why. At least it's not Maven! -->
+    <java classname="clojure.main" fork="true">
+      <classpath>
+	<path refid="libs.path"/>
+	<path location="src/test/resources"/>
+	<path location="${test-src.dir}"/>
+	<!-- Pick up sources in case didn't compile before running tests. -->
+	<path location="${src.dir}"/>
+	<path location="${classes.dir}"/>
+      </classpath>
+      <arg value="${test-src.dir}/all_tests.clj"/>
+    </java>
+  </target>
+
+  <target name="jar" depends="run-tests" description="Create JAR of compiled sources and resources.">
     <jar destfile="${target.dir}/cascade-${version}.jar">
       <fileset dir="${classes.dir}" />
+      <!-- Include the sources as well. -->
       <fileset dir="${src.dir}" />
       <!-- Once it exists:
       <fileset dir="src/main/resources" />

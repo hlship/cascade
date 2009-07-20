@@ -18,14 +18,15 @@
 
 (set! *warn-on-reflection* true)
 
-(let [spaces [
+(def spaces  [
   'com.howardlewisship.cascade.test-utils
   'com.howardlewisship.cascade.test-config
-  'com.howardlewisship.cascade.test-cascade]]
-  (println "Loading code ...")
-  (time (apply use spaces))
-  
-  (println "Executing tests ...")
+  'com.howardlewisship.cascade.test-cascade])
 
-  (doseq [ns (map find-ns spaces)]
-    (time (run-tests ns))))
+(println "Loading code ...")
+(time (apply use spaces))
+  
+(println "Executing tests ...")
+
+(doseq [ns (map find-ns spaces)]
+  (time (run-tests ns)))
