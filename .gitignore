@@ -1,2 +1,5 @@
-classes
-.settings
+bin/
+target/
+classes/
+.settings/
+*~
