@@ -14,14 +14,27 @@
 
 (ns com.howardlewisship.cascade.config)
 
-(def configuration {
-  })
+(def configuration {})
 
-(defn add-to-config
-  "Adds a value to a configuration list stored in the configuration var. The new value goes first in the identified configuration list."
+(defn update-config
+  "Updates the configuration by applying a function to a current (nested) value; key is either a single key,
+  or a vector of keys, leading to the node to update."
+  [key update-fn]
+  (let [key-path (if (vector? key) key [key])]
+    (alter-var-root (var configuration) (fn [current] (update-in current key-path update-fn)))))
+
+(defn alter-config
+  "Updates a configuration key to a new value. key is either a single key,
+  or a vector of keys, leading to the node to update."
   [key value]
-  (alter-var-root (var configuration) (fn [current] (update-in current [key] #(cons value %1)))))
-   
+  (update-config key (fn [_] value)))
+  
+(defn add-to-config
+  "Adds a value to a configuration list stored in the configuration var. The new value goes first in the identified configuration list.
+  key is either a single key,
+  or a vector of keys, leading to the node to update."
+  [key value]
+  (update-config key #(cons value %1)))
 
 
 

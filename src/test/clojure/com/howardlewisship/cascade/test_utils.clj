@@ -17,7 +17,6 @@
     (clojure.contrib test-is pprint duck-streams)
     com.howardlewisship.cascade.internal.utils))
 
-
 (deftest classpath-resource-does-not-exist
   (is (= (find-classpath-resource "does/not/exist.txt") nil)))
 
@@ -29,16 +28,6 @@
 (deftest namespace-relative
   (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
     (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt"))))
-
-(deftest read-single-form-with-constant
-  (is (= (read-single-form "5") 5)))
-
-(deftest read-single-form-with-simple-form
-  (is (= (read-single-form "(5 7)") '(5 7))))
-
-(defmacro unreachable
-  []
-  '(throw (RuntimeException. "This code should not be reachable.")))
 
 (defn test-re-partition
   [re s expected]
@@ -67,3 +56,9 @@
         match-fn (fn [result] (.toUpperCase (.group result)))
         mapped (re-map #"\w+" "At last, the future awaits!" text-fn match-fn)]
     (is (= mapped ["AT" "[ ]" "LAST" "[, ]" "THE" "[ ]" "FUTURE" "[ ]" "AWAITS" "[!]"]))))
+    
+(deftest to-str-list-conversions
+  (is (= (to-str-list nil) "(none)"))
+  (is (= (to-str-list []) "(none)"))
+  (is (= (to-str-list ["fred"]) "fred"))
+  (is (= (to-str-list ["fred" "barney" "wilma"]) "fred, barney, wilma")))    

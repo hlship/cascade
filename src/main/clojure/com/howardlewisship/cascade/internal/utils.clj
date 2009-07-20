@@ -53,34 +53,6 @@ if the collection is null or empty."
     "(none)"
     (str-join ", " coll)))
 
-(defn first-non-nil
-  "Returns the first non-nil value from the collection."
-  [coll]
-  (first (remove nil? coll)))
-
-(defn remove-matches
-  "Lazily removes from the seq (of maps) where the key matches the value."
-  [key value seq]
-  (remove #(= (get % key) value) seq))
-
-(defn filter-matches
-  "Lazily filters from the seq (of maps) where the key matches the value."
-  [key value seq]
-  (filter #(= (get % key) value) seq))
-
-(defn read-single-form
-  "Reads a single form from a string. Throws a RuntimeException if the string contains more than a single form."
-  [expression-string]
-  (with-in-str expression-string
-    (let [eof-marker (Object.)
-          read-once #(read *in* false eof-marker)
-          result (read-once)
-          extra (read-once)]
-      ; The first read should exhaust the input, and the extra should be the marker.
-      (if (= extra eof-marker)
-        result
-        (throw (RuntimeException. (format "Input expression '%s' should contain only a single form." expression-string)))))))
-
 (defn re-partition-matches
   "Partitions an input string using a regular expression. The result is a list of two element vectors (pairs).
   Each pair consists of a text value (that is, non matching text) and a java.util.regex.MatchResult. In some cases,

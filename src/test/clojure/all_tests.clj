@@ -18,8 +18,10 @@
 
 (set! *warn-on-reflection* true)
 
-(let [spaces ['com.howardlewisship.cascade.test-utils
-                    'com.howardlewisship.cascade.test-cascade]]
+(let [spaces [
+  'com.howardlewisship.cascade.test-utils
+  'com.howardlewisship.cascade.test-config
+  'com.howardlewisship.cascade.test-cascade]]
   (println "Loading code ...")
   (time (apply use spaces))
   
