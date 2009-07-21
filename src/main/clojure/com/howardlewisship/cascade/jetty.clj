@@ -15,7 +15,7 @@
 ; Used to start an embedded Jetty server.
 
 (ns com.howardlewisship.cascade.jetty
-  (:use com.howardlewisship.cascade.filter)
+  (:require com.howardlewisship.cascade.filter)
   (:import (org.eclipse.jetty.server Server)
            (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
 

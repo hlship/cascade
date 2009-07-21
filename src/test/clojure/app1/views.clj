@@ -12,4 +12,14 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns app1.views)
+(ns app1.views
+  (:use com.howardlewisship.cascade))
+  
+(defview itworks
+  [env]
+  :html [
+    :head [ :title [ "It Works!"]]
+    :body [
+      :h1 [ "It Works!"]
+    ]
+  ])  

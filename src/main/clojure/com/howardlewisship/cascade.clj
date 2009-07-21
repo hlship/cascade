@@ -13,7 +13,9 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade
-  (:use (com.howardlewisship.cascade.internal utils viewbuilder)))
+  (:use
+    (com.howardlewisship.cascade config)
+    (com.howardlewisship.cascade.internal utils viewbuilder)))
   
 (defmacro inline
   "Defines a block of template that renders inline."
@@ -29,11 +31,6 @@
   ; TODO: add meta data
   `(defn ~fn-name ~fn-params (inline ~@template)))
 
-(defmacro inline
-  "Defines a block of template that renders inline."
-  [& template]
-  (parse-embedded-template template))
-  
 (defmacro block
   "Defines a block of template that renders with with an environment controlled by its container. The result is a function
 that takes a single parameter (the env map)."
