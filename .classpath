@@ -6,5 +6,8 @@
 	<classpathentry kind="lib" path="lib/runtime/clojure-1.0.0.jar" sourcepath="lib/runtime-src/clojure-1.0.0-sources.zip"/>
 	<classpathentry kind="lib" path="lib/runtime/clojure-contrib-1.0-20090501.082310-18.jar"/>
 	<classpathentry kind="lib" path="src/test/resources"/>
+	<classpathentry kind="lib" path="lib/runtime/jetty-server-7.0.0.RC1.jar"/>
+	<classpathentry kind="lib" path="lib/runtime/jetty-util-7.0.0.RC1.jar"/>
+	<classpathentry kind="lib" path="lib/runtime/servlet-api-2.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
