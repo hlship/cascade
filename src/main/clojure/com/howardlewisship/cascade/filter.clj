@@ -17,42 +17,45 @@
 (ns com.howardlewisship.cascade.filter
   (:use (com.howardlewisship.cascade config))
   (:import (javax.servlet Filter FilterChain ServletRequest ServletResponse)
-           (javax.servlet.http HttpServletRequest HttpServletResponse))
+  (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:gen-class
-   :implements [javax.servlet.Filter]))
+  :implements [javax.servlet.Filter]))
 
 (declare pass-to-dispatchers)
 
 (defn -init 
-	[this filter-config] 
-	nil)
+  [this filter-config]
+  ; TODO: require a set of clojure namespaces defined in web.xml, if available 
+  nil)
 
 (defn -destroy 
   [this]
-	nil)
+  nil)
 
 (defn -doFilter 
-	[this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
+  [this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
+  (println (format "Cascade Filter: %s" request))
   (if (not (pass-to-dispatchers request response))
-  	(.doFilter chain request response)))
-  	
-; Ah ... and back into the world of Clojure
-  	
+  (.doFilter chain request response)))
+
+  ;; Ah ... and back into the world of Clojure
+
 (defn match-and-extract-dispatcher
-   [path]
-   (fn [[path-prefix dispatcher-fn]] (if (.startsWith path path-prefix) dispatcher-fn)))   	
-  	
+  [path] 
+  (fn [[path-prefix dispatcher-fn]] (if (.startsWith path path-prefix) dispatcher-fn)))
+
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request." 
-	[#^HttpServletRequest request #^HttpServletResponse response]
-	(println request)
-	(let [path (str (.getServletPath request) (.getPathInfo request))
-	      env { :servlet-api { :request request :response response :path path } }
-	      dispatchers (remove nil? (map (match-and-extract-dispatcher path) (configuration :dispatchers)))]
-	  ; working hard, despite laziness, to avoid evaluating a dispatcher-fn after the first one to return true
-	  (loop [queue dispatchers]
-	    (cond
-	      (empty? queue) nil
-	      ((first queue) env) true
-	      :otherwise (recur (rest queue))))))
-	      
+  [#^HttpServletRequest request #^HttpServletResponse response]
+  (let [path (str (.getServletPath request) (.getPathInfo request))
+    env { :servlet-api { :request request :response response :path path } }
+    dispatchers (remove nil? (map (match-and-extract-dispatcher path) (configuration :dispatchers)))]
+ 
+    ; working hard, despite laziness, to avoid evaluating a dispatcher-fn after the first one to return true
+ 
+    (loop [queue dispatchers]
+      (cond
+        (empty? queue) nil
+        ((first queue) env) true
+      :otherwise (recur (rest queue))))))
+

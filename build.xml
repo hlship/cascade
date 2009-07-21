@@ -10,6 +10,15 @@
     <fileset dir="lib/runtime" includes="*.jar" />
   </path>
 
+  <path id="test.path">
+    <path refid="libs.path"/>
+    <path location="src/test/resources"/>
+    <path location="${test-src.dir}"/>
+    <!-- Pick up sources in case didn't compile before running tests. -->
+    <path location="${src.dir}"/>
+    <path location="${classes.dir}"/>
+  </path>
+
   <target name="clean" description="Delete all derived files.">
     <delete dir="${target.dir}" quiet="true" />
   </target>
@@ -18,7 +27,7 @@
     <mkdir dir="${classes.dir}" />
 
     <!-- Seek out the namespaces to compile. Note that this will fail if the actual name of a package includes an underscore, as
-         all underscores are converted to dashes. -->
+    all underscores are converted to dashes. -->
     <pathconvert pathsep=" " property="compile.namespaces">
       <fileset dir="${src.dir}" includes="**/*.clj" />
       <chainedmapper>
@@ -28,7 +37,7 @@
         </filtermapper>
       </chainedmapper>
     </pathconvert>
-    
+
     <java classname="clojure.lang.Compile">
       <classpath>
         <path refid="libs.path" />
@@ -41,34 +50,33 @@
 
   </target>
 
-  <target name="run-tests" depends="compile" description="Run unit tests.">
+  <target name="run-tests"  description="Run unit tests.">
     <!-- For some reason, fork="true" necessary to pick up changes after a compile. Don't understand why. At least it's not Maven! -->
-    <java classname="clojure.main" fork="true">
-      <classpath>
-	<path refid="libs.path"/>
-	<path location="src/test/resources"/>
-	<path location="${test-src.dir}"/>
-	<!-- Pick up sources in case didn't compile before running tests. -->
-	<path location="${src.dir}"/>
-	<path location="${classes.dir}"/>
-      </classpath>
+    <java classname="clojure.main" fork="true" classpathref="test.path">
       <arg value="${test-src.dir}/all_tests.clj"/>
     </java>
   </target>
 
-  <target name="jar" depends="run-tests" description="Create JAR of compiled sources and resources.">
+  <target name="run-test-app" description="Runs the test integration application.">
+    <java classname="clojure.main" fork="true" classpathref="test.path">
+      <arg value="${test-src.dir}/test-app.clj"/>
+      <sysproperty key="org.eclipse.jetty.util.log.DEBUG" value="true"/>
+    </java>
+  </target>
+
+  <target name="jar" depends="compile,run-tests" description="Create JAR of compiled sources and resources.">
     <jar destfile="${target.dir}/cascade-${version}.jar">
       <fileset dir="${classes.dir}" />
       <!-- Include the sources as well. -->
       <fileset dir="${src.dir}" />
       <!-- Once it exists:
       <fileset dir="src/main/resources" />
-      -->
-      <fileset dir=".">
-        <include name="LICENSE*" />
-        <include name="README*" />
-      </fileset>
-    </jar>
-  </target>
+    -->
+    <fileset dir=".">
+      <include name="LICENSE*" />
+      <include name="README*" />
+    </fileset>
+  </jar>
+</target>
 
 </project>
