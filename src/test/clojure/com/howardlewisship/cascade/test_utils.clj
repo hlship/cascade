@@ -28,34 +28,6 @@
 (deftest namespace-relative
   (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
     (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt"))))
-
-(defn test-re-partition
-  [re s expected]
-  (let [actual (map (fn [[s mr]] [s (and mr (.group mr))]) (re-partition-matches re s))]
-    (is (= actual expected))))
-
-(deftest re-partition-no-matches
-  (test-re-partition
-    #"\d+" "No digits here"
-    [["No digits here" nil]]))
-
-(deftest re-partition-matches-with-matches
-  (test-re-partition #"\d+" "There are 100 matches."
-    [["There are " "100"]
-     [" matches." nil]]))
-
-
-(deftest re-partition-with-consecutive-matches
-  (test-re-partition #"\{.*?\}" "one{two}{three}four"
-    [["one" "{two}"]
-     ["" "{three}"]
-     ["four" nil]]))
-
-(deftest transform-string-using-re-map
-  (let [text-fn (fn [text] (if (zero? (.length text)) nil (str \[ text \])))
-        match-fn (fn [result] (.toUpperCase (.group result)))
-        mapped (re-map #"\w+" "At last, the future awaits!" text-fn match-fn)]
-    (is (= mapped ["AT" "[ ]" "LAST" "[, ]" "THE" "[ ]" "FUTURE" "[ ]" "AWAITS" "[!]"]))))
     
 (deftest to-str-list-conversions
   (is (= (to-str-list nil) "(none)"))
