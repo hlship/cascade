@@ -14,7 +14,7 @@
 
 (ns com.howardlewisship.cascade.test-utils
   (:use
-    (clojure.contrib (test-is :only [is deftest]) pprint duck-streams)
+    (clojure.contrib (test-is :only [is deftest]) pprint duck-streams str-utils)
     com.howardlewisship.cascade.config
     com.howardlewisship.cascade.internal.utils))
 
@@ -59,6 +59,11 @@
 (deftest sequence-of-functions-in-chain
   (test-chain { :test [ (always nil) (always :final)]} :test :final))
       
+(deftest chain-with-multiple-params
+  (let [combiner (fn [& args] (str-join ", " args))]
+    (binding [configuration {:chains {:combiner combiner}}]
+      (is (= ((create-chain :combiner) "fred" "barney") "fred, barney")))))
+    
 (deftest test-function?
   (is (= (function? map) true) "a real function")
   (is (= (function? nil) false) "nil is not a function")    

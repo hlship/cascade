@@ -37,7 +37,8 @@ that takes a single parameter (the env map)."
   (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")
     `(fn ~fn-params (inline ~@template)))
 
-(def linebreak
+(def #^{:doc "A DOM text node for a line break."}
+  linebreak
   (text-node "\r"))
   
 (defmacro defchain
@@ -45,6 +46,6 @@ that takes a single parameter (the env map)."
   added to the :chains configuration map (this is to encourage chains to be composable by keyword)."
   [name fn-params & forms]
   (fail-unless (keyword? name) "A chain is identified by a keyword, not a symbol.")
-  (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Chain definitions require exactly one parameter be defined.")
+  (fail-unless (vector? fn-params) "A chain function must define parameters like any other function.")
   `(assoc-in-config [:chains ~name] (fn ~fn-params ~@forms)))
 

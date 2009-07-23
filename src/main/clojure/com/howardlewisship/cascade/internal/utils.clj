@@ -66,13 +66,15 @@ if the collection is null or empty."
   (instance? IFn obj))
 
 (defn create-chain
-  "Function factory for building a chain control structure. The env passed to the function is passed
-  to every sub-function in the chain until one of them returns non-nil, which terminates the chain.
-  A chain definition is a keyword (which refers to a diffrerent chain), or 
-  a function (which is executed),
-  or sequence of chain definitions, which makes it all very composable."
+  "Function factory for building a chain control structure. The parameters passed to the
+  returned function are
+  passed to every step function in the chain.  Step functions are defined via the keys of the
+  :chain key of the global configuration. Each step can be a function (that should match the arity
+  of the overally chain), or can be a keyword or symbol used to identify another
+  step int the chain, or can be a vector of steps. In this way, chains can be easily
+  composed."
   [selector]
-  (fn [env]
+  (fn [& params]
     (loop [queue (to-seq (-> configuration :chains selector))]
         (let [current (first queue)
               remaining (rest queue)]
@@ -80,11 +82,12 @@ if the collection is null or empty."
             (empty? queue) nil
             (nil? current) (recur remaining)
             (sequential? current) (recur (concat current remaining))
-            ; TODO: should validate that current matches an actual value
-            (keyword? current) (recur (cons (-> configuration :chains current) remaining))
-            (function? current) (let [result (current env)]
+            (or (symbol? current) (keyword? current)) (recur (cons (-> configuration :chains current) remaining))
+            (function? current) (let [result (apply current params)]
                                   (if (nil? result)
                                       (recur remaining)
                                       result)))))))
-;;  TODO: better error reporting when an element from the queue is a symbol or other non-function object.
+;; TODO: better error reporting when an element from the queue is a symbol or other non-function object.
 ;; Also, symbol does implement IFn just to keep things confused.
+
+
