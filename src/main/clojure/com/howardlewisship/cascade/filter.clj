@@ -14,8 +14,9 @@
 
 ; A filter that directs traffic to into Cascade.
 
-(ns com.howardlewisship.cascade.filter
-  (:use (com.howardlewisship.cascade config)
+(ns #^{:doc "Clojure wrappers around Simple Logging Facade for Java (SLF4J)"} 
+  com.howardlewisship.cascade.filter
+  (:use (com.howardlewisship.cascade config logging)
         (clojure.contrib pprint))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))
@@ -76,7 +77,7 @@
                              :context context }
               :cascade { :path path
                          :split-path (split-path path) } }
-        dispatchers (remove nil? (map (match-and-extract-dispatcher path) (configuration :dispatchers)))]
+        dispatchers (remove nil? (map (match-and-extract-dispatcher path) (@configuration :dispatchers)))]
     ; TODO: perhaps sort the dispatchers by path prefix length?  
     ; working hard, despite laziness, to avoid evaluating a dispatcher-fn after the first one to return true
 
@@ -101,8 +102,7 @@
   [this #^FilterConfig filter-config]
   (reset! (.context this) (.getServletContext filter-config))
 
-  (println "Cascade Filter Startup")
-  (println "Configuration:" (ppstring configuration))
+  (info "Cascade Filter Startup\nConfiguration: %s" (ppstring @configuration))
 
   ; TODO: require a set of clojure namespaces defined in web.xml, if available 
 
@@ -114,12 +114,14 @@
 
 (defn -doFilter 
   [this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
+  (debug "Filtering %s" request)
   (let [path (get-path request)
         context @(.context this)]
-  (if (or 
+  (when (or 
         (static-file? context path) 
         (not (pass-to-dispatchers request response context path)))
     ; Let the servlet container process this normally.
+    (debug "Not handled; forwarding to next in chain")
     (.doFilter chain request response))))
 
 

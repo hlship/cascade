@@ -14,14 +14,17 @@
 
 (ns com.howardlewisship.cascade.config)
 
-(def configuration {})
+(def configuration (atom {}))
+
+(defn- to-key-path
+  [key]
+  (if (vector? key) key [key]))
 
 (defn update-config
   "Updates the configuration by applying a function to a current (nested) value; key is either a single key,
   or a vector of keys, leading to the node to update."
   [key update-fn]
-  (let [key-path (if (vector? key) key [key])]
-    (alter-var-root (var configuration) (fn [current] (update-in current key-path update-fn)))))
+  (swap! configuration (fn [current] (update-in current (to-key-path key) update-fn))))
 
 (defn alter-config
   "Updates a configuration key to a new value. key is either a single key,
@@ -36,5 +39,8 @@
   [key value]
   (update-config key #(cons value %1)))
 
-
+(defn assoc-in-config
+  "Associates a value into a map inside a configuration. The key is either a single key or a vector of keys."
+  [key value]
+  (swap! configuration (fn [current] (assoc-in current (to-key-path key) value))))
 

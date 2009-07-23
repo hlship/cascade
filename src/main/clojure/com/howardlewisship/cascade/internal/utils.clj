@@ -12,8 +12,10 @@
 ; and limitations under the License.
 
 (ns com.howardlewisship.cascade.internal.utils
-  (:import (java.util.regex Matcher MatchResult))
+  (:import (java.util.regex Matcher MatchResult)
+           (clojure.lang IFn))
   (:use
+    com.howardlewisship.cascade.config
     clojure.contrib.str-utils))
 
 (defn fail
@@ -52,3 +54,37 @@ if the collection is null or empty."
   (if (empty? coll)
     "(none)"
     (str-join ", " coll)))
+
+(defn- to-seq
+  "Converts the object to a sequence (a vector) unless it is already sequential."
+  [obj]
+  (if (sequential? obj) obj [obj]))
+
+(defn function?
+  "Returns true if an object is (or acts as) a Clojure function?"
+  [obj]
+  (instance? IFn obj))
+
+(defn create-chain
+  "Function factory for building a chain control structure. The env passed to the function is passed
+  to every sub-function in the chain until one of them returns non-nil, which terminates the chain.
+  A chain definition is a keyword (which refers to a diffrerent chain), or 
+  a function (which is executed),
+  or sequence of chain definitions, which makes it all very composable."
+  [selector]
+  (fn [env]
+    (loop [queue (to-seq (-> configuration :chains selector))]
+        (let [current (first queue)
+              remaining (rest queue)]
+          (cond
+            (empty? queue) nil
+            (nil? current) (recur remaining)
+            (sequential? current) (recur (concat current remaining))
+            ; TODO: should validate that current matches an actual value
+            (keyword? current) (recur (cons (-> configuration :chains current) remaining))
+            (function? current) (let [result (current env)]
+                                  (if (nil? result)
+                                      (recur remaining)
+                                      result)))))))
+;;  TODO: better error reporting when an element from the queue is a symbol or other non-function object.
+;; Also, symbol does implement IFn just to keep things confused.

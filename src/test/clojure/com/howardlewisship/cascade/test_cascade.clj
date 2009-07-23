@@ -19,7 +19,7 @@
     com.howardlewisship.cascade
     (com.howardlewisship.cascade dom)
     (com.howardlewisship.cascade.internal utils)
-    (clojure.contrib test-is duck-streams pprint)))
+    (clojure.contrib (test-is :only [is deftest]) duck-streams pprint)))
 
 (defn render
   [dom]
@@ -43,17 +43,23 @@
       (is (= trimmed-render trimmed-expected))))
 
 
-(defview simple-view
+(defview #^{:custom :bit-of-meta-data} simple-view
   [env] 
   :p [ (env :message) ])
 
 (deftest simple-defview
   (render-test simple-view "simple-defview" {:message "Embedded Template"}))
+
+(deftest meta-data
+  (let [md ^#'simple-view]
+    (is (= (md :name) 'simple-view) "standard meta-data")
+    (is (= (md :custom) :bit-of-meta-data) "added meta-data")
+    (is (= (md :cascade-type) :view) "cascade-added meta-data")))
   
 (defview attributes-view
   [env]
   :p {:id "outer"} [
-    :em {:id (env :inner) } [
+    :em {:id (env :inner)} [
       (env :message)
      ]
      linebreak
@@ -64,7 +70,7 @@
 (deftest attribute-rendering
   (render-test  attributes-view "attribute-rendering" {:message "Nested Text" 
     :copyright "(c) 2009 HLS"
-    :inner "frotz" }))
+    :inner "frotz"}))
   
   
 (defn fetch-accounts

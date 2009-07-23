@@ -19,22 +19,24 @@
     
 (deftest alter-config-single
   (alter-config :single :barney)
-  (is (= (configuration :single) :barney))
+  (is (= (@configuration :single) :barney))
   (alter-config :single :wilma)
-  (is (= (configuration :single) :wilma)))
+  (is (= (@configuration :single) :wilma)))
   
 (deftest alter-config-nested
   (alter-config :nested { :fred :flinstone })
   (alter-config [:nested :fred] :murray)
   (alter-config [:nested :barney] :rubble)
-  (is (= (configuration :nested) { :fred :murray :barney :rubble})))    
+  (is (= (@configuration :nested) { :fred :murray :barney :rubble})))    
   
 (deftest test-add-to-config
   (add-to-config :list :fred)
-  (is (= (configuration :list) [:fred]))
+  (is (= (@configuration :list) [:fred]))
   (add-to-config :list :barney)
-  (is (= (configuration :list) [:barney :fred])))
+  (is (= (@configuration :list) [:barney :fred])))
   
-  
+(deftest assoc-in-config-test
+  (assoc-in-config [::outer :inner] :value)
+  (is (= (@configuration ::outer) { :inner :value})))
   
     

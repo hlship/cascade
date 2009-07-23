@@ -58,9 +58,9 @@
   </target>
 
   <target name="run-test-app" depends="compile" description="Runs the test integration application.">
-    <java classname="clojure.main" classpathref="test.path">
+    <java fork="true" classname="clojure.main" classpathref="test.path">
       <arg value="${test-src.dir}/test-app.clj"/>
-      <sysproperty key="org.eclipse.jetty.util.log.DEBUG" value="false"/>
+      <sysproperty key="org.eclipse.jetty.util.log.DEBUG" value="true"/>
     </java>
   </target>
 

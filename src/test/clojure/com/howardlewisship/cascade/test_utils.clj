@@ -14,7 +14,8 @@
 
 (ns com.howardlewisship.cascade.test-utils
   (:use
-    (clojure.contrib test-is pprint duck-streams)
+    (clojure.contrib (test-is :only [is deftest]) pprint duck-streams)
+    com.howardlewisship.cascade.config
     com.howardlewisship.cascade.internal.utils))
 
 (deftest classpath-resource-does-not-exist
@@ -34,3 +35,32 @@
   (is (= (to-str-list []) "(none)"))
   (is (= (to-str-list ["fred"]) "fred"))
   (is (= (to-str-list ["fred" "barney" "wilma"]) "fred, barney, wilma")))    
+
+
+(defn- test-chain
+  [chains selector expected]
+  (binding [configuration { :chains chains}]
+    (let [chain (create-chain selector)]
+      (is (= (chain nil) expected)))))
+
+(defn- always
+  [result]
+  (fn [_] result))
+
+(deftest chain-to-function
+  (test-chain { :test (always :goober) } :test :goober))
+  
+(deftest indirect-chain
+  (test-chain { :test :indirect, :indirect (always :final) } :test :final))
+
+(deftest nil-in-chain-ignored
+  (test-chain { :test [ nil :indirect], :indirect (always :final) } :test :final))
+  
+(deftest sequence-of-functions-in-chain
+  (test-chain { :test [ (always nil) (always :final)]} :test :final))
+      
+(deftest test-function?
+  (is (= (function? map) true) "a real function")
+  (is (= (function? nil) false) "nil is not a function")    
+  (is (= (function? "string") false) "strings are not functions")
+  (is (= (function? {}) true) "maps act as a function"))

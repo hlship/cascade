@@ -25,11 +25,10 @@
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template."
   [fn-name fn-params & template]
-  ; TODO: support for a doc string
+  ; TODO: support for a doc string; I guess you can do it
   (fail-unless (vector? fn-params) "Must provide parameters (as with any function).")
   (fail-unless (not (empty? fn-params)) "At least one parameter (for the environment) is required when defining a view function.")
-  ; TODO: add meta data
-  `(defn ~fn-name ~fn-params (inline ~@template)))
+  `(defn ~fn-name {:cascade-type :view} ~fn-params (inline ~@template)))
 
 (defmacro block
   "Defines a block of template that renders with with an environment controlled by its container. The result is a function
@@ -40,4 +39,12 @@ that takes a single parameter (the env map)."
 
 (def linebreak
   (text-node "\r"))
+  
+(defmacro defchain
+  "Defines a function as part of a chain. Chain functions take a single parameter. The name parameter is a keyword
+  added to the :chains configuration map (this is to encourage chains to be composable by keyword)."
+  [name fn-params & forms]
+  (fail-unless (keyword? name) "A chain is identified by a keyword, not a symbol.")
+  (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Chain definitions require exactly one parameter be defined.")
+  `(assoc-in-config [:chains ~name] (fn ~fn-params ~@forms)))
 
