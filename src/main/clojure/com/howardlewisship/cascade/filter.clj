@@ -14,8 +14,7 @@
 
 ; A filter that directs traffic to into Cascade.
 
-(ns #^{:doc "Clojure wrappers around Simple Logging Facade for Java (SLF4J)"} 
-  com.howardlewisship.cascade.filter
+(ns com.howardlewisship.cascade.filter
   (:use (com.howardlewisship.cascade config logging)
         (clojure.contrib pprint))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)

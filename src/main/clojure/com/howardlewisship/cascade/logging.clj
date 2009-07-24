@@ -12,7 +12,8 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.logging
+(ns #^{:doc "Clojure wrappers around Simple Logging Facade for Java (SLF4J)"} 
+  com.howardlewisship.cascade.logging
   (:import (org.slf4j LoggerFactory Logger)))
   
 (defn #^Logger get-logger [#^String name]
