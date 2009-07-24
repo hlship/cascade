@@ -38,14 +38,14 @@
 
 
 (defn- test-chain
-  [chains selector expected]
-  (binding [configuration { :chains chains}]
+  [chains selector expected & params]
+  (binding [configuration (atom { :chains chains})]
     (let [chain (create-chain selector)]
-      (is (= (chain nil) expected)))))
+      (is (= (apply chain params) expected)))))
 
 (defn- always
   [result]
-  (fn [_] result))
+  (fn [] result))
 
 (deftest chain-to-function
   (test-chain { :test (always :goober) } :test :goober))
@@ -61,8 +61,9 @@
       
 (deftest chain-with-multiple-params
   (let [combiner (fn [& args] (str-join ", " args))]
-    (binding [configuration {:chains {:combiner combiner}}]
-      (is (= ((create-chain :combiner) "fred" "barney") "fred, barney")))))
+    (test-chain {:combiner combiner} :combiner
+       "fred, barney" 
+       "fred" "barney")))
     
 (deftest test-function?
   (is (= (function? map) true) "a real function")

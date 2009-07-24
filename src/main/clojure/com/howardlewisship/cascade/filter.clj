@@ -16,18 +16,13 @@
 
 (ns com.howardlewisship.cascade.filter
   (:use (com.howardlewisship.cascade config logging)
-        (clojure.contrib pprint))
+        (com.howardlewisship.cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:gen-class
     :state context
     :init psuedo-constructor
     :implements [javax.servlet.Filter]))
-
-(defn ppstring 
-  "Pretty-print a collection to a string."
-  [coll]
-  (with-out-str (pprint coll)))
 
 (defn get-path
   "Extracts the complete path (including extra path info) from the request."
@@ -99,6 +94,7 @@
 (defn -init 
   "Filter lifecycle method used to print startup messages and capture the ServletContext."
   [this #^FilterConfig filter-config]
+  
   (reset! (.context this) (.getServletContext filter-config))
 
   (info "Cascade Filter Startup\nConfiguration: %s" (ppstring @configuration))

@@ -15,8 +15,8 @@
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
   (:use
-    com.howardlewisship.cascade.config
-    clojure.contrib.str-utils))
+    (com.howardlewisship.cascade config)
+    (clojure.contrib str-utils pprint)))
 
 (defn fail
   "A quick way to throw a RuntimeException."
@@ -29,6 +29,11 @@
   (or condition (fail message)))
 
 (declare find-namespace-resource)
+
+(defn ppstring 
+  "Pretty-print a collection to a string."
+  [coll]
+  (with-out-str (pprint coll)))
 
 (defn find-classpath-resource
   "Finds a resource on the classpath (as a URL) or returns nil if not found. Optionally takes
@@ -55,7 +60,7 @@ if the collection is null or empty."
     "(none)"
     (str-join ", " coll)))
 
-(defn- to-seq
+(defn to-seq
   "Converts the object to a sequence (a vector) unless it is already sequential."
   [obj]
   (if (sequential? obj) obj [obj]))
@@ -64,6 +69,29 @@ if the collection is null or empty."
   "Returns true if an object is (or acts as) a Clojure function?"
   [obj]
   (instance? IFn obj))
+
+(defn expand-function-list
+  "Expands a configured function list into a sequence of actual functions. The configuration-key will be
+  :chains or :pipelines, to identify where inside @configuration we search for functions. The values
+  can be a keyword or symbol or an array of keywords or symbols."
+  [configuration-key selector]
+  (loop [result []
+         queue (to-seq selector)]
+    (let [current (first queue)
+          remaining (rest queue)]
+      (cond
+        (empty? queue) result
+        (nil? current) (recur result remaining)
+        (sequential? current) (recur result (concat current remaining))
+        (or (symbol? current) (keyword? current))
+          (recur result (cons (-> @configuration configuration-key current) remaining))
+        (function? current) (recur (conj result current) remaining)))))
+    
+(defn apply-until-non-nil
+  "Works through a sequence of functions, apply the args (a sequence) to each of them until a function
+  returns a non-nil value"
+  [functions args]
+  (first (remove nil? (map #(apply % args) functions))))
 
 (defn create-chain
   "Function factory for building a chain control structure. The parameters passed to the
@@ -75,19 +103,7 @@ if the collection is null or empty."
   composed."
   [selector]
   (fn [& params]
-    (loop [queue (to-seq (-> configuration :chains selector))]
-        (let [current (first queue)
-              remaining (rest queue)]
-          (cond
-            (empty? queue) nil
-            (nil? current) (recur remaining)
-            (sequential? current) (recur (concat current remaining))
-            (or (symbol? current) (keyword? current)) (recur (cons (-> configuration :chains current) remaining))
-            (function? current) (let [result (apply current params)]
-                                  (if (nil? result)
-                                      (recur remaining)
-                                      result)))))))
-;; TODO: better error reporting when an element from the queue is a symbol or other non-function object.
-;; Also, symbol does implement IFn just to keep things confused.
-
+    ; TODO: We do this pretty late in case someone's been changing @configuration
+    ; but it might be nice to cache this rather than compute it each time.
+    (apply-until-non-nil (expand-function-list :chains selector) params)))
 
