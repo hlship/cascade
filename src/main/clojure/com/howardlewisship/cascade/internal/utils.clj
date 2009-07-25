@@ -15,7 +15,7 @@
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
   (:use
-    (com.howardlewisship.cascade config)
+    (com.howardlewisship.cascade config logging)
     (clojure.contrib str-utils pprint)))
 
 (defn fail
@@ -88,10 +88,10 @@ if the collection is null or empty."
         (function? current) (recur (conj result current) remaining)))))
     
 (defn apply-until-non-nil
-  "Works through a sequence of functions, apply the args (a sequence) to each of them until a function
+  "Works through a sequence of functions, apply the argseq to each of them until a function
   returns a non-nil value"
-  [functions args]
-  (first (remove nil? (map #(apply % args) functions))))
+  [functions argseq]
+  (first (remove nil? (map #(apply % argseq) functions))))
 
 (defn create-chain
   "Function factory for building a chain control structure. The parameters passed to the
@@ -106,4 +106,27 @@ if the collection is null or empty."
     ; TODO: We do this pretty late in case someone's been changing @configuration
     ; but it might be nice to cache this rather than compute it each time.
     (apply-until-non-nil (expand-function-list :chains selector) params)))
+    
+(defn create-pipeline
+  "A pipeline is like a chain, but the individual functions (called filters) that
+  are each passed an extra parameter (the first
+  parameter) which is the next function in the pipeline. The final function in the pipeline is passed
+  a bridge to an ordinary function, called the terminator. In this way, each function can control
+  parameters, return values and exception behavior for functions further down the pipeline. Returns a function
+  with the same arity as the terminator. Nil return values from filter functions, or the terminator, have
+  no special meaning."
+  [selector terminator]
+  (fn [& params]
+    (loop [bridge terminator
+           queue (reverse (expand-function-list :pipelines selector))]
+       (if (empty? queue)
+         ; So, the outer function simply passes the params to the outermost bridge,
+         ; whose arity should match the arity of the terminator. 
+         ; The bridge may in fact be the terminator.
+         (apply bridge params)
 
+         ; Build a new bridge that invokes the current function passing the
+         ; current bridge to it as the first parameter.
+         
+         (recur (fn [& args]
+           (apply (first queue) bridge args)) (rest queue))))))

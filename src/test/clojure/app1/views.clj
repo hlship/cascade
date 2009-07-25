@@ -13,6 +13,7 @@
 ; and limitations under the License.
 
 (ns app1.views
+  (:import (java.util Date))
   (:use com.howardlewisship.cascade))
   
 (defview itworks
@@ -21,5 +22,19 @@
     :head [ :title [ "It Works!"]]
     :body [
       :h1 [ "It Works!"]
+      
+      :p  [ 
+        "Current date and time: " 
+        :span { :id "time"} [ (.toString (Date.)) ]
+      ]
+      
+      :p [
+        "Let's count:"
+        :ul [
+          (for [x (range 10 1 -1)]
+            (inline :li [ (str x) " ..." ] )
+          )
+        ]
+      ]            
     ]
   ])  

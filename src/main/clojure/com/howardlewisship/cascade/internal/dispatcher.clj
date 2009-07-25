@@ -16,20 +16,34 @@
 
 (ns com.howardlewisship.cascade.internal.dispatcher
   (:import (javax.servlet ServletResponse))
-  (:use (com.howardlewisship.cascade config dom logging)))
+  (:use com.howardlewisship.cascade
+        (com.howardlewisship.cascade config dom logging)
+        (com.howardlewisship.cascade.internal utils)))
 
-(defn render-xml-response
-  [view-fn env]
-  (let [#^ServletResponse response (-> env :servlet-api :response)
-        dom (view-fn env)]
-    (with-open [writer (.getWriter response)]
-      (render-xml dom writer))))
+(defn qualified-function-name
+  [f]
+  (let [meta ^f]
+    (str (name (ns-name (meta :ns))) "/" (name (meta :name)))))
 
-(defn is-view-fn
-  "Checks to see if the function exists and has meta :cascade-type equal to :view."
-  ; TODO: check that function has just one / at least one parameter?
-  [view-fn]
-  (and view-fn (= (^view-fn :cascade-type) :view)))
+(def #^{:doc "Renders a view function as an XML stream."} 
+  xml-render-pipeline
+  (create-pipeline :render-view-xml
+    (fn [env view-fn]
+      (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
+      (let [#^ServletResponse response (-> env :servlet-api :response)
+            dom (view-fn env)]
+        (with-open [writer (.getWriter response)]
+          (render-xml dom writer)))
+      true)))
+
+; Add :is-view-fn to the :render-view-xml pipeline.
+(assoc-in-config [:pipelines :render-view-xml] [:is-view-fn])
+
+(deffilter :is-view-fn
+  [delegate env view-fn]
+  (if (and view-fn (= (^view-fn :cascade-type) :view))
+    (delegate env view-fn)
+    false))
 
 (defn view-dispatcher 
   "Mapped to /view, this attempts to identify a namespace and a view function
@@ -39,8 +53,9 @@
         [_ fn-namespace fn-name] split-path
         view-ns (and fn-namespace (find-ns (symbol fn-namespace)))
         view-fn (and view-ns fn-name (ns-resolve view-ns (symbol fn-name)))]
-    (if (is-view-fn view-fn)
-      (do (render-xml-response view-fn env) true)
-      false)))
+    ; TODO: different pipelines for XML vs. HTML, and a meta pipeline that
+    ; chooses them.      
+    (xml-render-pipeline env view-fn)))
 
 (assoc-in-config [:dispatchers "/view/"] view-dispatcher)  
+

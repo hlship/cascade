@@ -48,4 +48,15 @@ that takes a single parameter (the env map)."
   (fail-unless (keyword? name) "A chain is identified by a keyword, not a symbol.")
   (fail-unless (vector? fn-params) "A chain function must define parameters like any other function.")
   `(assoc-in-config [:chains ~name] (fn ~fn-params ~@forms)))
+  
+(defmacro deffilter
+  "Defines a filter function that can be used to assemble a pipeline. The name of the filter is a keyword (not
+  a symbol). A filter function receives a delegate before its other parameters, it should invoke the delegate
+  function, passing it appropriate parameters."
+  [name fn-params & forms]
+  (fail-unless (keyword? name) "A filter is identified by a keyword, not a symbol.")
+  (fail-unless (vector? fn-params) "A filter function must define parameters like any other function.")
+  (fail-unless (>= (count fn-params) 1) "A filter function must define at least one parameter (to recieve the delegate).")
+  ; TODO: Is ":pipelines" the right name?  Should it be :filters or :pipeline-filters?  Oh, well.
+  `(assoc-in-config [:pipelines ~name] (fn ~fn-params ~@forms)))
 

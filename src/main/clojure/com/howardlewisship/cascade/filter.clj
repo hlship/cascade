@@ -46,6 +46,8 @@
   "Checks to see if the request is for a static file, which is passed through to the servlet container."
   [#^ServletContext context path]
   (cond
+    ; TODO: This was critical for Tapestry, but may not be needed for Cascade since it will not
+    ; look like a component event request.
     (= path "/favicon.ico") true  ;  whether it exists or not!
 
     ; If we can get a URL to the resource inside the context then it's a real static file
@@ -61,7 +63,6 @@
   (fn [[#^String path-prefix dispatcher-fn]]
     (if (.startsWith path path-prefix) dispatcher-fn)))
 
-
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
   false otherwise (i.e., forward to the servlet container for normal processing)." 
@@ -72,15 +73,8 @@
               :cascade { :path path
                          :split-path (split-path path) } }
         dispatchers (remove nil? (map (match-and-extract-dispatcher path) (@configuration :dispatchers)))]
-    ; TODO: perhaps sort the dispatchers by path prefix length?  
-    ; working hard, despite laziness, to avoid evaluating a dispatcher-fn after the first one to return true
-
-    (loop [queue dispatchers]
-      (cond
-        (empty? queue) nil
-        ((first queue) env) true
-        :otherwise (recur (rest queue))))))
-
+    (apply-until-non-nil dispatchers [env])))
+    
 ;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")
 ;; Just couldn't bring myself to call this namespace "CascadeFilter".
 

@@ -64,7 +64,15 @@
     (test-chain {:combiner combiner} :combiner
        "fred, barney" 
        "fred" "barney")))
-    
+
+(deftest pipeline
+  (let [to-upper-filter (fn [delegate s] (delegate (.toUpperCase s)))
+        doubler-filter (fn [delegate s] (format "before=%s after=%s" s (delegate s)))]
+    (binding [configuration (atom {:pipelines {:upper to-upper-filter 
+                                      :doubler doubler-filter 
+                                      :default [:doubler :upper]}})]
+      (is (= ((create-pipeline :default identity) "portland") "before=portland after=PORTLAND")))))
+
 (deftest test-function?
   (is (= (function? map) true) "a real function")
   (is (= (function? nil) false) "nil is not a function")    
