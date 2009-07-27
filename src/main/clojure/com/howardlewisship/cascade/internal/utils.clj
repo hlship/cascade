@@ -130,3 +130,11 @@ if the collection is null or empty."
          
          (recur (fn [& args]
            (apply (first queue) bridge args)) (rest queue))))))
+
+
+ (defn qualified-function-name
+   "Accesses the meta-data for a function to extract its name and namespace, concatinated and
+   returned as a string."
+   [f]
+   (let [meta ^f]
+     (str (name (ns-name (meta :ns))) "/" (name (meta :name)))))

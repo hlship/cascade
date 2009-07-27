@@ -20,11 +20,6 @@
         (com.howardlewisship.cascade config dom logging)
         (com.howardlewisship.cascade.internal utils)))
 
-(defn qualified-function-name
-  [f]
-  (let [meta ^f]
-    (str (name (ns-name (meta :ns))) "/" (name (meta :name)))))
-
 (def #^{:doc "Renders a view function as an XML stream."} 
   xml-render-pipeline
   (create-pipeline :render-view-xml

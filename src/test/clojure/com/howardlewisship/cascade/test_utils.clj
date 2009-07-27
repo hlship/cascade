@@ -84,3 +84,7 @@
     (is (identical? (to-seq v) v)))
   (is (= (to-seq :a) [:a])))
   
+(deftest test-qualified-function-name
+  (is (= (qualified-function-name #'map) "clojure.core/map"))
+  (is (= (qualified-function-name #'create-pipeline) "com.howardlewisship.cascade.internal.utils/create-pipeline")))  
+  
