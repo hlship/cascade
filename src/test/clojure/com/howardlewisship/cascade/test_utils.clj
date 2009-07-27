@@ -78,3 +78,9 @@
   (is (= (function? nil) false) "nil is not a function")    
   (is (= (function? "string") false) "strings are not functions")
   (is (= (function? {}) true) "maps act as a function"))
+  
+(deftest test-to-seq
+  (let [v [:a :b]]
+    (is (identical? (to-seq v) v)))
+  (is (= (to-seq :a) [:a])))
+  
