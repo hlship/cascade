@@ -31,8 +31,19 @@
           (render-xml dom writer)))
       true)))
 
-; Add :is-view-fn to the :render-view-xml pipeline.
-(assoc-in-config [:pipelines :render-view-xml] [:is-view-fn])
+(def #^{:doc "Invokes an action function."}
+  action-request-pipeline
+  (create-pipeline :action-pipeline
+    (fn [env action-fn]
+      (debug "Invoking action function %s" (qualified-function-name action-fn))
+      (let [result (action-fn env)]
+        (cond
+          (true? result) true
+          (nil? result) (fail "Action function %s returned nil." (qualified-function-name action-fn))
+          ; TODO: Should fail if function returned but it can't render. Or should a function returned from
+          ;  an action always be considered a rendering function?
+          (function? result) (xml-render-pipeline result)
+          :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn)))))))
 
 (deffilter :is-view-fn
   [delegate env view-fn]
@@ -40,17 +51,44 @@
     (delegate env view-fn)
     false))
 
+; Add :is-view-fn to the :render-view-xml pipeline.
+(assoc-in-config [:pipelines :render-view-xml] [:is-view-fn])
+    
+(deffilter :is-action-fn
+  [delegate env action-fn]
+  (if (and action-fn (= (^action-fn :cascade-type) :action))
+    (delegate env action-fn)
+    false))    
+    
+(assoc-in-config [:pipelines :action-pipeline] [:is-action-fn])
+    
+(defn extract-fn-from-path
+  "Examines the path in the environment to extract a namespace and function name which is resolved
+  to a function (or nil if the value are not present as the 2nd and 3rd terms in the split path,
+  or if the names can not be resolved)."
+  [env]
+  (let [split-path (-> env :cascade :split-path)
+        [_ ns-name fn-name] split-path
+        ns (and ns-name (find-ns (symbol ns-name)))]
+     (and ns fn-name (ns-resolve ns (symbol fn-name)))))
+
 (defn view-dispatcher 
   "Mapped to /view, this attempts to identify a namespace and a view function
   which is then invoked to render a DOM which is then streamed to the client."
   [env]
-  (let [split-path (-> env :cascade :split-path)
-        [_ fn-namespace fn-name] split-path
-        view-ns (and fn-namespace (find-ns (symbol fn-namespace)))
-        view-fn (and view-ns fn-name (ns-resolve view-ns (symbol fn-name)))]
-    ; TODO: different pipelines for XML vs. HTML, and a meta pipeline that
-    ; chooses them.      
-    (xml-render-pipeline env view-fn)))
+  ; TODO: different pipelines for XML vs. HTML, and a meta pipeline that
+  ; chooses them.      
+  (xml-render-pipeline env (extract-fn-from-path env)))
 
 (assoc-in-config [:dispatchers "/view/"] view-dispatcher)  
 
+
+(defn action-dispatcher
+  "Mapped to /action, attempts to identify a namespace and an action function,
+  which is then invoked. The action may render a response directly (and return true),
+  or it may return a rendering hint. Rendering hints are view functions (to render that view)
+  or other values as yet unspecified."
+  [env]
+  (action-request-pipeline (extract-fn-from-path env)))
+
+(assoc-in-config [:dispatchers "/action/"] action-dispatcher)

@@ -31,7 +31,7 @@
       :p [
         "Let's count:"
         :ul [
-          (for [x (range 10 1 -1)]
+          (for [x (range 10 0 -1)]
             (inline :li [ (str x) " ..." ] )
           )
         ]

@@ -14,7 +14,7 @@
 (ns com.howardlewisship.cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (com.howardlewisship.cascade dom)
-        (com.howardlewisship.cascade.internal utils)))
+        (com.howardlewisship.cascade.internal utils parser)))
         
 (defn text-node
   [text]
@@ -67,63 +67,10 @@ which are converted into :text DOM nodes."
         (sequential? current) (recur output (concat current remainder))
         :otherwise (recur (conj output (convert-render-result current)) remainder)))))
 
-(def parser-m (state-t maybe-m))
-
-(defn any-form
-  "Fundamental parser action; returns [first, rest] if forms is not empty, nil otherse."
-  [forms]
-  (if (empty? forms)
-    nil
-    ; "Consume" the form
-    (list (first forms) (rest forms))))
-    
 (with-monad parser-m
 
-  (defn form-test
-     "Parser factory using a predicate. When a form matches the predicate, it becomes the new result."
-     [pred]
-     (domonad
-       [form any-form :when (pred form)]
-       ; And return the matched form
-       form))
-       
-  (def match-keyword
-    (form-test keyword?))  
-    
-  (def match-string
-    (form-test string?))    
-    
-  (def match-map
-    (form-test map?))
-        
-  (def match-vector
-    (form-test vector?))
-    
-  (def match-list
-    (form-test list?))
-    
-  (def match-symbol
-    (form-test symbol?))
-
-  (defn optional 
-    [parser]
-    (m-plus parser (m-result nil)))
-    
-  (declare one-or-more parse-embedded-template)
-    
-  (defn none-or-more [parser]
-    (optional (one-or-more parser)))
-    
-  (defn one-or-more [parser]
-    (domonad [a parser
-              as (none-or-more parser)]
-      (cons a as)))
-    
-  (def match-first m-plus)
-                    
-  (def match-form
-    (match-first match-list match-symbol))
-                    
+  (declare parse-embedded-template)
+  
   (def parse-text
     (domonad [text match-string]
       `(text-node ~text)))
