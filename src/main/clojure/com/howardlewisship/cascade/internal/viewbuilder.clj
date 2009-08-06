@@ -11,7 +11,8 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.internal.viewbuilder
+(ns #^{:doc "A form parser used to to parse the markup template DSL."}
+  com.howardlewisship.cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (com.howardlewisship.cascade dom)
         (com.howardlewisship.cascade.internal utils parser)))

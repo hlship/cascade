@@ -19,7 +19,7 @@
     com.howardlewisship.cascade
     (com.howardlewisship.cascade dom)
     (com.howardlewisship.cascade.internal utils)
-    (clojure.contrib (test-is :only [is deftest]) duck-streams pprint)))
+    (clojure.contrib (test-is :only [is are deftest]) duck-streams pprint)))
 
 (defn render
   [dom]
@@ -148,3 +148,11 @@
 (deftest use-of-symbol
   (render-test symbol-view "use-of-symbol" nil))
 
+(defview fn-with-meta "doc meta" {:other-meta :data} [env] :p)
+
+(deftest meta-data-for-function
+  (are (= (^#'fn-with-meta _1) _2)
+    :doc "doc meta"
+    :other-meta :data
+    :cascade-type :view))
+  

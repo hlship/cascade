@@ -15,7 +15,7 @@
 (ns com.howardlewisship.cascade
   (:use
     (com.howardlewisship.cascade config)
-    (com.howardlewisship.cascade.internal utils viewbuilder)))
+    (com.howardlewisship.cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
   "Defines a block of template that renders inline."
@@ -23,15 +23,15 @@
   (parse-embedded-template template))
     
 (defmacro defview
-  "Defines a Cascade view function, which uses an embedded template."
-  [fn-name fn-params & template]
-  ; TODO: support for a doc string; I guess you can do it
-  (fail-unless (vector? fn-params) "Must provide parameters (as with any function).")
-  (fail-unless (not (empty? fn-params)) "At least one parameter (for the environment) is required when defining a view function.")
-  `(defn ~fn-name {:cascade-type :view} ~fn-params (inline ~@template)))
+  "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
+  preceding the parameters vectors. The functions forms are an implicit inline block."
+  [& forms]
+  (let [[fn-name fn-params template] (parse-function-def forms)
+        full-meta (merge ^fn-name {:cascade-type :view})]
+  `(defn ~fn-name ~full-meta ~fn-params (inline ~@template))))
 
 (defmacro block
-  "Defines a block of template that renders with with an environment controlled by its container. The result is a function
+  "Defines a block of template that renders with an environment controlled by its container. The result is a function
 that takes a single parameter (the env map)."
   [fn-params & template]
   (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")
@@ -40,6 +40,8 @@ that takes a single parameter (the env map)."
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
   (text-node "\r"))
+  
+;; TODO: get away from defining chains in terms of a keyword, use a symbol  
   
 (defmacro defchain
   "Defines a function as part of a chain. Chain functions take a single parameter. The name parameter is a keyword
