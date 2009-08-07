@@ -31,7 +31,7 @@
   `(defn ~fn-name ~full-meta ~fn-params (inline ~@template))))
 
 (defmacro block
-  "Defines a block of template that renders with11 an environment controlled by its container. The result is a function
+  "Defines a block of template that renders with an environment controlled by its container. The result is a function
 that takes a single parameter (the env map)."
   [fn-params & template]
   (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")

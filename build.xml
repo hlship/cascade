@@ -23,12 +23,6 @@
     <delete dir="${target.dir}" quiet="true" />
   </target>
 
-  <target name="repl" description="Start Clojure REPL">
-    <java classname="clojure.main">
-      <classpath refid="test.path"/>
-    </java>
-  </target>
-
   <target name="compile" description="Compile Clojure sources.">
     <mkdir dir="${classes.dir}" />
 
