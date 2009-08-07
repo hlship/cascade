@@ -18,7 +18,7 @@
     (com.howardlewisship.cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
-  "Defines a block of template that renders inline. Evaluates to a seq of DOM nodes."
+  "Defines a block of template that renders inline."
   [& template]
   (parse-embedded-template template))
     
@@ -27,17 +27,15 @@
   preceding the parameters vectors. The functions forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template] (parse-function-def forms)
-        full-meta (merge ^fn-name {:cascade-type :view})
-        expanded-template (parse-embedded-template template)]
-    `(defn ~fn-name ~full-meta ~fn-params ~expanded-template)))
+        full-meta (merge ^fn-name {:cascade-type :view})]
+  `(defn ~fn-name ~full-meta ~fn-params (inline ~@template))))
 
 (defmacro block
   "Defines a block of template that renders with11 an environment controlled by its container. The result is a function
 that takes a single parameter (the env map)."
   [fn-params & template]
   (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")
-  (let [expanded (parse-embedded-template template)]
-    `(fn ~fn-params ~expanded)))
+    `(fn ~fn-params (inline ~@template)))
 
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
