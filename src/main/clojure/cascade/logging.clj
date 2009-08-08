@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns #^{:doc "Clojure wrappers around Simple Logging Facade for Java (SLF4J)"} 
-  com.howardlewisship.cascade.logging
+  cascade.logging
   (:import (org.slf4j LoggerFactory Logger)))
   
 (defn #^Logger get-logger [#^String name]

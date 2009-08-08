@@ -12,10 +12,10 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade
+(ns cascade
   (:use
-    (com.howardlewisship.cascade config)
-    (com.howardlewisship.cascade.internal utils viewbuilder parse-functions)))
+    (cascade config)
+    (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
   "Defines a block of template that renders inline."
@@ -24,7 +24,7 @@
     
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
-  preceding the parameters vectors. The functions forms are an implicit inline block."
+  preceding the parameters vectors. The function's forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template] (parse-function-def forms)
         full-meta (merge ^fn-name {:cascade-type :view})]

@@ -12,23 +12,23 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.test-utils
+(ns cascade.test-utils
   (:use
-    (clojure.contrib (test-is :only [is deftest]) pprint duck-streams str-utils)
-    com.howardlewisship.cascade.config
-    com.howardlewisship.cascade.internal.utils))
+    (clojure.contrib (test-is :only [is are deftest]) pprint duck-streams str-utils)
+    cascade.config
+    cascade.internal.utils))
 
 (deftest classpath-resource-does-not-exist
   (is (= (find-classpath-resource "does/not/exist.txt") nil)))
 
 (deftest classpath-resource-exists
-  (let [path "com/howardlewisship/cascade/internal/resource.txt"]
+  (let [path "cascade/internal/resource.txt"]
     (is (= (slurp* (find-classpath-resource path))
       (slurp (str "src/test/resources/" path))))))
 
 (deftest namespace-relative
   (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
-    (slurp "src/test/resources/com/howardlewisship/cascade/test_utils/ns.txt"))))
+    (slurp "src/test/resources/cascade/test_utils/ns.txt"))))
     
 (deftest to-str-list-conversions
   (is (= (to-str-list nil) "(none)"))
@@ -86,5 +86,14 @@
   
 (deftest test-qualified-function-name
   (is (= (qualified-function-name #'map) "clojure.core/map"))
-  (is (= (qualified-function-name #'create-pipeline) "com.howardlewisship.cascade.internal.utils/create-pipeline")))  
+  (is (= (qualified-function-name #'create-pipeline) "cascade.internal.utils/create-pipeline")))  
+  
+(deftest test-split-path
+  (is (vector? (split-path "foo/bar")))
+  (are (= (split-path _1) _2)
+       "foo/bar" ["foo" "bar"]
+       "/foo/bar/" ["foo" "bar"]
+       "//foo//bar//baz" ["foo" "bar" "baz"]
+       "" []
+       "foo" ["foo"]))  
   

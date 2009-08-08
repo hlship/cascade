@@ -12,10 +12,10 @@
 ; and limitations under the License.
 
 (ns #^{:doc "A form parser used to to parse the markup template DSL."}
-  com.howardlewisship.cascade.internal.viewbuilder
+  cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
-        (com.howardlewisship.cascade dom)
-        (com.howardlewisship.cascade.internal utils parser)))
+        (cascade dom)
+        (cascade.internal utils parser)))
         
 (defn text-node
   [text]

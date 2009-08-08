@@ -13,7 +13,7 @@
 
 (ns 
   #^{:doc "Parser monad used to parse Clojure forms into higher-level structures."}
-  com.howardlewisship.cascade.internal.parser
+  cascade.internal.parser
   (:use clojure.contrib.monads))
 
 (def parser-m (state-t maybe-m))

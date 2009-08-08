@@ -12,10 +12,10 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.test-config
+(ns cascade.test-config
   (:use
     (clojure.contrib test-is)
-    com.howardlewisship.cascade.config))
+    cascade.config))
     
 (deftest alter-config-single
   (alter-config :single :barney)

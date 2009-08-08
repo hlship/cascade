@@ -12,13 +12,13 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.test-cascade
+(ns cascade.test-cascade
   (:import
     (java.io PrintWriter CharArrayWriter))
   (:use 
-    com.howardlewisship.cascade
-    (com.howardlewisship.cascade dom)
-    (com.howardlewisship.cascade.internal utils)
+    cascade
+    (cascade dom)
+    (cascade.internal utils)
     (clojure.contrib (test-is :only [is are deftest]) duck-streams pprint)))
 
 (defn render

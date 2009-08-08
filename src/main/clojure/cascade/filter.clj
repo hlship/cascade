@@ -14,9 +14,9 @@
 
 ; A filter that directs traffic to into Cascade.
 
-(ns com.howardlewisship.cascade.filter
-  (:use (com.howardlewisship.cascade config logging)
-        (com.howardlewisship.cascade.internal utils))
+(ns cascade.filter
+  (:use (cascade config logging)
+        (cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:gen-class
@@ -35,12 +35,6 @@
       ; and puts the true path into path-info
       (zero? (.length path-info)) servlet-path
     :otherwise (str servlet-path path-info))))
-
-(defn split-path
-  "Breaks apart a string path at slashes into a sequence of individual terms."
-  [#^String path]
-  ; (map identity) is a trick to convert from String[] to a sequence
-  (remove empty? (map identity (.split #"/" path))))
 
 (defn static-file?
   "Checks to see if the request is for a static file, which is passed through to the servlet container."

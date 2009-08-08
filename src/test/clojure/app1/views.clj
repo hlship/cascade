@@ -14,7 +14,7 @@
 
 (ns app1.views
   (:import (java.util Date))
-  (:use com.howardlewisship.cascade))
+  (:use cascade))
   
 (defview itworks
   [env]

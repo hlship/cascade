@@ -11,11 +11,11 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.internal.utils
+(ns cascade.internal.utils
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
   (:use
-    (com.howardlewisship.cascade config logging)
+    (cascade config logging)
     (clojure.contrib str-utils pprint)))
 
 (defn fail
@@ -138,3 +138,16 @@ if the collection is null or empty."
    [f]
    (let [meta ^f]
      (str (name (ns-name (meta :ns))) "/" (name (meta :name)))))
+ 
+(defn blank?
+  [#^String s]
+  (or 
+    (nil? s)
+    (= 0 (.length s))))
+    
+(defn split-path
+  "Splits a  (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are
+  ignored (that is, empty names in the result are removed)."
+  [#^String path]
+  (let [names (.split #"/" path)]
+    (vec (remove blank? (seq names)))))

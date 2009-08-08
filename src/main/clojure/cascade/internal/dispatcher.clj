@@ -14,11 +14,11 @@
 
 ; Contains the basic dispatchers
 
-(ns com.howardlewisship.cascade.internal.dispatcher
+(ns cascade.internal.dispatcher
   (:import (javax.servlet ServletResponse))
-  (:use com.howardlewisship.cascade
-        (com.howardlewisship.cascade config dom logging)
-        (com.howardlewisship.cascade.internal utils)))
+  (:use cascade
+        (cascade config dom logging)
+        (cascade.internal utils)))
 
 (def #^{:doc "Renders a view function as an XML stream."} 
   xml-render-pipeline

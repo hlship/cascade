@@ -12,9 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns com.howardlewisship.cascade.dom
+(ns cascade.dom
   (:import (java.io Writer))
-  (:use com.howardlewisship.cascade.internal.utils))
+  (:use cascade.internal.utils))
 
 ; TODO: Split out rendering (that may be internal).
 

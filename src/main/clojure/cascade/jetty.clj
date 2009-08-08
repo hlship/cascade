@@ -14,8 +14,8 @@
 
 ; Used to start an embedded Jetty server.
 
-(ns com.howardlewisship.cascade.jetty
-  (:require com.howardlewisship.cascade.filter)
+(ns cascade.jetty
+  (:require cascade.filter)
   (:import (org.eclipse.jetty.server Server)
            (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
 
@@ -31,6 +31,6 @@
   (doto context
     (.setResourceBase webapp)
     (.setClassLoader (.. (Thread/currentThread) getContextClassLoader))
-    (.addFilter com.howardlewisship.cascade.filter "/*" FilterMapping/DEFAULT)
+    (.addFilter cascade.filter "/*" FilterMapping/DEFAULT)
   (.addServlet DefaultServlet "/*")) 
   (doto server (.setHandler context) .start .join))))

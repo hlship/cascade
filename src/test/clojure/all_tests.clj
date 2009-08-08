@@ -19,10 +19,10 @@
 (set! *warn-on-reflection* true)
 
 (def spaces  [
-  'com.howardlewisship.cascade.test-utils
-  'com.howardlewisship.cascade.test-config
-  'com.howardlewisship.cascade.test-cascade
-  'com.howardlewisship.cascade.test-parse-functions])
+  'cascade.test-utils
+  'cascade.test-config
+  'cascade.test-cascade
+  'cascade.test-parse-functions])
 
 (println "Loading code ...")
 (time (apply use spaces))

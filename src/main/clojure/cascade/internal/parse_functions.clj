@@ -13,9 +13,9 @@
 
 (ns #^{:doc "A form parser used when building functions, to emulate (defn)'s ability to add documentation
   and other meta-data."}
-  com.howardlewisship.cascade.internal.parse-functions
+  cascade.internal.parse-functions
   (:use (clojure.contrib monads)
-        (com.howardlewisship.cascade.internal parser)))
+        (cascade.internal parser)))
 
 (def fn-def-parser
   (domonad parser-m
