@@ -14,7 +14,7 @@
 
 ; Contains the basic dispatchers
 
-(ns cascade.internal.dispatcher
+(ns cascade.dispatcher
   (:import (javax.servlet ServletResponse))
   (:use cascade
         (cascade config dom logging path-map)

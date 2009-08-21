@@ -1,6 +1,6 @@
 (set! *warn-on-reflection* true)
 
-(require '(cascade.internal dispatcher)
+(require '(cascade dispatcher)
          'app1.views)
 (use 'cascade.jetty)
 
