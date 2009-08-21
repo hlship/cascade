@@ -43,4 +43,9 @@
   "Associates a value into a map inside a configuration. The key is either a single key or a vector of keys."
   [key value]
   (swap! configuration (fn [current] (assoc-in current (to-key-path key) value))))
+  
+(defn read-config
+  "Obtains a value inside the configuration from a nested set of keys."
+  [& keys]
+  (get-in @configuration keys))
 

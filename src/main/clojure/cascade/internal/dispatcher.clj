@@ -17,50 +17,55 @@
 (ns cascade.internal.dispatcher
   (:import (javax.servlet ServletResponse))
   (:use cascade
-        (cascade config dom logging)
+        (cascade config dom logging path-map)
         (cascade.internal utils)))
 
-(def #^{:doc "Renders a view function as an XML stream."} 
-  xml-render-pipeline
-  (create-pipeline :render-view-xml
-    (fn [env view-fn]
-      (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
-      (let [#^ServletResponse response (-> env :servlet-api :response)
-            dom (view-fn env)]
-        (with-open [writer (.getWriter response)]
-          (render-xml dom writer)))
-      true)))
+(create-pipeline :render-view-as-xml
+  (fn [env view-fn]
+    (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
+    (let [#^ServletResponse response (-> env :servlet-api :response)
+          dom (view-fn env)]
+      (with-open [writer (.getWriter response)]
+        (render-xml dom writer)))
+    true))
 
-(def #^{:doc "Invokes an action function."}
-  action-request-pipeline
-  (create-pipeline :action-pipeline
-    (fn [env action-fn]
-      (debug "Invoking action function %s" (qualified-function-name action-fn))
-      (let [result (action-fn env)]
-        (cond
-          (true? result) true
-          (nil? result) (fail "Action function %s returned nil." (qualified-function-name action-fn))
-          ; TODO: Should fail if function returned but it can't render. Or should a function returned from
-          ;  an action always be considered a rendering function?
-          (function? result) (xml-render-pipeline result)
-          :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn)))))))
+(create-pipeline :render-view
+  (fn [env view-fn]
+    ;; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
+    (call-pipeline :render-view-as-xml env view-fn)))
+
+(create-pipeline :view
+  (fn [env view-fn]
+    (call-pipeline :render-view env view-fn)))
 
 (deffilter :is-view-fn
   [delegate env view-fn]
   (if (and view-fn (= (^view-fn :cascade-type) :view))
     (delegate env view-fn)
     false))
+        
+(assoc-in-config [:filters :view] :is-view-fn)
 
-; Add :is-view-fn to the :render-view-xml pipeline.
-(assoc-in-config [:pipelines :render-view-xml] [:is-view-fn])
-    
+(create-pipeline :default-handle-action
+  (fn [env action-fn]
+    (debug "Invoking action function %s" (qualified-function-name action-fn))
+    (let [result (action-fn env)]
+      (cond
+        (true? result) true
+        (function? result) (call-pipeline :view result)
+        :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn))))))
+
+(create-pipeline :action
+  (fn [env action-fn]
+    (call-pipeline :default-handle-action env action-fn)))
+
 (deffilter :is-action-fn
   [delegate env action-fn]
   (if (and action-fn (= (^action-fn :cascade-type) :action))
     (delegate env action-fn)
     false))    
     
-(assoc-in-config [:pipelines :action-pipeline] [:is-action-fn])
+(assoc-in-config [:filters :action] :is-action-fn)
     
 (defn extract-fn-from-path
   "Examines the path in the environment to extract a namespace and function name which is resolved
@@ -72,23 +77,45 @@
         ns (and ns-name (find-ns (symbol ns-name)))]
      (and ns fn-name (ns-resolve ns (symbol fn-name)))))
 
-(defn view-dispatcher 
+(defn named-view-dispatcher 
   "Mapped to /view, this attempts to identify a namespace and a view function
   which is then invoked to render a DOM which is then streamed to the client."
   [env]
   ; TODO: different pipelines for XML vs. HTML, and a meta pipeline that
   ; chooses them.      
-  (xml-render-pipeline env (extract-fn-from-path env)))
+  (call-pipeline :view env (extract-fn-from-path env)))
 
-(assoc-in-config [:dispatchers "/view/"] view-dispatcher)  
+(assoc-in-config [:dispatchers "/view/"] named-view-dispatcher)  
 
-
-(defn action-dispatcher
+(defn named-action-dispatcher
   "Mapped to /action, attempts to identify a namespace and an action function,
   which is then invoked. The action may render a response directly (and return true),
   or it may return a rendering hint. Rendering hints are view functions (to render that view)
   or other values as yet unspecified."
   [env]
-  (action-request-pipeline (extract-fn-from-path env)))
+  (call-pipeline :action env (extract-fn-from-path env)))
 
-(assoc-in-config [:dispatchers "/action/"] action-dispatcher)
+(assoc-in-config [:dispatchers "/action/"] named-action-dispatcher)
+      
+(defn invoke-mapped-function
+  [env request-path [path function]]
+  ;; TODO: choose correct pipeline (view vs. action)
+  (let [function-meta ^function
+        type (function-meta :cascade-type)
+        pipeline (read-config :type-to-pipeline type)
+        new-env (assoc-in env [:cascade :extra-path] (drop (count path) request-path))]
+    (fail-if (nil? pipeline) (format "Function %s defines a :cascade-type of %s which is not supported."
+      (qualified-function-name function) type))    
+    (call-pipeline pipeline new-env function)))
+        
+(defn path-dispatcher
+  "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration."
+  [env]
+  (let [split-path (-> env :cascade :split-path)
+        matches (find-mappings split-path)]
+        ;; Invoke each matching function until one returns true
+      (first (filter true? (map #(invoke-mapped-function env split-path %) matches)))))
+        
+(assoc-in-config [:dispatchers "/"] path-dispatcher)   
+(assoc-in-config [:type-to-pipeline :view] :render-view)    
+(assoc-in-config [:type-to-pipeline :action] :default-action)    

@@ -14,7 +14,7 @@
 
 (ns cascade
   (:use
-    (cascade config)
+    (cascade config path-map)
     (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
@@ -24,11 +24,11 @@
     
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
-  preceding the parameters vectors. The function's forms are an implicit inline block."
+  preceding the parameters vector. The function's forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template] (parse-function-def forms)
         full-meta (merge ^fn-name {:cascade-type :view})]
-  `(defn ~fn-name ~full-meta ~fn-params (inline ~@template))))
+  `(add-fn-to-dispatch-map (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
 
 (defmacro block
   "Defines a block of template that renders with an environment controlled by its container. The result is a function
@@ -60,5 +60,5 @@ that takes a single parameter (the env map)."
   (fail-unless (vector? fn-params) "A filter function must define parameters like any other function.")
   (fail-unless (>= (count fn-params) 1) "A filter function must define at least one parameter (to recieve the delegate).")
   ; TODO: Is ":pipelines" the right name?  Should it be :filters or :pipeline-filters?  Oh, well.
-  `(assoc-in-config [:pipelines ~name] (fn ~fn-params ~@forms)))
+  `(assoc-in-config [:filters ~name] (fn ~fn-params ~@forms)))
 

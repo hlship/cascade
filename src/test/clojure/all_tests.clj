@@ -19,7 +19,7 @@
 (set! *warn-on-reflection* true)
 
 (def spaces (map #(symbol (str "cascade." %)) [
-  "test-utils" "test-config" "test-cascade" "test-parse-functions"]))
+  "test-utils" "test-config" "test-cascade" "test-parse-functions" "test-path-map"]))
 
 (println "Loading code ...")
 (time (apply use spaces))

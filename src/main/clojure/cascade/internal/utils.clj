@@ -23,10 +23,15 @@
   [#^String msg]
   (throw (RuntimeException. msg)))
 
-(defn fail-unless
-  "Throws a runtime exception if the condition is false."
+(defmacro fail-unless
+  "Throws a runtime exception if the condition is false. The message is only evaluated if a failure occurs."
   [condition message]
-  (or condition (fail message)))
+  `(if-not ~condition (fail ~message)))
+
+(defmacro fail-if
+  "Throws a runtime exception if the condition is true. The message is only evaluated if a failure occurs."
+  [condition message]
+  `(if ~condition (fail ~message)))
 
 (declare find-namespace-resource)
 
@@ -84,7 +89,7 @@ if the collection is null or empty."
         (nil? current) (recur result remaining)
         (sequential? current) (recur result (concat current remaining))
         (or (symbol? current) (keyword? current))
-          (recur result (cons (-> @configuration configuration-key current) remaining))
+          (recur result (cons (read-config configuration-key current) remaining))
         (function? current) (recur (conj result current) remaining)))))
     
 (defn apply-until-non-nil
@@ -112,25 +117,31 @@ if the collection is null or empty."
   are each passed an extra parameter (the first
   parameter) which is the next function in the pipeline. The final function in the pipeline is passed
   a bridge to an ordinary function, called the terminator. In this way, each function can control
-  parameters, return values and exception behavior for functions further down the pipeline. Returns a function
+  parameters, return values and exception behavior for functions further down the pipeline (in AOP terms, \"around advice\"). Returns a function
   with the same arity as the terminator. Nil return values from filter functions, or the terminator, have
   no special meaning."
   [selector terminator]
-  (fn [& params]
-    (loop [bridge terminator
-           queue (reverse (expand-function-list :pipelines selector))]
-       (if (empty? queue)
-         ; So, the outer function simply passes the params to the outermost bridge,
-         ; whose arity should match the arity of the terminator. 
-         ; The bridge may in fact be the terminator.
-         (apply bridge params)
+  (assoc-in-config [:pipelines selector]
+    (fn [& params]
+      (loop [bridge terminator
+             queue (reverse (expand-function-list :filters selector))]
+         (if (empty? queue)
+           ; So, the outer function simply passes the params to the outermost bridge,
+           ; whose arity should match the arity of the terminator. 
+           ; The bridge may in fact be the terminator.
+           (apply bridge params)
 
-         ; Build a new bridge that invokes the current function passing the
-         ; current bridge to it as the first parameter.
+           ; Build a new bridge that invokes the current function passing the
+           ; current bridge to it as the first parameter.
          
-         (recur (fn [& args]
-           (apply (first queue) bridge args)) (rest queue))))))
+           (recur (fn [& args]
+             (apply (first queue) bridge args)) (rest queue)))))))
 
+(defn call-pipeline
+  "Calls into a pipeline, identified by its selector (a keyword). The pipeline is expected to be found
+  inside the :pipelines configuration map."
+  [selector & args]
+  (apply (read-config :pipelines selector) args))
 
  (defn qualified-function-name
    "Accesses the meta-data for a function to extract its name and namespace, concatinated and
@@ -146,7 +157,7 @@ if the collection is null or empty."
     (= 0 (.length s))))
     
 (defn split-path
-  "Splits a  (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are
+  "Splits path (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are
   ignored (that is, empty names in the result are removed)."
   [#^String path]
   (let [names (.split #"/" path)]

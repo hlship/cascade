@@ -16,13 +16,27 @@
 
 (ns #^{:doc "Manages path prefixs to views and functions."}
   cascade.path-map
-  (:use (cascade config)
-        ))
+  (:use 
+    (cascade config)
+    (cascade.internal utils)))
       
-(defn map-fn
-  "Maps a path to a view or action function. The path string is relative to the context root, it should neither being with nor end
-  with a slash."
-  [path function]
-  (let
-    [path-parts (vector (.split path "/"))])
-)
+(defn add-fn-to-dispatch-map
+  "Maps a path to a view or action function. The path string is relative to the context root and is extracted from the
+  :path meta-data key."
+  [function]
+  (let [path (^function :path)]
+    (if path
+      (let [key (split-path path)]
+        ; TODO: check for conflict on key
+        (assoc-in-config [:mapped-functions key] function)))))
+                  
+(defn find-mappings
+  "Given the request path (as a split path, or vector of terms), finds all mapped functions that can apply to
+  the request path. The return value is a seq of pairs; each pair is a split path to match against the request path,
+  and a corresponding function. The seq is sorted in descending order by path count."
+  [split-path]
+  (let [mapped-functions (get @configuration :mapped-functions)
+       sorted (sort (fn [[path1 _] [path2 _]] (- (count path2) (count path1))) mapped-functions)]
+    (filter (fn [[path function]] (= (take (count path) split-path) path)) sorted)))
+        
+     

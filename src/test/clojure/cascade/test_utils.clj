@@ -68,10 +68,11 @@
 (deftest pipeline
   (let [to-upper-filter (fn [delegate s] (delegate (.toUpperCase s)))
         doubler-filter (fn [delegate s] (format "before=%s after=%s" s (delegate s)))]
-    (binding [configuration (atom {:pipelines {:upper to-upper-filter 
+    (binding [configuration (atom {:filters {:upper to-upper-filter 
                                       :doubler doubler-filter 
                                       :default [:doubler :upper]}})]
-      (is (= ((create-pipeline :default identity) "portland") "before=portland after=PORTLAND")))))
+      (create-pipeline :default identity)
+      (is (= (call-pipeline :default "portland") "before=portland after=PORTLAND")))))
 
 (deftest test-function?
   (is (= (function? map) true) "a real function")
