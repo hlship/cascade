@@ -66,7 +66,7 @@
                              :context context }
               :cascade { :path path
                          :split-path (split-path path) } }
-        dispatchers (remove nil? (map (match-and-extract-dispatcher path) (@configuration :dispatchers)))]
+        dispatchers (remove nil? (map (match-and-extract-dispatcher path) (read-config :dispatchers)))]
     (apply-until-non-nil dispatchers [env])))
     
 ;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")

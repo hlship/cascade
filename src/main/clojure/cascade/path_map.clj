@@ -35,7 +35,7 @@
   the request path. The return value is a seq of pairs; each pair is a split path to match against the request path,
   and a corresponding function. The seq is sorted in descending order by path count."
   [split-path]
-  (let [mapped-functions (get @configuration :mapped-functions)
+  (let [mapped-functions (read-config :mapped-functions)
        sorted (sort (fn [[path1 _] [path2 _]] (- (count path2) (count path1))) mapped-functions)]
     (filter (fn [[path function]] (= (take (count path) split-path) path)) sorted)))
         
