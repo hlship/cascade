@@ -43,8 +43,6 @@
   (if (and view-fn (= (^view-fn :cascade-type) :view))
     (delegate env view-fn)
     false))
-        
-(assoc-in-config [:filters :view] :is-view-fn)
 
 (create-pipeline :default-handle-action
   (fn [env action-fn]
@@ -64,39 +62,30 @@
   (if (and action-fn (= (^action-fn :cascade-type) :action))
     (delegate env action-fn)
     false))    
-    
-(assoc-in-config [:filters :action] :is-action-fn)
-    
-(defn extract-fn-from-path
-  "Examines the path in the environment to extract a namespace and function name which is resolved
-  to a function (or nil if the value are not present as the 2nd and 3rd terms in the split path,
-  or if the names can not be resolved)."
-  [env]
+
+(defn dispatch-named-function-to-pipeline
+  [env pipeline]
   (let [split-path (-> env :cascade :split-path)
         [_ ns-name fn-name] split-path
-        ns (and ns-name (find-ns (symbol ns-name)))]
-     (and ns fn-name (ns-resolve ns (symbol fn-name)))))
+        fn-namespace (and ns-name (find-ns (symbol ns-name)))
+        named-function (and fn-namespace fn-name (ns-resolve fn-namespace (symbol fn-name)))
+        new-env (assoc-in env [:cascade :extra-path] (drop 3 split-path))]
+    (call-pipeline pipeline new-env named-function)))
 
 (defn named-view-dispatcher 
   "Mapped to /view, this attempts to identify a namespace and a view function
   which is then invoked to render a DOM which is then streamed to the client."
   [env]
-  ; TODO: different pipelines for XML vs. HTML, and a meta pipeline that
-  ; chooses them.      
-  (call-pipeline :view env (extract-fn-from-path env)))
-
-(assoc-in-config [:dispatchers "/view/"] named-view-dispatcher)  
-
+  (dispatch-named-function-to-pipeline env :view))
+  
 (defn named-action-dispatcher
   "Mapped to /action, attempts to identify a namespace and an action function,
   which is then invoked. The action may render a response directly (and return true),
   or it may return a rendering hint. Rendering hints are view functions (to render that view)
   or other values as yet unspecified."
   [env]
-  (call-pipeline :action env (extract-fn-from-path env)))
+  (dispatch-named-function-to-pipeline env :action))
 
-(assoc-in-config [:dispatchers "/action/"] named-action-dispatcher)
-      
 (defn invoke-mapped-function
   [env request-path [path function]]
   ;; TODO: choose correct pipeline (view vs. action)
@@ -112,10 +101,16 @@
   "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration."
   [env]
   (let [split-path (-> env :cascade :split-path)
-        matches (find-mapped-functions split-path)]
+        matches (find-matching-functions :mapped-functions split-path)]
         ;; Invoke each matching function until one returns true
       (first (filter true? (map #(invoke-mapped-function env split-path %) matches)))))
         
-(assoc-in-config [:dispatchers "/"] path-dispatcher)   
+(add-function-to-config :dispatchers "view" #'named-view-dispatcher)
+(add-function-to-config :dispatchers "action" #'named-action-dispatcher)
+(add-function-to-config :dispatchers "" #'path-dispatcher)
+
 (assoc-in-config [:type-to-pipeline :view] :render-view)    
 (assoc-in-config [:type-to-pipeline :action] :default-action)    
+
+(assoc-in-config [:filters :view] :is-view-fn)
+(assoc-in-config [:filters :action] :is-action-fn)

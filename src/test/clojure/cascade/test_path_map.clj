@@ -26,7 +26,7 @@
 
 (defn find-fns
   [path]
-  (map (fn [[path function]] function) (find-mapped-functions (split-path path))))
+  (for [[path function] (find-matching-functions :mapped-functions (split-path path))] function))
   
 (deftest test-find-mappings
   (binding [configuration (atom { :mapped-functions { ["a" "b"] fn-ab

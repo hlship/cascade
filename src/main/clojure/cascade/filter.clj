@@ -15,7 +15,7 @@
 ; A filter that directs traffic to into Cascade.
 
 (ns cascade.filter
-  (:use (cascade config logging)
+  (:use (cascade config logging path-map)
         (cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))
@@ -44,7 +44,7 @@
     ; look like a component event request.
     (= path "/favicon.ico") true  ;  whether it exists or not!
 
-    ; If we can get a URL to the resource inside the context then it's a real static file
+    ; If we can get a non-nil URL to the resource inside the context then it's a real static file
     ; to be ignored.
     (.getResource context path) true
     :otherwise false))
@@ -61,12 +61,14 @@
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
   false otherwise (i.e., forward to the servlet container for normal processing)." 
   [#^HttpServletRequest request #^HttpServletResponse response context path]
-  (let [env { :servlet-api { :request request
+  (let [split (split-path path)
+        env { :servlet-api { :request request
                              :response response 
                              :context context }
               :cascade { :path path
-                         :split-path (split-path path) } }
-        dispatchers (remove nil? (map (match-and-extract-dispatcher path) (read-config :dispatchers)))]
+                         :split-path split } }
+        matches (find-matching-functions :dispatchers split)
+        dispatchers (for [[path function] matches] function)]
     (apply-until-non-nil dispatchers [env])))
     
 ;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")
@@ -85,7 +87,7 @@
   
   (reset! (.context this) (.getServletContext filter-config))
 
-  (info "Cascade Filter Startup\nConfiguration: %s" (ppstring @configuration))
+  (info "Cascade Filter Startup\nConfiguration:\n%s" (ppstring @configuration))
 
   ; TODO: require a set of clojure namespaces defined in web.xml, if available 
 
