@@ -14,7 +14,7 @@
 
 (ns cascade
   (:use
-    (cascade config path-map)
+    (cascade path-map)
     (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
