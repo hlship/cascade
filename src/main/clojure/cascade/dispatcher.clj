@@ -16,8 +16,7 @@
 
 (ns cascade.dispatcher
   (:import (javax.servlet ServletResponse))
-  (:use cascade
-        (cascade config dom logging path-map)
+  (:use (cascade config dom logging path-map pipeline)
         (cascade.internal utils)))
 
 (create-pipeline :render-view-as-xml
