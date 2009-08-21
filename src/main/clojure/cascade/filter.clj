@@ -15,6 +15,7 @@
 ; A filter that directs traffic to into Cascade.
 
 (ns cascade.filter
+  (:require (cascade dispatcher))
   (:use (cascade config logging path-map)
         (cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
