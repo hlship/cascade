@@ -24,15 +24,15 @@
 (defn fn-c [env])
 (defn fn-any [env])
 
-(defn find-mapping-fns
+(defn find-fns
   [path]
-  (map (fn [[path function]] function) (find-mappings (split-path path))))
+  (map (fn [[path function]] function) (find-mapped-functions (split-path path))))
   
 (deftest test-find-mappings
   (binding [configuration (atom { :mapped-functions { ["a" "b"] fn-ab
                                                       ["c"] fn-c
                                                       [] fn-any }})]
-    (are (= (find-mapping-fns _1) _2)
+    (are (= (find-fns _1) _2)
       "a/b/c" [fn-ab fn-any]
       "a/b" [fn-ab fn-any]
       "c" [fn-c fn-any]

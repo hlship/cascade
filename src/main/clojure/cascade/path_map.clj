@@ -20,7 +20,7 @@
     (cascade config)
     (cascade.internal utils)))
       
-(defn add-fn-to-dispatch-map
+(defn add-mapped-function
   "Maps a path to a view or action function. The path string is relative to the context root and is extracted from the
   :path meta-data key."
   [function]
@@ -30,7 +30,7 @@
         ; TODO: check for conflict on key
         (assoc-in-config [:mapped-functions key] function)))))
                   
-(defn find-mappings
+(defn find-mapped-functions
   "Given the request path (as a split path, or vector of terms), finds all mapped functions that can apply to
   the request path. The return value is a seq of pairs; each pair is a split path to match against the request path,
   and a corresponding function. The seq is sorted in descending order by path count."

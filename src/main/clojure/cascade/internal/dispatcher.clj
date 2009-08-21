@@ -112,7 +112,7 @@
   "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration."
   [env]
   (let [split-path (-> env :cascade :split-path)
-        matches (find-mappings split-path)]
+        matches (find-mapped-functions split-path)]
         ;; Invoke each matching function until one returns true
       (first (filter true? (map #(invoke-mapped-function env split-path %) matches)))))
         

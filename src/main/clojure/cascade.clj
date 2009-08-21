@@ -28,7 +28,7 @@
   [& forms]
   (let [[fn-name fn-params template] (parse-function-def forms)
         full-meta (merge ^fn-name {:cascade-type :view})]
-  `(add-fn-to-dispatch-map (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
+  `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
 
 (defmacro block
   "Defines a block of template that renders with an environment controlled by its container. The result is a function
