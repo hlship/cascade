@@ -14,7 +14,8 @@
 
 (ns cascade.test-utils
   (:use
-    (clojure.contrib (test-is :only [is are deftest]) pprint duck-streams str-utils)
+    (clojure (test :only [is are deftest]) )
+    (clojure.contrib pprint duck-streams str-utils)
     cascade.config
     cascade.internal.utils))
 
@@ -91,7 +92,8 @@
   
 (deftest test-split-path
   (is (vector? (split-path "foo/bar")))
-  (are (= (split-path _1) _2)
+  (are [input split] 
+       (= (split-path input) split)
        "foo/bar" ["foo" "bar"]
        "/foo/bar/" ["foo" "bar"]
        "//foo//bar//baz" ["foo" "bar" "baz"]

@@ -13,6 +13,8 @@
 ; and limitations under the License.
 
 (ns cascade
+  (:require
+    (clojure.contrib [str-utils2 :as s2]))
   (:use
     (cascade path-map)
     (cascade.internal utils viewbuilder parse-functions)))
@@ -40,3 +42,17 @@ that takes a single parameter (the env map)."
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
   (text-node "\r"))
+
+(defn link-map*
+  [fn-path extra-path-info query-parameters]
+  {
+    :path (if (empty? extra-path-info)
+            fn-path
+            (str fn-path "/" (s2/join "/" (map str extra-path-info))))
+    :parameters query-parameters
+  })
+
+(defmacro link-map
+  "Creates a link map from a function reference, extra path info (as a seq), optional extra query parameters (as a map)."
+  [function extra-path-info query-parameters]
+  `(link-map* (path-to-function ~function) ~extra-path-info ~query-parameters))

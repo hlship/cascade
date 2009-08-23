@@ -20,6 +20,8 @@
     (cascade config)
     (cascade.internal utils)))
       
+(def cascade-type-to-virtual-folder { :view "view" :action "action"})      
+      
 (defn add-function-to-config
   [selector path function]
   (let [key (split-path path)]
@@ -43,5 +45,30 @@
   (let [path (^function :path)]
     (if path
       (add-function-to-config :mapped-functions path function))))
+      
+(defn path-to-function*
+  "Given the meta data for a function, computes the path (as a string, relative to the context root)
+  for that function."
+  [fn-meta]
+  (let [type (get fn-meta :cascade-type)
+        folder (get cascade-type-to-virtual-folder type)
+        fn-path (get fn-meta :path)
+        qname (qualified-function-name-from-meta fn-meta)]
+    (fail-if (or (nil? type) (nil? folder))
+      (format "Function %s is neither a view function nor an action function." qname))
+    (cond
+      ;; TODO: The user-supplied path may need some doctoring. It should not start with or end
+      ;; with a slash.
+      (not (nil? fn-path)) fn-path
+
+      ;; Go from type to folder
+      
+      true (str folder "/" qname))))
               
+(defmacro path-to-function
+  "Calculates the path to a given view or action function. The result is a path string,
+  relative to the context root. If the function defines :path meta-data, that it used, otherwise
+  an appropriate path is constructed within the virtual /view or /action folder."
+  [function]
+  `(path-to-function* (meta (var ~function))))
      

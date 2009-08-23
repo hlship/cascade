@@ -19,7 +19,8 @@
     cascade
     (cascade dom)
     (cascade.internal utils)
-    (clojure.contrib (test-is :only [is are deftest]) duck-streams pprint)))
+    (clojure (test :only [is are deftest]))
+    (clojure.contrib duck-streams pprint)))
 
 (defn render
   [dom]
@@ -29,8 +30,7 @@
   
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
-  
- 
+
 (defn render-test
   [view-fn name env]
   (let [input-path (str "expected/" name ".xml")
@@ -107,6 +107,7 @@
        (body (assoc env value-key value))))
        
 (defview list-accounts-with-loop
+  {:path "accounts/list" }
   [env]
   :html [
     :head [ :title [ "List Accounts" ] ]
@@ -151,8 +152,23 @@
 (defview fn-with-meta "doc meta" {:other-meta :data} [env] :p)
 
 (deftest meta-data-for-function
-  (are (= (^#'fn-with-meta _1) _2)
+  (are [k v]
+    (= (^#'fn-with-meta k) v)
     :doc "doc meta"
     :other-meta :data
     :cascade-type :view))
+  
+(deftest test-link-map
+  (are [f extra-path query-params expected-path]
+    (let [link (link-map f extra-path query-params)]
+      (is (= (link :path) expected-path))
+      (is (= (link :parameters) query-params)))
+      
+      list-accounts-with-loop nil nil "accounts/list"
+      
+      list-accounts-with-loop [5050 true] nil "accounts/list/5050/true"
+      
+      simple-view nil nil "view/cascade.test-cascade/simple-view"
+      
+      simple-view nil {:foo :bar} "view/cascade.test-cascade/simple-view"))  
   

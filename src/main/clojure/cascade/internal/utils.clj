@@ -143,13 +143,17 @@ if the collection is null or empty."
   [selector & args]
   (apply (read-config :pipelines selector) args))
 
- (defn qualified-function-name
+(defn qualified-function-name-from-meta
+  [fn-meta]
+  (str (ns-name (fn-meta :ns)) "/"  (fn-meta :name)))
+  
+
+(defn qualified-function-name
    "Accesses the meta-data for a function to extract its name and namespace, concatinated and
    returned as a string."
-   [f]
-   (let [meta ^f]
-     (str (name (ns-name (meta :ns))) "/" (name (meta :name)))))
- 
+  [f]
+  (qualified-function-name-from-meta ^f))
+  
 (defn blank?
   [#^String s]
   (or 

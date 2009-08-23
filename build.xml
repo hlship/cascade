@@ -1,29 +1,37 @@
-<project name="cascade" default="run-tests">
+<project name="cascade" default="run-tests" xmlns:mvn="urn:maven-artifact-ant">
 
   <property name="target.dir" value="target" />
   <property name="src.dir" value="src/main/clojure" />
   <property name="test-src.dir" value="src/test/clojure"/>
   <property name="classes.dir" value="${target.dir}/classes" />
-  <property name="version" value="1.0.0-SNAPSHOT" />
-
-  <path id="libs.path">
-    <fileset dir="lib/runtime" includes="*.jar" />
-  </path>
-
-  <path id="test.path">
-    <path refid="libs.path"/>
-    <path location="src/test/resources"/>
-    <path location="${test-src.dir}"/>
-    <!-- Pick up sources in case didn't compile before running tests. -->
-    <path location="${src.dir}"/>
-    <path location="${classes.dir}"/>
-  </path>
 
   <target name="clean" description="Delete all derived files.">
     <delete dir="${target.dir}" quiet="true" />
   </target>
+  
+  <target name="-setup-maven" unless="pom.version">
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"/>    
+    <mvn:pom id="pom" file="pom.xml" />
+    <mvn:dependencies pomRefId="pom" filesetId="compile.fileset" useScope="compile"/>
+    <mvn:dependencies pomRefid="pom" filesetId="test.fileset" useScope="test"/>
+    
+    <path id="compile.path">
+      <fileset refid="compile.fileset"/>
+      <path location="${classes.dir}" />
+      <path location="${src.dir}" />
+    </path>
+      
+    <path id="test.path">
+      <fileset refid="test.fileset"/>
+      <path location="src/test/resources"/>
+      <path location="${test-src.dir}"/>
+      <!-- Pick up sources in case didn't compile before running tests. -->
+      <path location="${src.dir}"/>
+      <path location="${classes.dir}"/>
+    </path>
+  </target>
 
-  <target name="compile" description="Compile Clojure sources.">
+  <target name="compile" depends="-setup-maven" description="Compile Clojure sources.">
     <mkdir dir="${classes.dir}" />
 
     <!-- Seek out the namespaces to compile. Note that this will fail if the actual name of a package includes an underscore, as
@@ -38,12 +46,7 @@
       </chainedmapper>
     </pathconvert>
 
-    <java classname="clojure.lang.Compile">
-      <classpath>
-        <path refid="libs.path" />
-        <path location="${classes.dir}" />
-        <path location="${src.dir}" />
-      </classpath>
+    <java classname="clojure.lang.Compile" classpathref="compile.path">
       <sysproperty key="clojure.compile.path" value="${classes.dir}" />
       <arg line="${compile.namespaces}" />
     </java>
@@ -51,7 +54,7 @@
   </target>
 
   <target name="run-tests" depends="compile" description="Run unit tests.">
-    <!-- For some reason, fork="true" necessary to pick up changes after a compile. Don't understand why. At least it's not Maven! -->
+    <!-- For some reason, fork="true" necessary to pick up changes after a compile. Don't understand why. -->
     <java classname="clojure.main" fork="true" classpathref="test.path">
       <arg value="${test-src.dir}/all_tests.clj"/>
     </java>
@@ -64,19 +67,21 @@
     </java>
   </target>
 
-  <target name="jar" depends="compile,run-tests" description="Create JAR of compiled sources and resources.">
-    <jar destfile="${target.dir}/cascade-${version}.jar">
-      <fileset dir="${classes.dir}" />
-      <!-- Include the sources as well. -->
-      <fileset dir="${src.dir}" />
-      <!-- Once it exists:
-      <fileset dir="src/main/resources" />
-    -->
-    <fileset dir=".">
-      <include name="LICENSE*" />
-      <include name="README*" />
-    </fileset>
-  </jar>
-</target>
+  <target name="jar" depends="run-tests" description="Create JAR of compiled sources and resources.">
+    <jar destfile="${target.dir}/cascade-${pom.version}-slim.jar" index="true">
+        <fileset dir="${src.dir}" />
+        <!-- Once it exists:
+        <fileset dir="src/main/resources" />
+      -->
+      <fileset dir=".">
+        <include name="LICENSE*" />
+        <include name="README*" />
+      </fileset>
+    </jar>
+    <jar destfile="${target.dir}/cascade-${pom.version}.jar" index="true">
+      <fileset dir="${classes.dir}" />      
+      <zipfileset src="${target.dir}/cascade-${pom.version}-slim.jar"/>
+    </jar>
+  </target>
 
 </project>

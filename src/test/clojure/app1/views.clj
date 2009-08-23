@@ -17,7 +17,7 @@
   (:use cascade))
   
 (defview itworks
-  {:path "/working"}
+  {:path "working"}
   [env]
   :html [
     :head [ :title [ "It Works!"]]

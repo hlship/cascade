@@ -14,19 +14,21 @@
 
 (ns cascade.test-parse-functions
   (:use
-    (clojure.contrib test-is)
+    (clojure test)
     (cascade.internal parse-functions)))
     
 (deftest test-simple-fn
   (let [[n p forms] (parse-function-def '(my-fn [a b] c d))]
-    (are (= _1 _2)
+    (are [value expected]
+     (= value expected)
      n 'my-fn
      p '[a b]
      forms '(c d))))
 
 (deftest meta-data-for-doc-string-available
   (let [[n p forms] (parse-function-def '(my-fn "Test" [a b] c))]
-    (are (= _1 _2)
+    (are [value expected]
+     (= value expected)
       n 'my-fn
       p '[a b]
       forms '(c))
@@ -34,10 +36,12 @@
     
 (deftest meta-data-applied-to-symbol
   (let [[n p forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
-    (are (= _1 _2)
+    (are [value expected]
+     (= value expected)
       n 'a-fn
       p '[x y z]
       forms '(:gnip :gnop))
-    (are (= (^n _1) _2)
+    (are [k v]
+      (= (^n k) v)
       :doc "Next"
       :key :value)))

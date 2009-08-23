@@ -18,7 +18,7 @@
   (:use 
     (cascade config path-map)
     (cascade.internal utils)
-    (clojure.contrib [test-is :only [deftest are]])))
+    (clojure [test :only [deftest is are]])))
     
 (defn fn-ab [env])
 (defn fn-c [env])
@@ -32,9 +32,33 @@
   (binding [configuration (atom { :mapped-functions { ["a" "b"] fn-ab
                                                       ["c"] fn-c
                                                       [] fn-any }})]
-    (are (= (find-fns _1) _2)
+    (are [path expected]
+      (= (find-fns path) expected)
       "a/b/c" [fn-ab fn-any]
       "a/b" [fn-ab fn-any]
       "c" [fn-c fn-any]
       "d" [fn-any]
       "" [fn-any])))
+      
+(defn valid-view-fn {:cascade-type :view} [])      
+(defn valid-action-fn {:cascade-type :action} [])      
+(defn pathed-action-fn {:cascade-type :action :path "do/something"} [])      
+(defn pathed-view-fn {:cascade-type :view :path "show/something"} [])
+(defn unknown-type-fn {:cascade-type :willow}[])
+
+(deftest test-path-to-function
+  (are [f path]
+    (= (path-to-function f) path)
+    valid-view-fn "view/cascade.test-path-map/valid-view-fn"
+    valid-action-fn "action/cascade.test-path-map/valid-action-fn"
+    pathed-action-fn "do/something"
+    pathed-view-fn "show/something"))
+    
+(deftest not-a-valid-function-for-path-to-function
+  (is (thrown-with-msg? RuntimeException 
+      #"^Function cascade\.internal\.utils/create-pipeline is neither a view function nor an action function\.$"
+    (path-to-function create-pipeline))))
+    
+(deftest unknown-cascade-type-for-path-to-function
+  (is (thrown? RuntimeException (path-to-function unknown-type-fn))))
+  

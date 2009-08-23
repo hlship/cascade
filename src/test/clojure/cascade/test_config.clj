@@ -14,7 +14,7 @@
 
 (ns cascade.test-config
   (:use
-    (clojure.contrib test-is)
+    (clojure test)
     cascade.config))
     
 (deftest alter-config-single

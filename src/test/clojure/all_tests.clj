@@ -14,7 +14,7 @@
 
 ; Script that loads all tests for execution.
 
-(use 'clojure.contrib.test-is)
+(use 'clojure.test)
 
 (set! *warn-on-reflection* true)
 
