@@ -12,8 +12,6 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Contains the basic dispatchers
-
 (ns cascade.test-path-map
   (:use 
     (cascade config path-map)
@@ -46,19 +44,19 @@
 (defn pathed-view-fn {:cascade-type :view :path "show/something"} [])
 (defn unknown-type-fn {:cascade-type :willow}[])
 
-(deftest test-path-to-function
+(deftest test-path-for-function
   (are [f path]
-    (= (path-to-function f) path)
+    (= (path-for-function f) path)
     valid-view-fn "view/cascade.test-path-map/valid-view-fn"
     valid-action-fn "action/cascade.test-path-map/valid-action-fn"
     pathed-action-fn "do/something"
     pathed-view-fn "show/something"))
     
-(deftest not-a-valid-function-for-path-to-function
+(deftest not-a-valid-function-for-path-for-function
   (is (thrown-with-msg? RuntimeException 
       #"^Function cascade\.internal\.utils/create-pipeline is neither a view function nor an action function\.$"
-    (path-to-function create-pipeline))))
+    (path-for-function create-pipeline))))
     
-(deftest unknown-cascade-type-for-path-to-function
-  (is (thrown? RuntimeException (path-to-function unknown-type-fn))))
+(deftest unknown-cascade-type-for-path-for-function
+  (is (thrown? RuntimeException (path-for-function unknown-type-fn))))
   

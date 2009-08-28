@@ -12,18 +12,17 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Script that loads all tests for execution.
+(ns cascade.test-map-utils
+  (:use
+    (cascade map-utils)
+    (clojure (test :only [is are deftest]))))
+    
+    
+(deftest test-list-to-map
+  (is (= (list-to-map-of-seqs [:foo :bar :baz] [[:foo :f1 :f2 :f3] [:bar :b1 :b2] [:baz]])
+        {:foo [:f1 :f2 :f3] :bar [:b1 :b2] :baz []})))
 
-(use 'clojure.test)
-
-(set! *warn-on-reflection* true)
-
-(def spaces (map #(symbol (str "cascade.test-" %)) [
-  "utils" "config" "cascade" "parse-functions" "path-map" "urls" "map-utils"]))
-
-(println "Loading code ...")
-(time (apply use spaces))
-  
-(println "Executing tests ...")
-
-(time (apply run-tests (map find-ns spaces)))
+(deftest unexpected-key-in-list-to-map
+  (is
+    (thrown-with-msg? RuntimeException #"Key :baz is not allowed; keys must be one of \[:foo :bar\]\."
+      (list-to-map-of-seqs [:foo :bar] [[:baz]]))))

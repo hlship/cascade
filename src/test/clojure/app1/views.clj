@@ -36,7 +36,11 @@
             (inline :li [ (str x) " ..." ] )
           )
         ]
-      ]            
+      ]
+      
+      :hr
+      
+      :a {:href (link env itworks)} [ "refresh" ]
     ]
   ])  
 

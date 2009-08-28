@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.howardlewisship.cascade</groupId>
-  <artifactId>cascade.core</artifactId>
+  <artifactId>core</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <url>http://github.com/hlship/cascade/</url>
 
@@ -56,6 +56,15 @@
        <artifactId>jetty-servlet</artifactId>
        <version>${jetty-version}</version>
        <scope>provided</scope>
+     </dependency>
+     
+     <!-- Provided scope means that to use the cascade.mock namespace, you must provide EasyMock as well. -->
+     
+     <dependency>
+         <groupId>org.easymock</groupId>
+         <artifactId>easymock</artifactId>
+         <version>2.5.1</version>
+         <scope>provided</scope>
      </dependency>
 
   </dependencies>

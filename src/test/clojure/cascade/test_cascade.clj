@@ -14,10 +14,11 @@
 
 (ns cascade.test-cascade
   (:import
+    (javax.servlet.http HttpServletRequest HttpServletResponse)
     (java.io PrintWriter CharArrayWriter))
   (:use 
     cascade
-    (cascade dom)
+    (cascade dom mock)
     (cascade.internal utils)
     (clojure (test :only [is are deftest]))
     (clojure.contrib duck-streams pprint)))
@@ -160,7 +161,7 @@
   
 (deftest test-link-map
   (are [f extra-path query-params expected-path]
-    (let [link (link-map f extra-path query-params)]
+    (let [link (link-map-from-function f extra-path query-params)]
       (is (= (link :path) expected-path))
       (is (= (link :parameters) query-params)))
       
@@ -171,4 +172,14 @@
       simple-view nil nil "view/cascade.test-cascade/simple-view"
       
       simple-view nil {:foo :bar} "view/cascade.test-cascade/simple-view"))  
+  
+(deftest test-link
+  (with-mocks [request HttpServletRequest
+               response HttpServletResponse]
+    (:train 
+      (expect .getContextPath request "/ctx")
+      (expect .encodeURL response "/ctx/accounts/list" "*encoded*"))
+    (:test
+      (is (= (link {:servlet-api {:request request :response response}} list-accounts-with-loop)
+             "*encoded*")))))  
   

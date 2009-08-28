@@ -46,7 +46,7 @@
     (if path
       (add-function-to-config :mapped-functions path function))))
       
-(defn path-to-function*
+(defn path-for-function*
   "Given the meta data for a function, computes the path (as a string, relative to the context root)
   for that function."
   [fn-meta]
@@ -65,10 +65,10 @@
       
       true (str folder "/" qname))))
               
-(defmacro path-to-function
+(defmacro path-for-function
   "Calculates the path to a given view or action function. The result is a path string,
   relative to the context root. If the function defines :path meta-data, that it used, otherwise
   an appropriate path is constructed within the virtual /view or /action folder."
   [function]
-  `(path-to-function* (meta (var ~function))))
+  `(path-for-function* (meta (var ~function))))
      

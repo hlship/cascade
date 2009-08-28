@@ -14,8 +14,10 @@
 (ns cascade.internal.utils
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
+  (:require
+    (clojure.contrib [str-utils2 :as s2]))  
   (:use
-    (cascade config logging)
+    (cascade config logging urls)
     (clojure.contrib str-utils pprint)))
 
 (defn fail
@@ -166,3 +168,37 @@ if the collection is null or empty."
   [#^String path]
   (let [names (.split #"/" path)]
     (vec (remove blank? (seq names)))))
+
+(defn add-query-parameter
+  [#^StringBuilder builder key value]
+  (doto builder
+    (.append (to-url-string key))
+    (.append "=")
+    (.append (to-url-string value))))
+
+(defn construct-absolute-path
+  "Converts a link map into a absolute path, including query parameters."  
+  [context-path link-map]
+  (loop [#^StringBuilder sb (doto (StringBuilder.)
+                              (.append context-path)
+                              (.append "/")
+                              (.append (link-map :path)))
+         sep "?"
+         param-pairs (-> link-map :parameters)]
+    (if (empty? param-pairs)
+      (.toString sb)
+      (do
+        (.append sb sep)
+        (add-query-parameter sb ((first param-pairs) 0) ((first param-pairs) 1))
+        (recur sb "&" (next param-pairs))))))          
+
+(defn link-map-from-path
+  "Constructs a link map a path, extra path info, and optional query parameters. Applications should
+  use the link-map macro instead."
+  [fn-path extra-path-info query-parameters]
+  {
+    :path (if (empty? extra-path-info)
+            fn-path
+            (str fn-path "/" (s2/join "/" (map str extra-path-info))))
+    :parameters query-parameters
+  })         

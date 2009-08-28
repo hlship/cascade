@@ -53,7 +53,7 @@
 
   </target>
 
-  <target name="run-tests" depends="compile" description="Run unit tests.">
+  <target name="run-tests" depends="-setup-maven" description="Run unit tests.">
     <!-- For some reason, fork="true" necessary to pick up changes after a compile. Don't understand why. -->
     <java classname="clojure.main" fork="true" classpathref="test.path">
       <arg value="${test-src.dir}/all_tests.clj"/>

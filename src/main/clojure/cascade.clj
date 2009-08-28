@@ -13,8 +13,8 @@
 ; and limitations under the License.
 
 (ns cascade
-  (:require
-    (clojure.contrib [str-utils2 :as s2]))
+  (:import
+    (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
     (cascade path-map)
     (cascade.internal utils viewbuilder parse-functions)))
@@ -43,16 +43,31 @@ that takes a single parameter (the env map)."
   linebreak
   (text-node "\r"))
 
-(defn link-map*
-  [fn-path extra-path-info query-parameters]
-  {
-    :path (if (empty? extra-path-info)
-            fn-path
-            (str fn-path "/" (s2/join "/" (map str extra-path-info))))
-    :parameters query-parameters
-  })
-
-(defmacro link-map
+(defmacro link-map-from-function
   "Creates a link map from a function reference, extra path info (as a seq), optional extra query parameters (as a map)."
   [function extra-path-info query-parameters]
-  `(link-map* (path-to-function ~function) ~extra-path-info ~query-parameters))
+  `(link-map-from-path (path-for-function ~function) ~extra-path-info ~query-parameters))
+        
+(defn link-path
+  "Converts a link map into an absolute path (but not a complete URL). The returned path string
+  will include any query parameters and extra path info from the link map, and will have
+  been encoded by the HttpServletResponse. Uses standard keys from the env map."
+  [env link-map]
+  (let [#^HttpServletRequest request (-> env :servlet-api :request)
+        #^HttpServletResponse response (-> env :servlet-api :response)
+        context-path (.getContextPath request)
+        link-path (construct-absolute-path context-path link-map)]
+    (.encodeURL response link-path)))
+                  
+(defmacro link
+  "Creates a link to a view or action function. Additional path info data may be specified (as a seq of
+  data items),
+  as well as query parameters (as a map whose keys are strings or keywords and whose values are converted to strings.).
+  Uses standard keys from the env map."
+  ([env function]
+    (link env function nil))
+  ([env function extra-path-info]
+    (link env function extra-path-info nil))
+  ([env function extra-path-info query-parameters]
+    `(link-path ~env (link-map-from-function ~function ~extra-path-info ~query-parameters))))
+

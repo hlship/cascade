@@ -100,3 +100,8 @@
        "" []
        "foo" ["foo"]))  
   
+(deftest test-construct-absolute-path
+  (are [context-path path extra-path parameters expected]
+      (= (construct-absolute-path context-path (link-map-from-path path extra-path parameters)) expected)
+      "" "foo" ["bar"] nil "/foo/bar"
+      "/ctx" "account/list" [12 34] { :format :brief 'per-path 23 } "/ctx/account/list/12/34?format=brief&per-path=23"))  
