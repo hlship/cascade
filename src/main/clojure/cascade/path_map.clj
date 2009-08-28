@@ -55,7 +55,7 @@
         fn-path (get fn-meta :path)
         qname (qualified-function-name-from-meta fn-meta)]
     (fail-if (or (nil? type) (nil? folder))
-      (format "Function %s is neither a view function nor an action function." qname))
+     "Function %s is neither a view function nor an action function." qname)
     (cond
       ;; TODO: The user-supplied path may need some doctoring. It should not start with or end
       ;; with a slash.

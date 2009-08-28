@@ -71,3 +71,11 @@ that takes a single parameter (the env map)."
   ([env function extra-path-info query-parameters]
     `(link-path ~env (link-map-from-function ~function ~extra-path-info ~query-parameters))))
 
+(defmacro link-to
+  "Creates a hyperlink with an href as a link to a view or action function.
+  Following the function, is an optional vector of extra path information, then
+  an optional map of query parameters. Additional forms after that form an implicit template."
+  [env function & forms]
+  (let [[extra-path query-parameters template-forms] (parse-link-to-forms forms)]
+    `(inline :a { :href (link ~env ~function ~extra-path ~query-parameters) } [ ~@template-forms ])))
+

@@ -182,4 +182,3 @@
     (:test
       (is (= (link {:servlet-api {:request request :response response}} list-accounts-with-loop)
              "*encoded*")))))  
-  

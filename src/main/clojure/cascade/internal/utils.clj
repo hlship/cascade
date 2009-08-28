@@ -26,14 +26,16 @@
   (throw (RuntimeException. msg)))
 
 (defmacro fail-unless
-  "Throws a runtime exception if the condition is false. The message is only evaluated if a failure occurs."
-  [condition message]
-  `(if-not ~condition (fail ~message)))
+  "Throws a runtime exception if the condition is false. The message is generated from the format
+  and additional arguments and is only evaluated if a failure occurs."
+  [condition fmt & args ]
+  `(if-not ~condition (fail (format ~fmt ~@args))))
 
 (defmacro fail-if
-  "Throws a runtime exception if the condition is true. The message is only evaluated if a failure occurs."
-  [condition message]
-  `(if ~condition (fail ~message)))
+  "Throws a runtime exception if the condition is true.  The message is generated from the format
+  and additional arguments and is only evaluated if a failure occurs."
+  [condition fmt & args]
+  `(if ~condition (fail (format ~fmt ~@args))))
 
 (declare find-namespace-resource)
 

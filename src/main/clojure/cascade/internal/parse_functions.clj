@@ -15,8 +15,8 @@
   and other meta-data."}
   cascade.internal.parse-functions
   (:use (clojure.contrib monads)
-        (cascade.internal parser)))
-
+        (cascade.internal utils parser)))
+        
 (def fn-def-parser
   (domonad parser-m
     [fn-name match-symbol
@@ -37,5 +37,22 @@
   [fn-def-forms]
   (let [[result remaining-forms] (fn-def-parser fn-def-forms)]
     (if-not (empty? remaining-forms)
-      (throw (RuntimeException. (format "Function definition invalid, starting at %s." (first remaining-forms))))
+      (throw (RuntimeException. "Function definition invalid, starting at %s." (first remaining-forms)))
       result)))
+      
+(def link-to-forms-parser
+  (domonad parser-m
+    [extra-path-info (optional match-vector)
+     query-parameters (optional match-map)
+     template-forms (one-or-more any-form)]
+     [extra-path-info query-parameters template-forms]))
+     
+(defn parse-link-to-forms
+  "Parses the extra forms used by the cascade/link-to macro, returning a seq of three values:
+  a vector of extra path info, a map of query parameters, and a seq of template forms."
+  [link-to-forms]
+  (let [[result remaining-forms] (link-to-forms-parser link-to-forms)]
+    
+    (fail-unless (empty? remaining-forms) "Not all forms for link-to parsed, starting at %s." (first remaining-forms))
+    
+    result))           

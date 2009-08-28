@@ -92,8 +92,8 @@
         type (function-meta :cascade-type)
         pipeline (read-config :type-to-pipeline type)
         new-env (assoc-in env [:cascade :extra-path] (drop (count path) request-path))]
-    (fail-if (nil? pipeline) (format "Function %s defines a :cascade-type of %s which is not supported."
-      (qualified-function-name function) type))    
+    (fail-if (nil? pipeline) "Function %s defines a :cascade-type of %s which is not supported."
+      (qualified-function-name function) type)    
     (call-pipeline pipeline new-env function)))
         
 (defn path-dispatcher

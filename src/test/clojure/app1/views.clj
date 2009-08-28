@@ -40,7 +40,7 @@
       
       :hr
       
-      :a {:href (link env itworks)} [ "refresh" ]
+      (link-to env itworks ["extra"] { :class "nav" } "refresh")
     ]
   ])  
 
