@@ -3,4 +3,5 @@ bin/
 target/
 classes/
 .settings/
+*.tmproj
 *~
