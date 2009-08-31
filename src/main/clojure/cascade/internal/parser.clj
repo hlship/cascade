@@ -14,7 +14,8 @@
 (ns 
   #^{:doc "Parser monad used to parse Clojure forms into higher-level structures."}
   cascade.internal.parser
-  (:use clojure.contrib.monads))
+  (:use clojure.contrib.monads
+        (cascade.internal utils)))
 
 (def parser-m (state-t maybe-m))
 
@@ -74,3 +75,21 @@
     (match-first match-list match-symbol))
 
 )  ;  with-monad parser-m
+
+(defn run-parse
+  "Executes a parse given a parser function and a set of forms to parse. The construct-name is used for reporting errors:
+  either a nil monadic result, or an incomplete parse (that leaves some forms unparsed)."
+  [parser forms construct-name]
+  (let [monadic-result (parser forms)]
+    
+    (when (nil? monadic-result)
+      (fail (format "Parse of %s completed with no result." construct-name)))
+      
+    (let [[result remaining-forms] monadic-result]
+      
+      (when-not (empty? remaining-forms)
+        (fail (format "Incomplete parse of %s, %s forms remain, starting with %s."
+          (count remaining-forms)
+          (first remaining-forms))))
+
+      result)))

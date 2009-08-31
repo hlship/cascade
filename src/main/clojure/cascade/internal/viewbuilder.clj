@@ -111,15 +111,4 @@ which are converted into :text DOM nodes."
   "Used as part of (defview) or (deffragment) to convert the a form, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
-  (let [monadic-result (parse-forms forms)]
-
-      (when (nil? monadic-result)
-        (pprint forms)
-        (fail "Embedded template form parse completed with no result."))
-        
-    (let [[master-form remaining-forms] monadic-result]
-      (when-not (empty? remaining-forms)
-        (fail (format "Not all embedded template forms were parsed, %s remain, starting with %s."
-          (count remaining-forms)
-          (first remaining-forms))))
-      master-form)))       
+  (run-parse parse-forms forms "embedded template forms"))

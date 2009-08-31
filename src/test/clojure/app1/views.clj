@@ -40,7 +40,7 @@
       
       :hr
       
-      (link-to env itworks ["extra"] { :class "nav" } "refresh")
+      (render-link env itworks ["extra"] { :class "nav" } "refresh")
     ]
   ])  
 

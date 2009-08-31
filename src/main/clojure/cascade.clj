@@ -76,6 +76,6 @@ that takes a single parameter (the env map)."
   Following the function, is an optional vector of extra path information, then
   an optional map of query parameters. Additional forms after that form an implicit template."
   [env function & forms]
-  (let [[extra-path query-parameters template-forms] (parse-link-to-forms forms)]
+  (let [[extra-path query-parameters template-forms] (parse-render-link-forms forms)]
     `(inline :a { :href (link ~env ~function ~extra-path ~query-parameters) } [ ~@template-forms ])))
 

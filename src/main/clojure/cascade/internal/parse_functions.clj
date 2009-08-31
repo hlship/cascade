@@ -35,24 +35,17 @@
   required vector of parameters, and a series of additional forms. Returns a vector of the name (with additional meta
   data from the documentation string provided meta-data map), the parameters vector, and a seq of the additional forms."
   [fn-def-forms]
-  (let [[result remaining-forms] (fn-def-parser fn-def-forms)]
-    (if-not (empty? remaining-forms)
-      (throw (RuntimeException. "Function definition invalid, starting at %s." (first remaining-forms)))
-      result)))
+  (run-parse fn-def-parser fn-def-forms "function definition"))
       
-(def link-to-forms-parser
+(def render-link-forms-parser
   (domonad parser-m
     [extra-path-info (optional match-vector)
      query-parameters (optional match-map)
      template-forms (one-or-more any-form)]
      [extra-path-info query-parameters template-forms]))
      
-(defn parse-link-to-forms
+(defn parse-render-link-forms
   "Parses the extra forms used by the cascade/link-to macro, returning a seq of three values:
   a vector of extra path info, a map of query parameters, and a seq of template forms."
-  [link-to-forms]
-  (let [[result remaining-forms] (link-to-forms-parser link-to-forms)]
-    
-    (fail-unless (empty? remaining-forms) "Not all forms for link-to parsed, starting at %s." (first remaining-forms))
-    
-    result))           
+  [forms]
+  (run-parse render-link-forms-parser forms "render-link"))
