@@ -4,4 +4,6 @@ target/
 classes/
 .settings/
 *.tmproj
+.classpath
+.project
 *~
