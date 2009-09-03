@@ -83,13 +83,13 @@
   (let [monadic-result (parser forms)]
     
     (when (nil? monadic-result)
-      (fail (format "Parse of %s completed with no result." construct-name)))
+      (fail "Parse of %s completed with no result." construct-name))
       
     (let [[result remaining-forms] monadic-result]
       
       (when-not (empty? remaining-forms)
-        (fail (format "Incomplete parse of %s, %s forms remain, starting with %s."
+        (fail "Incomplete parse of %s, %s forms remain, starting with %s."
           (count remaining-forms)
-          (first remaining-forms))))
+          (first remaining-forms)))
 
       result)))

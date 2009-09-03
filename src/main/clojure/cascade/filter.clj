@@ -50,14 +50,6 @@
     (.getResource context path) true
     :otherwise false))
 
-(defn match-and-extract-dispatcher
-  "Passed a path-prefix/dispatcher-fn pair, returns the dispatcher-fn if the request path
-  matches the path-prefix, or returns nil otherwise."
-  ;;  TODO change the path prefix to a seq of terms (i.e.[["view"]])
-  [#^String path] 
-  (fn [[#^String path-prefix dispatcher-fn]]
-    (if (.startsWith path path-prefix) dispatcher-fn)))
-
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
   false otherwise (i.e., forward to the servlet container for normal processing)." 
@@ -79,7 +71,7 @@
   "Initializes the 'class' of filter by providing a new atom to hold the context.
   Named this way due to the fact that Filter defines method init()."
   []
-  ; No super-class constructor, state is an atom
+  ; No super-class constructor, state is an atom whichs stores the servlet context
   [[] (atom nil)])
 
 (defn -init 
@@ -96,6 +88,7 @@
 
 (defn -destroy 
   [this]
+  (debug "Cascade Filter Shutdown")
   nil)
 
 (defn -doFilter 
@@ -104,8 +97,8 @@
   (let [path (get-path request)
         context @(.context this)]
   (when (or 
-        (static-file? context path) 
-        (not (pass-to-dispatchers request response context path)))
+          (static-file? context path) 
+          (not (pass-to-dispatchers request response context path)))
     ; Let the servlet container process this normally.
     (debug "Not handled; forwarding to next in chain")
     (.doFilter chain request response))))

@@ -86,8 +86,8 @@
   (dispatch-named-function-to-pipeline env :action))
 
 (defn invoke-mapped-function
+  "Called from path-dispatcher to try one of a series of functions that may match the request path."
   [env request-path [path function]]
-  ;; TODO: choose correct pipeline (view vs. action)
   (let [function-meta ^function
         type (function-meta :cascade-type)
         pipeline (read-config :type-to-pipeline type)

@@ -22,20 +22,20 @@
 
 (defn fail
   "A quick way to throw a RuntimeException."
-  [#^String msg]
-  (throw (RuntimeException. msg)))
+  [#^String fmt & args]
+  (throw (RuntimeException. (apply format fmt args))))
 
 (defmacro fail-unless
   "Throws a runtime exception if the condition is false. The message is generated from the format
   and additional arguments and is only evaluated if a failure occurs."
   [condition fmt & args ]
-  `(if-not ~condition (fail (format ~fmt ~@args))))
+  `(if-not ~condition (fail ~fmt ~@args)))
 
 (defmacro fail-if
   "Throws a runtime exception if the condition is true.  The message is generated from the format
   and additional arguments and is only evaluated if a failure occurs."
   [condition fmt & args]
-  `(if ~condition (fail (format ~fmt ~@args))))
+  `(if ~condition (fail ~fmt ~@args)))
 
 (declare find-namespace-resource)
 
