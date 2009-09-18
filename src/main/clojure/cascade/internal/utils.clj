@@ -145,6 +145,7 @@ if the collection is null or empty."
   "Calls into a pipeline, identified by its selector (a keyword). The pipeline is expected to be found
   inside the :pipelines configuration map."
   [selector & args]
+  (debug "Calling pipeline %s" selector)
   (apply (read-config :pipelines selector) args))
 
 (defn qualified-function-name-from-meta

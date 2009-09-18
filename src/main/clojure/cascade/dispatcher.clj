@@ -48,6 +48,7 @@
     (debug "Invoking action function %s" (qualified-function-name action-fn))
     (let [result (action-fn env)]
       (cond
+        ;;  TODO: This should be an multimethod for extensibility
         (true? result) true
         (function? result) (call-pipeline :view result)
         :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn))))))
@@ -109,7 +110,7 @@
 (add-function-to-config :dispatchers "" #'path-dispatcher)
 
 (assoc-in-config [:type-to-pipeline :view] :render-view)    
-(assoc-in-config [:type-to-pipeline :action] :default-action)    
+(assoc-in-config [:type-to-pipeline :action] :default-handle-action)    
 
 (assoc-in-config [:filters :view] :is-view-fn)
 (assoc-in-config [:filters :action] :is-action-fn)

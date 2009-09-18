@@ -30,7 +30,15 @@
   [& forms]
   (let [[fn-name fn-params template] (parse-function-def forms)
         full-meta (merge ^fn-name {:cascade-type :view})]
-  `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
+    `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
+
+(defmacro defaction
+  "Defines a Cascade action function.  An action function may have a doc string and meta data
+  preceding the parameters vector. The forms are interpreted normally (not as an embedded template)."
+  [& forms]
+  (let [[fn-name fn-params forms] (parse-function-def forms)
+        full-meta (merge ^fn-name {:cascade-type :action})]
+    `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params ~@forms))))
 
 (defmacro block
   "Defines a block of template that renders with an environment controlled by its container. The result is a function
@@ -63,7 +71,7 @@ that takes a single parameter (the env map)."
   "Creates a link to a view or action function. Additional path info data may be specified (as a seq of
   data items),
   as well as query parameters (as a map whose keys are strings or keywords and whose values are converted to strings.).
-  Uses standard keys from the env map."
+  Uses standard keys from the env map. The resulting link is returned as a string."
   ([env function]
     (link env function nil))
   ([env function extra-path-info]
@@ -79,3 +87,9 @@ that takes a single parameter (the env map)."
   (let [[extra-path query-parameters template-forms] (parse-render-link-forms forms)]
     `(inline :a { :href (link ~env ~function ~extra-path ~query-parameters) } [ ~@template-forms ])))
 
+(defn send-redirect
+  "Sends a redirect to the client using a link map created by the link macro. Returns true."
+  [env #^String link-path]
+  (let [#^HttpServletResponse response (-> env :servlet-api :response)]
+       (.sendRedirect response link-path)
+       true))

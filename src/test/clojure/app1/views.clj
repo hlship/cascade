@@ -44,4 +44,38 @@
     ]
   ])  
 
+(use 'cascade.logging)
+(use 'cascade.internal.utils)
 
+(defn current-count
+  [env]
+  "Converts the first term of the extra path to an int."
+   (let [s (first (-> env :cascade :extra-path))]
+     (Integer/parseInt s)))
+
+(declare show-counter)
+
+(defaction increment-count
+  {:path "count/increment"}
+  [env]
+  (send-redirect env (link env show-counter [(inc (current-count env))])))
+
+(defview show-counter
+  {:path "count/current"}
+  [env]
+  :html [
+    :head [ :title "Current Count" ]
+    :body [
+      :h1 [ "Current Count"]
+      :p [
+        "The current count is: "
+        :strong {:id "current"} [(current-count env)]
+        "."
+      ]
+      :p [
+        "Click "
+        (render-link env increment-count [(current-count env)] "here to increment")
+        "."
+      ]      
+    ]
+  ])
