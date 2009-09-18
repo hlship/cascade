@@ -47,7 +47,9 @@ element DOM nodes."
     ; A map is assumed to be a DOM node
     (map? any) any
     
-    (string? any) (struct-map dom-node :type :text :value any)
+    (string? any) (text-node any)
+    
+    (number? any) (text-node (str any))
     
     true (throw (RuntimeException. 
       (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."

@@ -12,18 +12,17 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Script that loads all tests for execution.
-
-(use 'clojure.test)
-
-(set! *warn-on-reflection* true)
-
-(def spaces (map #(symbol (str "cascade.test-" %)) [
-  "utils" "config" "cascade" "parse-functions" "path-map" "urls" "map-utils" "viewbuilder"]))
-
-(println "Loading code ...")
-(time (apply use spaces))
-  
-(println "Executing tests ...")
-
-(time (apply run-tests (map find-ns spaces)))
+(ns cascade.test-viewbuilder
+  (:use
+    (clojure (test :only [is are deftest]) )
+    cascade.internal.viewbuilder))
+    
+(deftest test-convert-render-result
+  (let [fake-dom-node {:foo :bar}]
+    (are [input output] (= (convert-render-result input) output)
+      
+      fake-dom-node fake-dom-node
+      
+      "any string" (text-node "any string")
+      
+      123.4 (text-node "123.4"))))
