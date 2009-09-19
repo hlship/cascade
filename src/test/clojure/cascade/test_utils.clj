@@ -67,15 +67,6 @@
        "fred, barney" 
        "fred" "barney")))
 
-(deftest pipeline
-  (let [to-upper-filter (fn [delegate s] (delegate (.toUpperCase s)))
-        doubler-filter (fn [delegate s] (format "before=%s after=%s" s (delegate s)))]
-    (binding [configuration (atom {:filters {:upper to-upper-filter 
-                                      :doubler doubler-filter 
-                                      :default [:doubler :upper]}})]
-      (create-pipeline :default identity)
-      (is (= (call-pipeline :default "portland") "before=portland after=PORTLAND")))))
-
 (deftest test-function?
   (is (= (function? map) true) "a real function")
   (is (= (function? nil) false) "nil is not a function")    
@@ -89,5 +80,5 @@
   
 (deftest test-qualified-function-name
   (is (= (qualified-function-name #'map) "clojure.core/map"))
-  (is (= (qualified-function-name #'create-pipeline) "cascade.internal.utils/create-pipeline")))  
+  (is (= (qualified-function-name #'function?) "cascade.internal.utils/function?")))  
   

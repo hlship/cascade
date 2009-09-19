@@ -19,10 +19,10 @@
 (set! *warn-on-reflection* true)
 
 (def spaces (map #(symbol (str "cascade.test-" %)) [
-  "utils" "config" "cascade" "parse-functions" "path-map" "urls" "map-utils" "viewbuilder"]))
+  "utils" "config" "cascade" "parse-functions" "path-map" "pipeline" "urls" "map-utils" "viewbuilder"]))
 
 (println "Loading code ...")
-(time (apply use spaces))
+(time (apply use (sort spaces)))
   
 (println "Executing tests ...")
 

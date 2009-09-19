@@ -96,39 +96,7 @@ if the collection is null or empty."
     ; TODO: We do this pretty late in case someone's been changing @configuration
     ; but it might be nice to cache this rather than compute it each time.
     (apply-until-non-nil (expand-function-list :chains selector) params)))
-    
-(defn create-pipeline
-  "A pipeline is like a chain, but the individual functions (called filters) that
-  are each passed an extra parameter (the first
-  parameter) which is the next function in the pipeline. The final function in the pipeline is passed
-  a bridge to an ordinary function, called the terminator. In this way, each function can control
-  parameters, return values and exception behavior for functions further down the pipeline (in AOP terms, \"around advice\"). Returns a function
-  with the same arity as the terminator. Nil return values from filter functions, or the terminator, have
-  no special meaning."
-  [selector terminator]
-  (assoc-in-config [:pipelines selector]
-    (fn [& params]
-      (loop [bridge terminator
-             queue (reverse (expand-function-list :filters selector))]
-         (if (empty? queue)
-           ; So, the outer function simply passes the params to the outermost bridge,
-           ; whose arity should match the arity of the terminator. 
-           ; The bridge may in fact be the terminator.
-           (apply bridge params)
-
-           ; Build a new bridge that invokes the current function passing the
-           ; current bridge to it as the first parameter.
-         
-           (recur (fn [& args]
-             (apply (first queue) bridge args)) (rest queue)))))))
-
-(defn call-pipeline
-  "Calls into a pipeline, identified by its selector (a keyword). The pipeline is expected to be found
-  inside the :pipelines configuration map."
-  [selector & args]
-  (debug "Calling pipeline %s" selector)
-  (apply (read-config :pipelines selector) args))  
-  
+      
 (defn blank?
   [#^String s]
   (or 

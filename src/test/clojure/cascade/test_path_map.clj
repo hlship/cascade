@@ -14,7 +14,7 @@
 
 (ns cascade.test-path-map
   (:use 
-    (cascade config path-map urls)
+    (cascade config path-map urls pipeline)
     (cascade.internal utils)
     (clojure [test :only [deftest is are]])))
     
@@ -54,8 +54,8 @@
     
 (deftest not-a-valid-function-for-path-for-function
   (is (thrown-with-msg? RuntimeException 
-      #"^Function cascade\.internal\.utils/create-pipeline is neither a view function nor an action function\.$"
-    (path-for-function create-pipeline))))
+      #"^Function cascade\.internal\.utils/function\? is neither a view function nor an action function\.$"
+    (path-for-function function?))))
     
 (deftest unknown-cascade-type-for-path-for-function
   (is (thrown? RuntimeException (path-for-function unknown-type-fn))))
