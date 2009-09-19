@@ -12,7 +12,8 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.config)
+(ns cascade.config
+  (:use cascade.fail))
 
 (def configuration (atom {}))
 
@@ -39,7 +40,9 @@
   (swap! configuration (fn [current] (assoc-in current (to-key-path key) value))))
   
 (defn read-config
-  "Obtains a value inside the configuration from a nested set of keys."
+  "Obtains a value inside the configuration from a nested set of keys. Throws RuntimeException if the value could not be found."
   [& keys]
-  (get-in @configuration keys))
+  (or 
+    (get-in @configuration keys)
+    (fail "Configuration key: %s was nil." keys)))
 

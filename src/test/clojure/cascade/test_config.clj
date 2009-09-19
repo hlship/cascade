@@ -34,4 +34,7 @@
   (is (= (@configuration :list) [:fred]))
   (add-to-config :list :barney)
   (is (= (@configuration :list) [:barney :fred])))
+  
+(deftest missing-key-on-read
+  (is (thrown-with-msg? RuntimeException #"Configuration key: \(:missing-key\) was nil\." (read-config :missing-key))))
     
