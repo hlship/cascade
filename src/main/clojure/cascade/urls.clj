@@ -17,7 +17,7 @@
   (:import (clojure.lang Keyword Symbol))
   (:require
     (clojure.contrib [str-utils2 :as s2]))    
-  (:use (cascade config fail)
+  (:use (cascade config fail logging)
         (cascade.internal utils)
         (clojure.contrib seq-utils)))
   
@@ -40,35 +40,31 @@
                [:str #'str]]]
   (assoc-in-config [:url-parser k] f))
 
-
-(defn get-parse-fn 
+(defn get-parser-fn 
+  "Converts a parser into a parser function, looking for it in configuration (under :url-parser) if a keyword,
+  or passing it through (a symbol of inline function) otherwise."
   [parser]
-  nil) 
-  
-(use 'cascade.logging)      
-      
+  (if (keyword? parser)
+    (read-config :url-parser parser)
+    parser))
+          
 (defn parse-url-value
   "Used internally to parse a URL value. Nil values stay nil, but others are subject to exceptions
-  if improperly formed. Parser will either be a keyword (looked for in the :url-parser configuration) or a function."
-  [value parse-fn]
-  (if-not (nil? value)
-    (parse-fn value)))
+  if improperly formed. The parser-fn is passed the value if not nil."
+  [value parser-fn]
+  (if-not (nil? value) (parser-fn value)))
 
 (defn parse-extra-path-value
   "Used internally to parse a positional value from the extra path in the URL."
-  [extra-path index parser]
-  (parse-url-value (get extra-path index) parser))
+  [extra-path index parser-fn]
+  (parse-url-value (get extra-path index) parser-fn))
         
 (defn create-positional-binding
   [extra-path-symbol bound-symbol parser index]
-  (let [parser-fn (if (keyword? parser)
-                    (read-config :url-parser parser)
-                    parser)]
-    `[~bound-symbol (parse-extra-path-value ~extra-path-symbol ~index ~parser-fn)]))
+  `[~bound-symbol (parse-extra-path-value ~extra-path-symbol ~index ~(get-parser-fn parser))])
 
 (defn construct-positional-bindings
   [env-symbol pairs]
-  ;; (debug "construct-positional-bindings, env=%s, pairs=%s" env-symbol (ppstring pairs))
   (if-not (empty? pairs)
     (let [extra-path (gensym "extra-path")
           setup `[~extra-path (-> ~env-symbol :cascade :extra-path)]
