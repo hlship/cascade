@@ -17,16 +17,16 @@
     (clojure test)
     cascade.config))
     
-(deftest alter-config-single
-  (alter-config :single :barney)
+(deftest test-assoc-in-config-single
+  (assoc-in-config :single :barney)
   (is (= (@configuration :single) :barney))
-  (alter-config :single :wilma)
+  (assoc-in-config :single :wilma)
   (is (= (@configuration :single) :wilma)))
   
-(deftest alter-config-nested
-  (alter-config :nested { :fred :flinstone })
-  (alter-config [:nested :fred] :murray)
-  (alter-config [:nested :barney] :rubble)
+(deftest test-assoc-in-config
+  (assoc-in-config :nested { :fred :flinstone })
+  (assoc-in-config [:nested :fred] :murray)
+  (assoc-in-config [:nested :barney] :rubble)
   (is (= (@configuration :nested) { :fred :murray :barney :rubble})))    
   
 (deftest test-add-to-config
@@ -34,9 +34,4 @@
   (is (= (@configuration :list) [:fred]))
   (add-to-config :list :barney)
   (is (= (@configuration :list) [:barney :fred])))
-  
-(deftest assoc-in-config-test
-  (assoc-in-config [::outer :inner] :value)
-  (is (= (@configuration ::outer) { :inner :value})))
-  
     

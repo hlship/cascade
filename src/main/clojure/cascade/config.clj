@@ -25,12 +25,6 @@
   or a vector of keys, leading to the node to update."
   [key update-fn]
   (swap! configuration (fn [current] (update-in current (to-key-path key) update-fn))))
-
-(defn alter-config
-  "Updates a configuration key to a new value. key is either a single key,
-  or a vector of keys, leading to the node to update."
-  [key value]
-  (update-config key (fn [_] value)))
   
 (defn add-to-config
   "Adds a value to a configuration list stored in the configuration var. The new value goes first in the identified configuration list.
