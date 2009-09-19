@@ -16,7 +16,8 @@
 (defn fail
   "A quick way to throw a RuntimeException."
   [#^String fmt & args]
-  (throw (RuntimeException. (apply format fmt args))))
+  (let [#^String msg (apply format fmt args)]
+    (throw (RuntimeException. msg))))
 
 (defmacro fail-unless
   "Throws a runtime exception if the condition is false. The message is generated from the format
