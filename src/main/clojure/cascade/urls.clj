@@ -18,7 +18,8 @@
   (:require
     (clojure.contrib [str-utils2 :as s2]))    
   (:use (cascade config fail)
-        (cascade.internal utils)))
+        (cascade.internal utils)
+        (clojure.contrib seq-utils)))
   
 (defmulti to-url-string
   "Used to encode a value for inclusion as a query parameter value, or as extra path data.
@@ -40,31 +41,52 @@
   (assoc-in-config [:url-parser k] f))
 
 
-(defn get-parse-fn [parser]
-  (if (function? parser)
-    parser
-    (let [parse-fn (read-config [:url-parser parser])]
-      (fail-if (nil? parse-fn) "%s not found inside configuration :url-parser." parser)
-      parse-fn)))
+(defn get-parse-fn 
+  [parser]
+  nil) 
+  
+(use 'cascade.logging)      
       
 (defn parse-url-value
   "Used internally to parse a URL value. Nil values stay nil, but others are subject to exceptions
   if improperly formed. Parser will either be a keyword (looked for in the :url-parser configuration) or a function."
-  [value parser]
-  (let [parse-fn (get-parse-fn parser)]
-    (if (nil? value) value (parse-fn value))))
+  [value parse-fn]
+  (if-not (nil? value)
+    (parse-fn value)))
 
-(defn parse-extra-path
+(defn parse-extra-path-value
   "Used internally to parse a positional value from the extra path in the URL."
   [extra-path index parser]
   (parse-url-value (get extra-path index) parser))
-    
+        
+(defn create-positional-binding
+  [extra-path-symbol bound-symbol parser index]
+  (let [parser-fn (if (keyword? parser)
+                    (read-config :url-parser parser)
+                    parser)]
+    `[~bound-symbol (parse-extra-path-value ~extra-path-symbol ~index ~parser-fn)]))
+
+(defn construct-positional-bindings
+  [env-symbol pairs]
+  ;; (debug "construct-positional-bindings, env=%s, pairs=%s" env-symbol (ppstring pairs))
+  (if-not (empty? pairs)
+    (let [extra-path (gensym "extra-path")
+          setup `[~extra-path (-> ~env-symbol :cascade :extra-path)]
+          bindings (mapcat (fn [[bound-symbol parser] index] (create-positional-binding extra-path bound-symbol parser index))
+                           pairs
+                           (iterate inc 0))]
+      (concat setup bindings))))
 
 (defmacro parse-url
   "Handles the extraction and conversion of data encoded into the URL as extra path information or as query parameters."
-  [env-symbol & symbol-mappings]
+  [env-symbol symbol-mappings & forms]
+  (fail-unless (vector? symbol-mappings) "parse-url expects a vector of symbol mappings.")
   (fail-unless (even? (count symbol-mappings)) "parse-url requires an even number of symbol mappings.")
-  nil)
+  (let [symbol-pairs (partition 2 symbol-mappings)
+        [query-parameter-pairs positional-pairs] (separate #(vector? (get % 1)) symbol-pairs)
+        positional-bindings (construct-positional-bindings env-symbol positional-pairs)
+        query-parameter-bindings nil]  ; Not yet implemented
+    `(let [~@positional-bindings ~@query-parameter-bindings] ~@forms)))
 
 (defn split-path
   "Splits path (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are

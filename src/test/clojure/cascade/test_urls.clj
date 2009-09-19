@@ -39,4 +39,10 @@
   (are [context-path path extra-path parameters expected]
       (= (construct-absolute-path context-path (link-map-from-path path extra-path parameters)) expected)
       "" "foo" ["bar"] nil "/foo/bar"
-      "/ctx" "account/list" [12 34] { :format :brief 'per-path 23 } "/ctx/account/list/12/34?format=brief&per-path=23"))      
+      "/ctx" "account/list" [12 34] { :format :brief 'per-path 23 } "/ctx/account/list/12/34?format=brief&per-path=23"))  
+      
+(deftest test-parse-url-positional
+  (let [env { :cascade { :extra-path ["123" "beta" "456"]}}]
+    (is (= (class (parse-url env [p0 :int] p0)) Integer) ":int parses to Integer")
+    (is (= (parse-url env [p0 :int p1 :str p2 :int] [p0 p1 p2]) [123 "beta" 456])))
+    )          
