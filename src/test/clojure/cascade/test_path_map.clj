@@ -14,7 +14,7 @@
 
 (ns cascade.test-path-map
   (:use 
-    (cascade config path-map)
+    (cascade config path-map urls)
     (cascade.internal utils)
     (clojure [test :only [deftest is are]])))
     

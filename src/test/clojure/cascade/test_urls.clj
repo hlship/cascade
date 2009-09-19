@@ -24,3 +24,19 @@
     -42.7 "-42.7"
     :any-keyword "any-keyword"
     'any-symbol "any-symbol"))
+    
+(deftest test-split-path
+  (is (vector? (split-path "foo/bar")))
+  (are [input split] 
+       (= (split-path input) split)
+       "foo/bar" ["foo" "bar"]
+       "/foo/bar/" ["foo" "bar"]
+       "//foo//bar//baz" ["foo" "bar" "baz"]
+       "" []
+       "foo" ["foo"]))  
+  
+(deftest test-construct-absolute-path
+  (are [context-path path extra-path parameters expected]
+      (= (construct-absolute-path context-path (link-map-from-path path extra-path parameters)) expected)
+      "" "foo" ["bar"] nil "/foo/bar"
+      "/ctx" "account/list" [12 34] { :format :brief 'per-path 23 } "/ctx/account/list/12/34?format=brief&per-path=23"))      

@@ -17,8 +17,7 @@
 (ns #^{:doc "Manages path prefixs to view, action and dispatcher functions."}
   cascade.path-map
   (:use 
-    (cascade config)
-    (cascade.internal utils)))
+    (cascade config urls func-utils fail)))
       
 (def cascade-type-to-virtual-folder { :view "view" :action "action"})      
       

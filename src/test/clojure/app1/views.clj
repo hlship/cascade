@@ -60,13 +60,23 @@
   [env]
   (send-redirect env (link env show-counter [(inc (current-count env))])))
 
+(defn page-template
+  [env title body-block]
+  (inline
+    :html [
+      :head [ :title title]
+      :body [
+        :h1 [ title ]
+        (body-block env)
+      ]
+    ]))
+          
+    
 (defview show-counter
   {:path "count/current"}
   [env]
-  :html [
-    :head [ :title "Current Count" ]
-    :body [
-      :h1 [ "Current Count"]
+  (page-template env "Current Count"
+    (block [env]
       :p [
         "The current count is: "
         :strong {:id "current"} [(current-count env)]
@@ -76,6 +86,4 @@
         "Click "
         (render-link env increment-count [(current-count env)] "here to increment")
         "."
-      ]      
-    ]
-  ])
+      ])))

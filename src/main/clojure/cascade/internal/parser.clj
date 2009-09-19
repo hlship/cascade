@@ -15,6 +15,7 @@
   #^{:doc "Parser monad used to parse Clojure forms into higher-level structures."}
   cascade.internal.parser
   (:use clojure.contrib.monads
+        (cascade fail)
         (cascade.internal utils)))
 
 (def parser-m (state-t maybe-m))

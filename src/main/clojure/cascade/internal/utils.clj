@@ -14,28 +14,9 @@
 (ns cascade.internal.utils
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
-  (:require
-    (clojure.contrib [str-utils2 :as s2]))  
   (:use
-    (cascade config logging urls)
+    (cascade config logging)
     (clojure.contrib str-utils pprint)))
-
-(defn fail
-  "A quick way to throw a RuntimeException."
-  [#^String fmt & args]
-  (throw (RuntimeException. (apply format fmt args))))
-
-(defmacro fail-unless
-  "Throws a runtime exception if the condition is false. The message is generated from the format
-  and additional arguments and is only evaluated if a failure occurs."
-  [condition fmt & args ]
-  `(if-not ~condition (fail ~fmt ~@args)))
-
-(defmacro fail-if
-  "Throws a runtime exception if the condition is true.  The message is generated from the format
-  and additional arguments and is only evaluated if a failure occurs."
-  [condition fmt & args]
-  `(if ~condition (fail ~fmt ~@args)))
 
 (declare find-namespace-resource)
 
@@ -146,18 +127,7 @@ if the collection is null or empty."
   inside the :pipelines configuration map."
   [selector & args]
   (debug "Calling pipeline %s" selector)
-  (apply (read-config :pipelines selector) args))
-
-(defn qualified-function-name-from-meta
-  [fn-meta]
-  (str (ns-name (fn-meta :ns)) "/"  (fn-meta :name)))
-  
-
-(defn qualified-function-name
-   "Accesses the meta-data for a function to extract its name and namespace, concatinated and
-   returned as a string."
-  [f]
-  (qualified-function-name-from-meta ^f))
+  (apply (read-config :pipelines selector) args))  
   
 (defn blank?
   [#^String s]
@@ -165,43 +135,3 @@ if the collection is null or empty."
     (nil? s)
     (= 0 (.length s))))
     
-(defn split-path
-  "Splits path (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are
-  ignored (that is, empty names in the result are removed)."
-  [#^String path]
-  (let [names (.split #"/" path)]
-    (vec (remove blank? (seq names)))))
-
-(defn add-query-parameter
-  [#^StringBuilder builder key value]
-  (doto builder
-    (.append (to-url-string key))
-    (.append "=")
-    (.append (to-url-string value))))
-
-(defn construct-absolute-path
-  "Converts a link map into a absolute path, including query parameters."  
-  [context-path link-map]
-  (loop [#^StringBuilder sb (doto (StringBuilder.)
-                              (.append context-path)
-                              (.append "/")
-                              (.append (link-map :path)))
-         sep "?"
-         param-pairs (-> link-map :parameters)]
-    (if (empty? param-pairs)
-      (.toString sb)
-      (do
-        (.append sb sep)
-        (add-query-parameter sb ((first param-pairs) 0) ((first param-pairs) 1))
-        (recur sb "&" (next param-pairs))))))          
-
-(defn link-map-from-path
-  "Constructs a link map a path, extra path info, and optional query parameters. Applications should
-  use the link-map macro instead."
-  [fn-path extra-path-info query-parameters]
-  {
-    :path (if (empty? extra-path-info)
-            fn-path
-            (str fn-path "/" (s2/join "/" (map str extra-path-info))))
-    :parameters query-parameters
-  })         

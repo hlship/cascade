@@ -16,7 +16,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
-    (cascade path-map)
+    (cascade path-map fail urls)
     (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline

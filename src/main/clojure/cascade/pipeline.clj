@@ -15,7 +15,7 @@
 (ns #^{:doc "Macros used to define filters and chains for extending Cascade."}
   cascade.pipeline
   (:use
-    (cascade config)
+    (cascade config fail)
     (cascade.internal utils)))
   
 ;; TODO: get away from defining chains in terms of a keyword, use a symbol  

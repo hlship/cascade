@@ -16,7 +16,7 @@
 
 (ns cascade.filter
   (:require (cascade dispatcher))
-  (:use (cascade config logging path-map)
+  (:use (cascade config logging path-map urls)
         (cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))

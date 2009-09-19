@@ -17,7 +17,8 @@
     (clojure (test :only [is are deftest]) )
     (clojure.contrib pprint duck-streams str-utils)
     cascade.config
-    cascade.internal.utils))
+    (cascade func-utils)
+    (cascade.internal utils)))
 
 (deftest classpath-resource-does-not-exist
   (is (= (find-classpath-resource "does/not/exist.txt") nil)))
@@ -90,18 +91,3 @@
   (is (= (qualified-function-name #'map) "clojure.core/map"))
   (is (= (qualified-function-name #'create-pipeline) "cascade.internal.utils/create-pipeline")))  
   
-(deftest test-split-path
-  (is (vector? (split-path "foo/bar")))
-  (are [input split] 
-       (= (split-path input) split)
-       "foo/bar" ["foo" "bar"]
-       "/foo/bar/" ["foo" "bar"]
-       "//foo//bar//baz" ["foo" "bar" "baz"]
-       "" []
-       "foo" ["foo"]))  
-  
-(deftest test-construct-absolute-path
-  (are [context-path path extra-path parameters expected]
-      (= (construct-absolute-path context-path (link-map-from-path path extra-path parameters)) expected)
-      "" "foo" ["bar"] nil "/foo/bar"
-      "/ctx" "account/list" [12 34] { :format :brief 'per-path 23 } "/ctx/account/list/12/34?format=brief&per-path=23"))  

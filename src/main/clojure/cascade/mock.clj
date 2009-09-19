@@ -16,7 +16,7 @@
   cascade.mock
   (:import (org.easymock EasyMock IMocksControl))
   (:use
-    (cascade map-utils)
+    (cascade map-utils fail)
     (cascade.internal utils)))
     
 (defn new-mock

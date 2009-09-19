@@ -14,7 +14,8 @@
 
 (ns #^{:doc "Utilities for building and manipulating maps."}
   cascade.map-utils
-  (:use (cascade.internal utils)))
+  (:use 
+    (cascade fail)))
 
 (defn list-to-map-of-seqs
   "Converts a seq into a map based on a set of predetermined keys. Each form in forms is a seq; the
