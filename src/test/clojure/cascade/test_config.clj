@@ -39,6 +39,6 @@
   (is (thrown-with-msg? RuntimeException #"Configuration key: \(:missing-key\) was nil\." (read-config :missing-key))))
     
 (deftest test-find-config
-  (add-to-config :mykey :myvalue)
+  (assoc-in-config :mykey :myvalue)
   (is (nil? (find-config :missing-key)))
   (is (= (find-config :mykey) :myvalue)))    

@@ -74,7 +74,7 @@ if the collection is null or empty."
         (nil? current) (recur result remaining)
         (sequential? current) (recur result (concat current remaining))
         (or (symbol? current) (keyword? current))
-          (recur result (cons (read-config configuration-key current) remaining))
+          (recur result (cons (find-config configuration-key current) remaining))
         (function? current) (recur (conj result current) remaining)))))
     
 (defn apply-until-non-nil

@@ -18,30 +18,43 @@
     (cascade.internal parse-functions)))
     
 (deftest test-simple-fn
-  (let [[n p forms] (parse-function-def '(my-fn [a b] c d))]
+  (let [[n p b forms] (parse-function-def '(my-fn [a b] c d))]
     (are [value expected]
      (= value expected)
      n 'my-fn
+     b nil
      p '[a b]
      forms '(c d))))
 
 (deftest meta-data-for-doc-string-available
-  (let [[n p forms] (parse-function-def '(my-fn "Test" [a b] c))]
+  (let [[n p b forms] (parse-function-def '(my-fn "Test" [a b] c))]
     (are [value expected]
      (= value expected)
       n 'my-fn
+      b nil
       p '[a b]
       forms '(c))
     (is (= (^n :doc) "Test"))))
     
 (deftest meta-data-applied-to-symbol
-  (let [[n p forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
+  (let [[n p b forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
     (are [value expected]
      (= value expected)
       n 'a-fn
       p '[x y z]
+      b nil
       forms '(:gnip :gnop))
     (are [k v]
       (= (^n k) v)
       :doc "Next"
       :key :value)))
+      
+(deftest binding-vector
+  (let [[n p b forms] (parse-function-def '(a-fn "Next" [a b] [c d] :gnip :gnop))]
+    (are [value expected]
+      (= value expected)
+      n 'a-fn
+      p '[a b]
+      b '[c d]
+      forms '(:gnip :gnop))))
+      

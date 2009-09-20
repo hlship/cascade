@@ -57,7 +57,7 @@
 (defn parse-extra-path-value
   "Used internally to parse a positional value from the extra path in the URL."
   [extra-path index parser-fn]
-  (parse-url-value (get extra-path index) parser-fn))
+  (parse-url-value (nth extra-path index nil) parser-fn))
         
 (defn create-positional-binding
   [extra-path-symbol bound-symbol parser index]
@@ -76,13 +76,17 @@
 (defmacro parse-url
   "Handles the extraction and conversion of data encoded into the URL as extra path information or as query parameters."
   [env-symbol symbol-mappings & forms]
-  (fail-unless (vector? symbol-mappings) "parse-url expects a vector of symbol mappings.")
-  (fail-unless (even? (count symbol-mappings)) "parse-url requires an even number of symbol mappings.")
-  (let [symbol-pairs (partition 2 symbol-mappings)
-        [query-parameter-pairs positional-pairs] (separate #(vector? (get % 1)) symbol-pairs)
-        positional-bindings (construct-positional-bindings env-symbol positional-pairs)
-        query-parameter-bindings nil]  ; Not yet implemented
-    `(let [~@positional-bindings ~@query-parameter-bindings] ~@forms)))
+  (if (empty? symbol-mappings)
+    `(do ~@forms)
+    (do
+      (fail-unless (vector? symbol-mappings) "parse-url expects a vector of symbol mappings.")
+      (fail-unless (even? (count symbol-mappings)) "parse-url requires an even number of symbol mappings.")
+
+      (let [symbol-pairs (partition 2 symbol-mappings)
+            [query-parameter-pairs positional-pairs] (separate #(vector? (get % 1)) symbol-pairs)
+            positional-bindings (construct-positional-bindings env-symbol positional-pairs)
+            query-parameter-bindings nil]  ; Not yet implemented
+        `(let [~@positional-bindings ~@query-parameter-bindings] ~@forms)))))
 
 (defn split-path
   "Splits path (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are

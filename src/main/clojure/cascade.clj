@@ -16,7 +16,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
-    (cascade path-map fail urls)
+    (cascade path-map fail urls logging)
     (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro inline
@@ -26,19 +26,28 @@
     
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
-  preceding the parameters vector. The function's forms are an implicit inline block."
+  preceding the parameters vector. The parameters vector is followed by an optional vector to establish URL bindings. 
+  The function's forms are an implicit inline block."
   [& forms]
-  (let [[fn-name fn-params template] (parse-function-def forms)
+  (let [[fn-name fn-params fn-bindings template] (parse-function-def forms)
+        env-symbol (first fn-params)
         full-meta (merge ^fn-name {:cascade-type :view})]
-    `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params (inline ~@template)))))
-
+    `(add-mapped-function (defn ~fn-name 
+                                ~full-meta
+                                ~fn-params 
+                                (parse-url ~env-symbol ~fn-bindings (inline ~@template))))))
+ 
 (defmacro defaction
   "Defines a Cascade action function.  An action function may have a doc string and meta data
   preceding the parameters vector. The forms are interpreted normally (not as an embedded template)."
   [& forms]
-  (let [[fn-name fn-params forms] (parse-function-def forms)
+  (let [[fn-name fn-params fn-bindings forms] (parse-function-def forms)
+        env-symbol (first fn-params)
         full-meta (merge ^fn-name {:cascade-type :action})]
-    `(add-mapped-function (defn ~fn-name ~full-meta ~fn-params ~@forms))))
+    `(add-mapped-function (defn ~fn-name 
+                                ~full-meta 
+                                ~fn-params 
+                                (parse-url ~env-symbol ~fn-bindings ~@forms)))))
 
 (defmacro block
   "Defines a block of template that renders with an environment controlled by its container. The result is a function

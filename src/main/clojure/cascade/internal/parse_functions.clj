@@ -21,13 +21,14 @@
   (domonad parser-m
     [fn-name match-symbol
      doc-string (optional match-string)
-     fn-meta-data (optional match-map)
+     fn-meta-data (optional match-map)     
      parameters match-vector
+     bindings (optional match-vector)
      fn-forms (one-or-more any-form)]
     (let [doc-meta (and doc-string {:doc doc-string})
           full-meta (merge ^fn-name fn-meta-data doc-meta)
           symbol-with-meta (with-meta fn-name full-meta)]
-      [symbol-with-meta parameters fn-forms])))
+      [symbol-with-meta parameters bindings fn-forms])))
 
 
 (defn parse-function-def

@@ -14,7 +14,9 @@
 
 (ns app1.views
   (:import (java.util Date))
-  (:use cascade))
+  (:use cascade
+        (cascade logging)
+        (cascade.internal utils)))
   
 (defview itworks
   {:path "working"}
@@ -44,27 +46,19 @@
     ]
   ])  
 
-(use 'cascade.logging)
-(use 'cascade.internal.utils)
-
-(defn current-count
-  [env]
-  "Converts the first term of the extra path to an int."
-   (let [s (first (-> env :cascade :extra-path))]
-     (Integer/parseInt s)))
-
 (declare show-counter)
 
 (defaction increment-count
   {:path "count/increment"}
-  [env]
-  (send-redirect env (link env show-counter [(inc (current-count env))])))
+  [env] 
+  [count :int]
+  (send-redirect env (link env show-counter [(inc count)])))
 
 (defn page-template
   [env title body-block]
   (inline
     :html [
-      :head [ :title title]
+      :head [ :title title ]
       :body [
         :h1 [ title ]
         (body-block env)
@@ -75,15 +69,16 @@
 (defview show-counter
   {:path "count/current"}
   [env]
+  [count :int]
   (page-template env "Current Count"
     (block [env]
       :p [
         "The current count is: "
-        :strong {:id "current"} [(current-count env)]
+        :strong {:id "current"} [ count ]
         "."
       ]
       :p [
         "Click "
-        (render-link env increment-count [(current-count env)] "here to increment")
+        (render-link env increment-count [ count ] "here to increment")
         "."
       ])))
