@@ -39,6 +39,11 @@
   [key value]
   (swap! configuration (fn [current] (assoc-in current (to-key-path key) value))))
   
+(defn find-config
+  "Obtains a value inside the configuraiton from a nested set of keys. May return nil."
+  [& keys]
+  (get-in @configuration keys))
+  
 (defn read-config
   "Obtains a value inside the configuration from a nested set of keys. Throws RuntimeException if the value could not be found."
   [& keys]
