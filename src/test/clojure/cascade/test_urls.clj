@@ -13,9 +13,10 @@
 ; and limitations under the License.
 
 (ns cascade.test-urls
+  (:import javax.servlet.http.HttpServletRequest)
   (:use
     (clojure (test :only [is are deftest]))
-    cascade.urls))
+    (cascade mock urls)))
     
 (deftest convert-to-url-string
   (are [v s] (= (to-url-string v) s)
@@ -57,5 +58,15 @@
     
     (is (= (parse-url env [p0 :int p1 custom-parser] p1) "BETA") "Custom value parser.")
     
-    (is (= (parse-url env [p0 :int p1 #(apply str (reverse %))] p1) "ateb") "Inline custom parser.")
-    ))
+    (is (= (parse-url env [p0 :int p1 #(apply str (reverse %))] p1) "ateb") "Inline custom parser.")))
+
+(deftest test-parse-url-query-parameters
+   (with-mocks
+     [request HttpServletRequest]
+     (:train
+       (expect .getParameter request "buzby" "12345"))
+     (:test
+       (let [env {:servlet-api { :request request }}
+            result (parse-url env [b [:buzby :int]] b)]
+         (is (= (class result) Integer))
+         (is (= result 12345))))))

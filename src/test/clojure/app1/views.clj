@@ -14,9 +14,7 @@
 
 (ns app1.views
   (:import (java.util Date))
-  (:use cascade
-        (cascade logging)
-        (cascade.internal utils)))
+  (:use cascade))
   
 (defview itworks
   {:path "working"}
@@ -54,6 +52,16 @@
   [count :int]
   (send-redirect env (link env show-counter [(inc count)])))
 
+(defaction adjust-count
+  {:path "count/adjust"}
+  [env]
+  [op [:operation :str]
+   count [:count :int]]
+  (let [new-value (condp = op
+                    "reset" 1
+                    "dec" (dec count))]
+    (send-redirect env (link env show-counter [new-value]))))
+
 (defn page-template
   [env title body-block]
   (inline
@@ -80,5 +88,15 @@
       :p [
         "Click "
         (render-link env increment-count [ count ] "here to increment")
+        "."
+      ]
+      :p [ 
+        "Click "
+        (render-link env adjust-count {:operation :reset} "here to reset")
+        "."
+      ]
+      :p [
+        "Click "
+        (render-link env adjust-count {:operation :dec :count count} "here to decrement")
         "."
       ])))

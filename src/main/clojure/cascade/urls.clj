@@ -14,12 +14,15 @@
 
 (ns #^{:doc "Functions used when encoding data into portions of a URL."} 
   cascade.urls
-  (:import (clojure.lang Keyword Symbol))
+  (:import 
+    (clojure.lang Keyword Symbol)
+    (javax.servlet.http HttpServletRequest))
   (:require
     (clojure.contrib [str-utils2 :as s2]))    
-  (:use (cascade config fail logging)
-        (cascade.internal utils)
-        (clojure.contrib seq-utils)))
+  (:use 
+    (cascade config fail logging)
+    (cascade.internal utils)
+    (clojure.contrib seq-utils)))
   
 (defmulti to-url-string
   "Used to encode a value for inclusion as a query parameter value, or as extra path data.
@@ -55,9 +58,16 @@
   (if-not (nil? value) (parser-fn value)))
 
 (defn parse-extra-path-value
-  "Used internally to parse a positional value from the extra path in the URL."
+  "Used internally to parse a positional value from the extra path in the URL. The value extacted from the extra-path (a seq of strings) is
+  passed through the parser function. Indexes outside the bounds of the extra-path seq are treated as nil."
   [extra-path index parser-fn]
   (parse-url-value (nth extra-path index nil) parser-fn))
+        
+(defn parse-query-parameter-value
+  "Parses a value specified as a query parameter. The parameter-name is the string used to identify the parameter, and the extracted parameter value
+  is passed through the parser function."
+  [#^HttpServletRequest request parameter-name parser-fn]
+  (parse-url-value (.getParameter request parameter-name) parser-fn))
         
 (defn create-positional-binding
   [extra-path-symbol bound-symbol parser index]
@@ -73,6 +83,19 @@
                            (iterate inc 0))]
       (concat setup bindings))))
 
+(defn create-query-parameter-binding
+  [request-symbol bound-symbol parser param-keyword]
+  `[~bound-symbol (parse-query-parameter-value ~request-symbol ~(name param-keyword) ~(get-parser-fn parser))])
+
+(defn construct-query-parameter-bindings
+  [env-symbol pairs]
+  (if-not (empty? pairs)
+    (let [request-symbol (gensym "request")
+          setup `[~request-symbol (-> ~env-symbol :servlet-api :request)]
+          ;; TODO: More verification of the pairs; second value must be a vector, must have two values, first value must be a keyword.
+          bindings (mapcat (fn [[bound-symbol [param-keyword parser]]] (create-query-parameter-binding request-symbol bound-symbol parser param-keyword)) pairs)]
+      (concat setup bindings))))
+
 (defmacro parse-url
   "Handles the extraction and conversion of data encoded into the URL as extra path information or as query parameters."
   [env-symbol symbol-mappings & forms]
@@ -83,9 +106,9 @@
       (fail-unless (even? (count symbol-mappings)) "parse-url requires an even number of symbol mappings.")
 
       (let [symbol-pairs (partition 2 symbol-mappings)
-            [query-parameter-pairs positional-pairs] (separate #(vector? (get % 1)) symbol-pairs)
+            [query-parameter-pairs positional-pairs] (separate #(vector? (nth % 1)) symbol-pairs)
             positional-bindings (construct-positional-bindings env-symbol positional-pairs)
-            query-parameter-bindings nil]  ; Not yet implemented
+            query-parameter-bindings (construct-query-parameter-bindings env-symbol query-parameter-pairs)]
         `(let [~@positional-bindings ~@query-parameter-bindings] ~@forms)))))
 
 (defn split-path
