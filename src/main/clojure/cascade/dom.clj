@@ -76,9 +76,6 @@
       (do
         (write out ">")
 
-        ; Render children recursively; they inherit the namespace mappings from this element
-        ; and its containers.
-
         (render-xml content out)
 
         (write out "</" element-name ">")))))

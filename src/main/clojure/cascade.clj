@@ -19,23 +19,23 @@
     (cascade path-map fail urls logging)
     (cascade.internal utils viewbuilder parse-functions)))
   
-(defmacro inline
-  "Defines a block of template that renders inline."
-  [& template]
-  (parse-embedded-template template))
+(defmacro template
+  "Defines a block of the template DSL, which is converted into code that renders a seq of DOM nodes."
+  [& forms]
+  (parse-embedded-template forms))
     
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
   preceding the parameters vector. The parameters vector is followed by an optional vector to establish URL bindings. 
   The function's forms are an implicit inline block."
   [& forms]
-  (let [[fn-name fn-params fn-bindings template] (parse-function-def forms)
+  (let [[fn-name fn-params fn-bindings template-forms] (parse-function-def forms)
         env-symbol (first fn-params)
         full-meta (merge ^fn-name {:cascade-type :view})]
     `(add-mapped-function (defn ~fn-name 
                                 ~full-meta
                                 ~fn-params 
-                                (parse-url ~env-symbol ~fn-bindings (inline ~@template))))))
+                                (parse-url ~env-symbol ~fn-bindings (template ~@template-forms))))))
  
 (defmacro defaction
   "Defines a Cascade action function.  An action function may have a doc string and meta data
@@ -50,11 +50,10 @@
                                 (parse-url ~env-symbol ~fn-bindings ~@forms)))))
 
 (defmacro block
-  "Defines a block of template that renders with an environment controlled by its container. The result is a function
-that takes a single parameter (the env map)."
-  [fn-params & template]
-  (fail-unless (and (vector? fn-params) (= 1 (count fn-params))) "Blocks require that exactly one parameter be defined.")
-    `(fn ~fn-params (inline ~@template)))
+  "Encapsulates a block of template forms as a function with parameters, typically used as
+  a callback. The function, when invoked, returns a seq of DOM nodes."
+  [fn-params & template-forms]
+    `(fn ~fn-params (template ~@template-forms)))
 
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
@@ -94,7 +93,7 @@ that takes a single parameter (the env map)."
   an optional map of query parameters. Additional forms after that form an implicit template."
   [env function & forms]
   (let [[extra-path query-parameters template-forms] (parse-render-link-forms forms)]
-    `(inline :a { :href (link ~env ~function ~extra-path ~query-parameters) } [ ~@template-forms ])))
+    `(template :a { :href (link ~env ~function ~extra-path ~query-parameters) } [ ~@template-forms ])))
 
 (defn send-redirect
   "Sends a redirect to the client using a link map created by the link macro. Returns true."
@@ -102,3 +101,4 @@ that takes a single parameter (the env map)."
   (let [#^HttpServletResponse response (-> env :servlet-api :response)]
        (.sendRedirect response link-path)
        true))
+       

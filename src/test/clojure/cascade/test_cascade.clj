@@ -89,7 +89,7 @@
       :h1 [ "List of Accounts" ]
       :ul [
         (for [acct (fetch-accounts env)]
-          (inline :li [ (acct :name) ] linebreak))
+          (template :li [ (acct :name) ] linebreak))
       ]
     ]
   ])
@@ -131,12 +131,12 @@
   
 (defn symbol-view
   [env]
-  (let [copyright (inline  
+  (let [copyright (template  
     linebreak :hr :p [ 
       "&copy; 2009 " 
       :a {:href "mailto:hlship@gmail.com"} [ "Howard M. Lewis Ship" ]
     ] linebreak)]
-    (inline
+    (template
       :html [ 
         :head [ :title [ "Symbol Demo" ]]
         :body [
