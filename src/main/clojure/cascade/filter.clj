@@ -15,8 +15,8 @@
 (ns 
   #^{:doc "Servlet API Filter that directs requests into Cascade"}
   cascade.filter
-  (:require (cascade dispatcher))
-  (:use (cascade config logging path-map urls)
+  (:require (cascade dispatcher exception))
+  (:use (cascade config logging path-map pipeline urls)
         (cascade.internal utils))
   (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
   (javax.servlet.http HttpServletRequest HttpServletResponse))
@@ -50,6 +50,11 @@
     (.getResource context path) true
     :otherwise false))
 
+(defn handle-request-exception
+  [env exception]
+  ;; TODO: A try..catch here in case just reporting the exception fails!
+  (call-pipeline :request-exception env exception))
+
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
   false otherwise (i.e., forward to the servlet container for normal processing)." 
@@ -59,10 +64,12 @@
                              :response response 
                              :context context }
               :cascade { :path path
-                         :split-path split } }
-        matches (find-matching-functions :dispatchers split)
-        dispatchers (for [[path function] matches] function)]
-    (apply-until-non-nil dispatchers [env])))
+                         :split-path split } }]
+    (try 
+      (let [matches (find-matching-functions :dispatchers split)
+            dispatchers (for [[path function] matches] function)]
+        (apply-until-non-nil dispatchers [env]))
+      (catch Throwable t (handle-request-exception env t)))))
     
 ;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")
 ;; Just couldn't bring myself to call this namespace "CascadeFilter".

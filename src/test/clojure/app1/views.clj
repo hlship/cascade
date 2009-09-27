@@ -100,3 +100,14 @@
         (render-link env adjust-count {:operation :dec :count count} "here to decrement")
         "."
       ])))
+
+
+(defview fail-view
+  {:path "force-failure"}
+  [env]
+  (page-template env "Force Failure"
+    (block [env]
+      :p [
+        "Five / 0 =" 
+        :strong [ (/ 5 0) ]
+        ])))
