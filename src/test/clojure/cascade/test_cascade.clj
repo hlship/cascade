@@ -150,6 +150,15 @@
 (deftest use-of-symbol
   (render-test symbol-view "use-of-symbol" nil))
 
+(defview template-for-view
+  [env]
+  :ul [
+    (template-for [x [1 2 3]] :li [ x ])
+  ])
+
+(deftest test-template-for
+  (render-test template-for-view "template-for" nil))
+
 (defview fn-with-meta "doc meta" {:other-meta :data} [env] :p)
 
 (deftest meta-data-for-function

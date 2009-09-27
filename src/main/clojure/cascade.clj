@@ -12,7 +12,8 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade
+(ns #^{:doc "Core functions and macros used when implementing Cascade views and actions."}
+  cascade
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
@@ -54,6 +55,11 @@
   a callback. The function, when invoked, returns a seq of DOM nodes."
   [fn-params & template-forms]
     `(fn ~fn-params (template ~@template-forms)))
+    
+(defmacro template-for
+  "A combination of a for list comprehension with the template macro: the body of the for is template DSL."
+  [bindings & template-forms]
+  `(for ~bindings (template ~@template-forms)))    
 
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
