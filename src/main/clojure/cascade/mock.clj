@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Used to interface with the EasyMock library."}
+(ns #^{:doc "Wrapper for EasyMock"}
   cascade.mock
   (:import (org.easymock EasyMock IMocksControl))
   (:use

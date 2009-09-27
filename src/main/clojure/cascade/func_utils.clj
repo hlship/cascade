@@ -11,7 +11,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.func-utils)
+(ns 
+  #^{:doc "Meta utilities for functions"}
+  cascade.func-utils)
 
 (defn qualified-function-name-from-meta
   [fn-meta]

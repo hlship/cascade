@@ -12,7 +12,7 @@
 ; and limitations under the License.
 
 (ns #^{:doc "A form parser used when building functions, to emulate (defn)'s ability to add documentation
-  and other meta-data."}
+  and other meta-data"}
   cascade.internal.parse-functions
   (:use (clojure.contrib monads)
         (cascade.internal utils parser)))

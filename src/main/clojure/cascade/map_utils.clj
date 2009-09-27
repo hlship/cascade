@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Utilities for building and manipulating maps."}
+(ns #^{:doc "Utilities for building and manipulating maps"}
   cascade.map-utils
   (:use 
     (cascade fail)))

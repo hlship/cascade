@@ -12,7 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.dom
+(ns 
+  #^{:doc "DOM node and rendering"}
+  cascade.dom
   (:import (java.io Writer))
   (:use cascade.internal.utils))
 

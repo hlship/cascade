@@ -12,9 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Contains the basic dispatchers
-
-(ns cascade.dispatcher
+(ns 
+  #^{:doc "Request dispatch to views and actions"}
+  cascade.dispatcher
   (:import (javax.servlet ServletResponse))
   (:use (cascade config dom logging path-map pipeline fail func-utils)
         (cascade.internal utils)))

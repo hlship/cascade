@@ -11,7 +11,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "A form parser used to to parse the markup template DSL."}
+(ns #^{:doc "Form parser for the template DSL"}
   cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (cascade dom)

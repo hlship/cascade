@@ -14,7 +14,7 @@
 
 ; Contains the basic dispatchers
 
-(ns #^{:doc "Manages path prefixs to view, action and dispatcher functions."}
+(ns #^{:doc "Maps path prefixs to view, action and dispatcher functions"}
   cascade.path-map
   (:use 
     (cascade config urls func-utils fail)))

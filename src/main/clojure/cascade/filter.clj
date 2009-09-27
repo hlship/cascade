@@ -12,9 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; A filter that directs traffic to into Cascade.
-
-(ns cascade.filter
+(ns 
+  #^{:doc "Servlet API Filter that directs requests into Cascade"}
+  cascade.filter
   (:require (cascade dispatcher))
   (:use (cascade config logging path-map urls)
         (cascade.internal utils))

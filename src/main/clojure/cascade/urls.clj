@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Functions used when encoding data into portions of a URL."} 
+(ns #^{:doc "Functions used when encoding data into portions of a URL"} 
   cascade.urls
   (:import 
     (clojure.lang Keyword Symbol)

@@ -11,7 +11,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.internal.utils
+(ns 
+  #^{:doc "Internal private utilities"}
+  cascade.internal.utils
   (:import (java.util.regex Matcher MatchResult)
            (clojure.lang IFn))
   (:use

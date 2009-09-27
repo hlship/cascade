@@ -12,17 +12,18 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Used to start an embedded Jetty server.
-
-(ns cascade.jetty
+(ns 
+  #^{:doc "Run Jetty server embedded"}
+  cascade.jetty
   (:require cascade.filter)
   (:import (org.eclipse.jetty.server Server)
            (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
 
 (defn run-jetty
   "Starts an instance of the Jetty Server running.
-  webapp defines the folder containing
-	ordinary static resources (the docroot). The default for the port parameter is 8080. Returns the new Jetty Server instance."
+  webapp defines the folder containing ordinary static resources (the docroot). 
+  The default for the port parameter is 8080. Returns the new Jetty Server instance. No web.xml is necessary, a
+  cascade.filter will automatically be installed."
   ([webapp] (run-jetty webapp 8080))
   ([#^String webapp port] 
   

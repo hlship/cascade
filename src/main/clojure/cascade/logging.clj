@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Clojure wrappers around Simple Logging Facade for Java (SLF4J)"} 
+(ns #^{:doc "Wrappers around Simple Logging Facade for Java (SLF4J)"} 
   cascade.logging
   (:import (org.slf4j LoggerFactory Logger)))
   

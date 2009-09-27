@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Macros used to define filters and chains for extending Cascade."}
+(ns #^{:doc "Define filters and chains for extending Cascade"}
   cascade.pipeline
   (:use
     (cascade config fail logging)

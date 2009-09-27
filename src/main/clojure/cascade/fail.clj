@@ -11,7 +11,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.fail)
+(ns 
+  #^{:doc "Assert-like failures"}
+  cascade.fail)
 
 (defn fail
   "A quick way to throw a RuntimeException."
