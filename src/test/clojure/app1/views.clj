@@ -33,7 +33,7 @@
         "Let's count:"
         :ul [
           (for [x (range 10 0 -1)]
-            (inline :li [ (str x) " ..." ] )
+            (template :li [ (str x) " ..." ] )
           )
         ]
       ]
@@ -64,7 +64,7 @@
 
 (defn page-template
   [env title body-block]
-  (inline
+  (template
     :html [
       :head [ :title title ]
       :body [
