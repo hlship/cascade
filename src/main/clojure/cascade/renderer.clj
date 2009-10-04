@@ -87,10 +87,10 @@
 	  	  :dd [ (.getRequestURI request) ]
 	  	  
 	  	  :dt [ "Locale" ]
-	  	  :dd [ (.. request getLocale toString) ]
+	  	  :dd [ (str (.getLocale request)) ]
 	  	  
 	  	  :dt [ "Secure" ]
-	  	  :dd [ (.. request isSecure toString) ]
+	  	  :dd [ (str (.. request isSecure)) ]
 	  	  
 	  	  :dt [ "Server Name" ]
 	  	  :dd [ (.getServerName request) ]

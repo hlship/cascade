@@ -126,8 +126,7 @@
 	        :dl [
 	          (template-for [k (sort (keys properties))]
 	            :dt [ (name k)]
-	            ;; TODO: Expand here to do more than just .toString!
-	            :dd [ (.toString (get properties k)) ])
+	            :dd [ (str (get properties k)) ])
 	          (when deepest
 	            (template
 	              :dt [ "Stack Trace" ]
@@ -184,6 +183,8 @@
 (create-pipeline :request-exception
   (fn [env exception]
     (debug "Request exception: %s" exception)
-    (.printStackTrace (root-cause exception))
+    (let [#^Throwable root (root-cause exception)]
+    	(.printStackTrace root))
+    	
     (call-pipeline :render-view (assoc-in env [:cascade :exception] exception) #'exception-report)))
             
