@@ -28,6 +28,7 @@
       <!-- Pick up sources in case didn't compile before running tests. -->
       <path location="${src.dir}"/>
       <path location="${classes.dir}"/>
+      <path location="src/main/resources"/>
     </path>
   </target>
 
@@ -68,11 +69,10 @@
   </target>
 
   <target name="jar" depends="run-tests" description="Create JAR of compiled sources and resources.">
+    <mkdir dir="${target.dir}"/>
     <jar destfile="${target.dir}/cascade-${pom.version}-slim.jar" index="true">
-        <fileset dir="${src.dir}" />
-        <!-- Once it exists:
-        <fileset dir="src/main/resources" />
-      -->
+      <fileset dir="${src.dir}" />
+      <fileset dir="src/main/resources" />
       <fileset dir=".">
         <include name="LICENSE*" />
         <include name="README*" />
