@@ -12,12 +12,13 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Exception reporting"}
+(ns #^{:doc "Exception reporting view and pipeline"}
   cascade.exception
   (:import (java.lang Throwable StackTraceElement))
-  (:require
+  (:require  	
   	(clojure.contrib (str-utils2 :as s2)))
   (:use 
+  	(clojure stacktrace)
   	cascade 
   	(cascade.internal utils)
   	(cascade config logging pipeline renderer)))
@@ -36,12 +37,9 @@
 	"Converts a stack frame into DOM nodes representing the Clojure namespace and function name(s),
 	or returns nil if the stack frame is not for a Clojure call frame."
 	[class-name method-name]
-	(debug "Converting: %s.%s" class-name method-name)
 	(when (contains? #{"invoke" "doInvoke"} method-name)
 		(let [[namespace-name & raw-function-ids] (s2/split class-name #"\$")
-		_ (debug "Raw function ids: %s" (ppstring raw-function-ids))
 				  function-ids (map #(nth (first (re-seq #"(\w+)__\d+" %)) 1 nil) raw-function-ids)
-				  _ (debug "Function ids: %s" (ppstring function-ids))
 				  function-names (map #(s2/replace % \_ \-) function-ids)]				 
 		  (if-not (empty? raw-function-ids)
 		  	(template
@@ -73,13 +71,11 @@
   })  
   
 (defn transform-stack-trace
-  "Transforms a primitive array of StackTraceElements into individual maps; each with two keys:
-  :frame is a string representing the method name and location,
-  :class is a string (may be nil) used when rendering the frame (values to be defined)."
+  "Transforms a primitive array of StackTraceElements into individual maps; 
+  :method-name is a seq of DOM nodes to describe the method and location
+  :element is the original StackTraceElement
+  :class-name is a keyword (may be nil) used when rendering the frame as an :li element"
   [elements]
-  ;; Currently very simple, but will expand in the future, when we convert Java stack frames
-  ;; for Clojure code into clojure names, and use the CSS class to hide uninteresting
-  ;; stack frames, and highlight application stack frames.
   (loop [seen-filter false
   			 queue (map transform-stack-frame (seq elements))
   			 result []]
@@ -143,7 +139,8 @@
 
 (defn include-js-library
   [env path]
-  (template       
+  (template
+  	; Force open/close tags for stupid browser compatibility       
   	:script { :type "text/javascript" :src (classpath-asset-path env path) } [ linebreak ]))
 
 (defview exception-report
@@ -168,6 +165,10 @@
       
       :ul { :class :c-exception-report } [
         (template-for [m (expand-exception-stack (-> env :cascade :exception))]
+        	; TODO: Smarter logic about which frames to be hidden
+        	; Currently, assumes only the deepest is interesting.
+        	; When we add some additonal levels of try/catch & report
+        	; it may be useful to display some of the outer exceptions as well
           :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
       ]
 
@@ -177,12 +178,12 @@
 		  
 		  	(render (-> env :servlet-api :request))
 			]		  	
-
     ]
   ])
   
 (create-pipeline :request-exception
   (fn [env exception]
     (debug "Request exception: %s" exception)
+    (.printStackTrace (root-cause exception))
     (call-pipeline :render-view (assoc-in env [:cascade :exception] exception) #'exception-report)))
             
