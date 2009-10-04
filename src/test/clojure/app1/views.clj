@@ -111,3 +111,14 @@
         "Five / 0 =" 
         :strong [ (/ 5 0) ]
         ])))
+        
+(defview index-view
+  {:path ""}
+  [env]
+  (page-template env "Test Application"
+    (block [env]
+      :ul [
+			  :li [ (render-link env itworks "Simple Output") ]
+			  :li [ (render-link env fail-view "Forced Exception") ]
+			  :li [ (render-link env show-counter [0] "Simple Actions") ]    				
+      ])))        
