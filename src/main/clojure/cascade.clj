@@ -17,7 +17,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
-    (cascade path-map fail urls logging)
+    (cascade asset path-map fail urls logging)
     (cascade.internal utils viewbuilder parse-functions)))
   
 (defmacro template
@@ -108,3 +108,9 @@
        (.sendRedirect response link-path)
        true))
        
+(defn classpath-asset-path
+  "Returns the path to the given classpath asset as a string."
+  [env asset-path]
+  (to-asset-path env (get-classpath-asset asset-path)))
+  
+			       
