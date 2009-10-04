@@ -84,7 +84,6 @@
         [_ _ application-version & asset-path-terms] (-> env :cascade :split-path)
         asset-path (s2/join "/" asset-path-terms)
     		_ (fail-if (nil? application-version) "Invalid classpath asset URL.")
-    		_ (debug "Application version: %s, expect %s" application-version (read-config :application-version))
     		_ (fail-unless (= application-version (read-config :application-version)) "Incorrect application version.")    		
     		; TODO Check whitelist/blacklist
     		; TODO Gzip, etc.
