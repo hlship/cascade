@@ -15,7 +15,9 @@
 (ns 
   #^{:doc "DOM node and rendering"}
   cascade.dom
-  (:import (java.io Writer))
+  (:import
+  	(clojure.lang Keyword)
+  	(java.io Writer))
   (:use cascade.internal.utils))
 
 ; TODO: Split out rendering (that may be internal).
@@ -39,6 +41,22 @@
   :content) ; dom-nodes for any children
   
 (declare render-xml)
+  
+(defmulti to-attr-string
+  "Converts an attribute value to a string (which will be enclosed in quotes)."
+  class)
+  
+(defmethod to-attr-string String
+  [str-value]
+  str-value)
+  
+(defmethod to-attr-string Number
+  [#^Number numeric-value]
+  (.toString numeric-value))     
+
+(defmethod to-attr-string Keyword
+  [kw]
+  (name kw)) 
   
 (defn- write
   [#^Writer out & strings]
@@ -69,7 +87,8 @@
 
     (doseq [{attr-name :name attr-value :value} (element-node :attributes)]
         ; TODO: URL escaping here, or elsewhere?
-        (write out " " (name attr-name) "=\"" attr-value "\""))
+        (if-not (nil? attr-value)
+        	(write out " " (name attr-name) "=\"" (to-attr-string attr-value) "\"")))
 
     ; TODO: ugly gotchas about rendering HTML: can't always close an empty tag (i.e., <script>), etc.
 

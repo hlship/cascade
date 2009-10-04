@@ -73,6 +73,13 @@
     :copyright "(c) 2009 HLS"
     :inner "frotz"}))
   
+(defview special-attribute-values-view
+   [env]
+   :p {:class :foo :height 0 :skipped nil } [ "some text" ])
+   
+(deftest special-attribute-values
+  (render-test special-attribute-values-view "special-attribute-values" nil))  
+  
   
 (defn fetch-accounts
   [env]
