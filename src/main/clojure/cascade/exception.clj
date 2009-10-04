@@ -112,6 +112,10 @@
                   :li {:class (frame :class-name) } [ (frame :method-name) ])
               ]))
         ]))))
+(defn include-js-library
+  [env path]
+  (template       
+  	:script { :type "text/javascript" :src (classpath-asset-path env path) } [ linebreak ]))
 
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
@@ -120,7 +124,8 @@
   :html [
     :head [
       :title [ exception-banner ]
-      :script { :type "text/javascript" :src (classpath-asset-path env (read-config :jquery-path)) } [ linebreak ]      
+      (include-js-library env (read-config :jquery-path))
+      (include-js-library env "cascade/exception-report.js")
       :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
      ]
     :body [
@@ -137,15 +142,6 @@
           :li [ (render-exception-map m) ])
       ]
       ;; TODO request details, session details? etc.
-      
-      :script {:type "text/javascript" } [
-		  "$(document).ready(function() {"
-		  "var visible = this.checked;"
-		  "$('#omitted-toggle').click(function() {"
-		  "$('LI.c-omitted-frame, .c-omitted').toggle(visible);"
-		  "});"
-		  "});"
-      ]
     ]
   ])
   
