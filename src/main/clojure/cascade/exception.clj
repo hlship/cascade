@@ -15,16 +15,39 @@
 (ns #^{:doc "Exception reporting"}
   cascade.exception
   (:import (java.lang Throwable StackTraceElement))
-  (:use cascade (cascade logging pipeline)))
+  (:use 
+  	cascade 
+  	(cascade config logging pipeline)))
   
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties  
 (def throwable-properties (keys (bean (Throwable.))))  
-  
+    
+(defn class-name-for-element
+  "Returns the CSS class name for a stack frame element, or nil.  Useful values are :c-omitted-frame
+   or :c-usercode-frame."
+  [#^StackTraceElement element]
+  (cond
+  	(.startsWith (.getClassName element) "clojure.lang.") :c-omitted-frame))
+       
 (defn transform-stack-frame
   [#^StackTraceElement element]
   ;; TODO: some regexp matching to identify Clojure stack frames and transform them into a better format.
   ;; Also, mark a lot of the clojure's API classes as "uninteresting".
-  { :method-name (.toString element) })  
+  { 
+  	:element element
+  	:method-name
+  	(let [file-name (.getFileName element)
+  			  line-number (.getLineNumber element)
+  			  extended-name (str (.getClassName element) "." (.getMethodName element))]
+  		(template
+  		  extended-name
+  		  (cond
+  		    (.isNativeMethod element) (template :em [ "(Native Method)" ])
+  		    (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
+  		    (not (nil? file-name)) (str "(" file-name ")") 
+  		    true (template :em [ "(Unknown Source)" ]))))
+  	:class-name (class-name-for-element element)
+  })  
   
 (defn transform-stack-trace
   "Transforms a primitive array of StackTraceElements into individual maps; each with two keys:
@@ -34,7 +57,15 @@
   ;; Currently very simple, but will expand in the future, when we convert Java stack frames
   ;; for Clojure code into clojure names, and use the CSS class to hide uninteresting
   ;; stack frames, and highlight application stack frames.
-  (map transform-stack-frame (seq elements)))  
+  (loop [seen-filter false
+  			 queue (map transform-stack-frame (seq elements))
+  			 result []]
+    (let [first-frame (first queue)
+    			#^StackTraceElement element (get first-frame :element)]
+    		(cond
+		  	  (nil? first-frame) result
+		  		seen-filter (recur true (rest queue) (conj result (assoc first-frame :class-name :c-omitted-frame)))
+		  		true (recur (= (.getClassName element) "cascade.filter") (rest queue) (conj result first-frame))))))		            
   
 (defn expand-exception-stack
     "Expands a simple exception into a seq of exception maps, representing the stack of exceptions (the first or outer
@@ -63,9 +94,9 @@
   "Renders an individual exception map. "
   [{:keys [class-name message properties stack-trace]}]
   (template 
-    :span { :class "ccd-exception-class-name" } [ class-name ]
+    :span { :class :c-exception-class-name } [ class-name ]
     (if-not (nil? message)
-      (template :span { :class "ccd-exception-message" } [ message ]))
+      (template :div { :class :c-exception-message } [ message ]))
     (when-not (and (nil? properties) (nil? stack-trace))
       (template 
         :dl [
@@ -76,26 +107,45 @@
           (when-not (nil? stack-trace)
             (template
               :dt [ "Stack Trace" ]
-              :ul { :class "ccd-stack-trace" } [
+              :ul { :class :c-stack-trace } [
                 (template-for [frame stack-trace]
-                  :li [ (frame :method-name) ])
+                  :li {:class (frame :class-name) } [ (frame :method-name) ])
               ]))
         ]))))
 
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
   Formats a detailed HTML report of the exception and the overall environment."
-  ;; TODO: link in a CSS file
   [env]
   :html [
-    :head [ :title exception-banner ]
+    :head [
+      :title [ exception-banner ]
+      :script { :type "text/javascript" :src (classpath-asset-path env (read-config :jquery-path)) } [ linebreak ]      
+      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
+     ]
     :body [
-      :h1 [ exception-banner ]
-      :ul [
+      :h1 {:class "c-exception-report" } [ exception-banner ]
+      
+      :p {:class :c-exception-controls } [
+        :input { :type :checkbox :id :omitted-toggle }
+        " "
+        :label { :for :omitted-toggle } [ "Display hidden detail" ]
+      ]
+      
+      :ul { :class :c-exception-report } [
         (template-for [m (expand-exception-stack (-> env :cascade :exception))]
           :li [ (render-exception-map m) ])
       ]
       ;; TODO request details, session details? etc.
+      
+      :script {:type "text/javascript" } [
+		  "$(document).ready(function() {"
+		  "var visible = this.checked;"
+		  "$('#omitted-toggle').click(function() {"
+		  "$('LI.c-omitted-frame, .c-omitted').toggle(visible);"
+		  "});"
+		  "});"
+      ]
     ]
   ])
   

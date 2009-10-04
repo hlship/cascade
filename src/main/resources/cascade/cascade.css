@@ -1,0 +1,70 @@
+/* Default stylesheet for Cascade. */
+
+UL.c-exception-report {
+    font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+UL.c-exception-report LI {
+	margin-left: -40px;
+	list-style: none;
+}
+
+SPAN.c-exception-class-name {
+    display: block;
+    margin-top: 15px;
+    font-size: 12pt;
+    background-color: #E1E1E1;
+    color: blue;
+    padding: 2px 3px;
+    font-weight: bold;
+}
+
+DIV.c-exception-message {
+    font-style: italic;
+    font-size: 12pt;
+    border: thin dotted silver;
+    margin: 5px 0px;
+    padding: 3px;
+}
+
+UL.c-exception-report DT {
+    color: green;
+    padding-left: 2px;
+    background-color: #FFFFCF;
+}
+
+H1.c-exception-report {
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    color: red;
+}
+
+UL.c-exception-report DT:after {
+    content: ":";
+}
+
+UL.c-exception-report DD {
+    margin-left: 10px;
+}
+
+UL.c-stack-trace LI {
+    font-family: Monaco, Times, monospace;
+    font-size: 10pt;
+    margin-left: -25px;
+    list-style: square;
+}
+
+LI.c-usercode-frame {
+    font-weight: bold;
+    color: blue;
+}
+
+LI.c-omitted-frame, .c-omitted {
+    display: none;
+    color: gray;
+}
+
+P.c-exception-controls {
+    background-color: #FFFFCF;
+    font-weight: bold;
+    padding: 5px 0px;
+}
