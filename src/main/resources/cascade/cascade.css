@@ -27,7 +27,7 @@ DIV.c-exception-message {
     padding: 3px;
 }
 
-UL.c-exception-report DT, DIV.c,-env-data DT {
+UL.c-exception-report DT, DIV.c-env-data DT {
     color: green;
     padding-left: 2px;
     background-color: #FFFFCF;
@@ -38,7 +38,7 @@ H1.c-exception-report {
     color: red;
 }
 
-UL.c-exception-report DT:after {
+UL.c-exception-report DT:after, DIV.c-env-data DT:after {
     content: ":";
 }
 
