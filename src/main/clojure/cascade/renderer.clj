@@ -1,0 +1,104 @@
+; Copyright 2009 Howard M. Lewis Ship
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;   http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+; implied. See the License for the specific language governing permissions
+; and limitations under the License.
+
+(ns #^{:doc "Render objects as markup"}
+  cascade.renderer
+  (:import
+  	(javax.servlet.http HttpServletRequest)
+  	(java.util Enumeration))
+  (:use
+  	cascade))
+
+(defn enumeration-to-seq
+  [#^Enumeration enumeration]
+  (loop [result []]
+  	(if (.hasMoreElements enumeration)
+  		(recur (conj result (.nextElement enumeration)))
+  		result))) 
+  
+
+(defmulti render
+	"Renders an arbitrary object (identified by its type) as markup. This is often needed
+	 by the exception report page."
+	 class)
+	 
+(defn render-values
+  [values]
+  (if (= 1 (count values))
+  	(first values)
+  	(template 
+  		:ul [
+  			(template-for [value values]
+  				:li [ value ])
+  		])))
+  		 
+(defn data-section
+	[title]
+	(template :div {:class :c-env-data-section } [ title ]))
+	  		 
+(defn render-parameters	 
+	[#^HttpServletRequest request]
+  (let [parameter-names (sort (seq (.. request getParameterMap keySet)))]
+	  (when-not (empty? parameter-names)
+	  	(template
+	  		(data-section "Query Parameters")
+	  		:dl [
+					(template-for [name parameter-names] 
+						:dt [ name ]
+						:dd [ (render-values (seq (.getParameterValues request name))) ])
+				]))))
+
+(defn render-headers
+ 	[#^HttpServletRequest request]
+ 	(let [header-names (sort (enumeration-to-seq (.getHeaderNames request)))]
+ 		(template
+ 			(data-section "Headers")
+ 			:dl [
+ 			  (template-for [name header-names]
+ 			  	:dt [ name ]
+ 			  	:dl [ (render-values (enumeration-to-seq (.getHeaders request name))) ])
+ 			])))
+     
+(defmethod render HttpServletRequest
+  [#^HttpServletRequest request]
+  (let [context-path (.getContextPath request)]	  
+	  (template
+	  
+	  	:dl [
+	  	  :dt [ "Context Path" ]
+	  	  :dd [
+	  	    (if-not (= context-path "")
+	  	    	context-path
+	  	    	(template :em [ "none (deployed as root)" ]))
+	  	  ]
+	  	    	
+	  	  :dt [ "Request URI" ]
+	  	  :dd [ (.getRequestURI request) ]
+	  	  
+	  	  :dt [ "Locale" ]
+	  	  :dd [ (.. request getLocale toString) ]
+	  	  
+	  	  :dt [ "Secure" ]
+	  	  :dd [ (.. request isSecure toString) ]
+	  	  
+	  	  :dt [ "Server Name" ]
+	  	  :dd [ (.getServerName request) ]
+	  	  
+	  	]
+	  	
+	  	(render-parameters request)
+	  	(render-headers request)
+	  	
+	  	)))
+		 

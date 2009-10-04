@@ -20,7 +20,7 @@
   (:use 
   	cascade 
   	(cascade.internal utils)
-  	(cascade config logging pipeline)))
+  	(cascade config logging pipeline renderer)))
   
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties  
 (def throwable-properties (keys (bean (Throwable.))))  
@@ -170,7 +170,14 @@
         (template-for [m (expand-exception-stack (-> env :cascade :exception))]
           :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
       ]
-      ;; TODO request details, session details? etc.
+
+			:div { :class :c-env-data } [
+		  	
+		  	:h2 [ "Request" ]
+		  
+		  	(render (-> env :servlet-api :request))
+			]		  	
+
     ]
   ])
   

@@ -1,6 +1,6 @@
 /* Default stylesheet for Cascade. */
 
-UL.c-exception-report {
+UL.c-exception-report,  DIV.c-env-data {
     font-family: "Trebuchet MS", Arial, sans-serif;
 }
 
@@ -27,7 +27,7 @@ DIV.c-exception-message {
     padding: 3px;
 }
 
-UL.c-exception-report DT {
+UL.c-exception-report DT, DIV.c,-env-data DT {
     color: green;
     padding-left: 2px;
     background-color: #FFFFCF;
@@ -44,6 +44,10 @@ UL.c-exception-report DT:after {
 
 UL.c-exception-report DD {
     margin-left: 10px;
+}
+
+DIV.c-env-data DD {
+  margin-left: 20px;
 }
 
 UL.c-stack-trace LI {
@@ -67,4 +71,25 @@ P.c-exception-controls {
     background-color: #FFFFCF;
     font-weight: bold;
     padding: 5px 0px;
+}
+
+DIV.c-env-data-section {
+    padding-left: 5px;
+}
+
+DIV.c-env-data DD, DIV.c-exception-report DD {
+    margin-left: 25px;
+    margin-bottom: 10px;
+}
+
+DIV.c-env-data LI {
+    margin-left: -25px;
+}
+
+DIV.c-env-data-section {
+    font-size: 12pt;
+    background-color: #E1E1E1;
+    color: blue;
+    padding: 2px 3px;
+    font-weight: bold;
 }
