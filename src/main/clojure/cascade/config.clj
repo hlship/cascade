@@ -17,7 +17,9 @@
   cascade.config
   (:use cascade.fail))
 
-(def configuration (atom {}))
+(def configuration (atom {
+  :jquery-path "cascade/jquery-1.3.2.js"
+  }))
 
 (defn- to-key-path
   [key]
