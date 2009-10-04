@@ -15,8 +15,11 @@
 (ns #^{:doc "Exception reporting"}
   cascade.exception
   (:import (java.lang Throwable StackTraceElement))
+  (:require
+  	(clojure.contrib (str-utils2 :as s2)))
   (:use 
   	cascade 
+  	(cascade.internal utils)
   	(cascade config logging pipeline)))
   
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties  
@@ -29,6 +32,22 @@
   (cond
   	(.startsWith (.getClassName element) "clojure.lang.") :c-omitted-frame))
        
+(defn convert-clojure-frame
+	"Converts a stack frame into DOM nodes representing the Clojure namespace and function name(s),
+	or returns nil if the stack frame is not for a Clojure call frame."
+	[class-name method-name]
+	(debug "Converting: %s.%s" class-name method-name)
+	(when (contains? #{"invoke" "doInvoke"} method-name)
+		(let [[namespace-name & raw-function-ids] (s2/split class-name #"\$")
+		_ (debug "Raw function ids: %s" (ppstring raw-function-ids))
+				  function-ids (map #(nth (first (re-seq #"(\w+)__\d+" %)) 1 nil) raw-function-ids)
+				  _ (debug "Function ids: %s" (ppstring function-ids))
+				  function-names (map #(s2/replace % \_ \-) function-ids)]				 
+		  (if-not (empty? raw-function-ids)
+		  	(template
+		  		namespace-name "/" (s2/join "/" function-names)
+		  	  :span { :class :c-omitted } [ " " class-name "." method-name])))))
+     
 (defn transform-stack-frame
   [#^StackTraceElement element]
   ;; TODO: some regexp matching to identify Clojure stack frames and transform them into a better format.
@@ -36,17 +55,21 @@
   { 
   	:element element
   	:method-name
-  	(let [file-name (.getFileName element)
-  			  line-number (.getLineNumber element)
-  			  extended-name (str (.getClassName element) "." (.getMethodName element))]
-  		(template
-  		  extended-name
-  		  (cond
-  		    (.isNativeMethod element) (template :em [ "(Native Method)" ])
-  		    (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
-  		    (not (nil? file-name)) (str "(" file-name ")") 
-  		    true (template :em [ "(Unknown Source)" ]))))
-  	:class-name (class-name-for-element element)
+	  	(let [file-name (.getFileName element)
+	  			  line-number (.getLineNumber element)
+	  			  class-name (.getClassName element)
+	  			  method-name (.getMethodName element)]
+	  		(template
+	  		  (or
+	  		  	(convert-clojure-frame class-name method-name)
+	  		  	(str class-name "." method-name))
+	  		  " "	
+	  		  (cond
+	  		    (.isNativeMethod element) (template :em [ "(Native Method)" ])
+	  		    (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
+	  		    (not (nil? file-name)) (str "(" file-name ")") 
+	  		    true (template :em [ "(Unknown Source)" ]))))
+	  	:class-name (class-name-for-element element)
   })  
   
 (defn transform-stack-trace
@@ -93,25 +116,31 @@
 (defn render-exception-map
   "Renders an individual exception map. "
   [{:keys [class-name message properties stack-trace]}]
-  (template 
-    :span { :class :c-exception-class-name } [ class-name ]
-    (if-not (nil? message)
-      (template :div { :class :c-exception-message } [ message ]))
-    (when-not (and (nil? properties) (nil? stack-trace))
-      (template 
-        :dl [
-          (template-for [k (sort (keys properties))]
-            :dt [ (name k)]
-            ;; TODO: Expand here to do more than just .toString!
-            :dd [ (.toString (get properties k)) ])
-          (when-not (nil? stack-trace)
-            (template
-              :dt [ "Stack Trace" ]
-              :ul { :class :c-stack-trace } [
-                (template-for [frame stack-trace]
-                  :li {:class (frame :class-name) } [ (frame :method-name) ])
-              ]))
-        ]))))
+  (let [deepest (not (nil? stack-trace))
+        has-properties (not (empty? properties))
+        render-dl (or has-properties deepest)]
+	  (template 
+	    :span { :class :c-exception-class-name } [ class-name ]
+	    
+	    (if-not (nil? message)
+	      (template :div { :class :c-exception-message } [ message ]))
+	    
+	    (when render-dl
+	      (template 
+	        :dl [
+	          (template-for [k (sort (keys properties))]
+	            :dt [ (name k)]
+	            ;; TODO: Expand here to do more than just .toString!
+	            :dd [ (.toString (get properties k)) ])
+	          (when deepest
+	            (template
+	              :dt [ "Stack Trace" ]
+	              :ul { :class :c-stack-trace } [
+	                (template-for [frame stack-trace]
+	                  :li {:class (frame :class-name) } [ (frame :method-name) ])
+	              ]))
+	        ])))))
+
 (defn include-js-library
   [env path]
   (template       
@@ -139,7 +168,7 @@
       
       :ul { :class :c-exception-report } [
         (template-for [m (expand-exception-stack (-> env :cascade :exception))]
-          :li [ (render-exception-map m) ])
+          :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
       ]
       ;; TODO request details, session details? etc.
     ]
