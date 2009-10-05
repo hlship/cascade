@@ -173,9 +173,24 @@
 
 			:div { :class :c-env-data } [
 		  	
+		  	:h2 [ "Environment" ]
+		  	
+		  	:dl [
+		  	  :dt [ "Clojure Version" ]
+		  	  :dd [ (render *clojure-version*) ]
+		  	  :dt [ "Cascade Version" ]
+		  	  :dd [ "TBD" ]
+		  	  :dt [ "Application Version" ]
+		  	  :dd [ (read-config :application-version) ]
+		  	]
+		  	
 		  	:h2 [ "Request" ]
 		  
 		  	(render (-> env :servlet-api :request))
+		  	
+		  	:h2 [ "Servlet Context" ]
+		  	
+		  	(render (-> env :servlet-api :context))
 			]		  	
     ]
   ])

@@ -15,6 +15,7 @@
 (ns #^{:doc "Render objects as markup"}
   cascade.renderer
   (:import
+    (javax.servlet ServletContext)
   	(javax.servlet.http HttpServletRequest)
   	(java.util Enumeration))
   (:use
@@ -32,6 +33,10 @@
 	"Renders an arbitrary object (identified by its type) as markup. This is often needed
 	 by the exception report page."
 	 class)
+	 
+(defmethod render Object
+	[obj]
+	(str obj))	 
 	 
 (defn render-values
   [values]
@@ -69,7 +74,19 @@
  			  	:dt [ name ]
  			  	:dl [ (render-values (enumeration-to-seq (.getHeaders request name))) ])
  			])))
-     
+
+(defn render-attributes
+	[keys-enumeration access-fn]
+	(let [sorted-names (sort (enumeration-to-seq keys-enumeration))]
+	  (when-not (empty? sorted-names)
+			(template
+				(data-section "Attributes")
+				:dl [
+					(template-for [name sorted-names]
+						:dt [ name ]
+						:dd [ (render (access-fn name)) ])
+				]))))		
+				
 (defmethod render HttpServletRequest
   [#^HttpServletRequest request]
   (let [context-path (.getContextPath request)]	  
@@ -99,6 +116,21 @@
 	  	
 	  	(render-parameters request)
 	  	(render-headers request)
-	  	
-	  	)))
+	  	(render-attributes (.getAttributeNames request) #(.getAttribute request %)))))		
+						 
+(defmethod render ServletContext
+	[#^ServletContext context]
+	(template
+		:dl [
+		  :dt [ "Version" ]
+		  :dd [ (.getMajorVersion context) "." (.getMinorVersion context) ]
+		  
+		  :dt [ "Server Info" ]
+		  :dd [ (.getServerInfo context) ]
+		  
+		  :dt [ "Context Name" ]
+		  :dd [ (.getServletContextName context) ]
+		]
+		
+		(render-attributes (.getAttributeNames context) #(.getAttribute context %))))
 		 

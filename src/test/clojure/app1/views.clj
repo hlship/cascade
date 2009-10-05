@@ -105,6 +105,7 @@
 (defview fail-view
   {:path "force-failure"}
   [env]
+  (.setAttribute (-> env :servlet-api :request) "an-attribute" "a value")
   (page-template env "Force Failure"
     (block [env]
       :p [
