@@ -8,16 +8,9 @@
   <version>1.0.0-SNAPSHOT</version>
   <url>http://github.com/hlship/cascade/</url>
 
-  <description>Cascade web framework.</description>
+  <description>Simple, fast, easy web applications in idiomatic Clojure</description>
 
   <dependencies>
-    
-    <dependency>
-      <!-- Clojure-contrib does not track properly against clojure's master branch. -->
-      <groupId>org.clojure</groupId>
-      <artifactId>clojure-lang</artifactId>
-      <version>1.1.0-alpha-SNAPSHOT</version>
-    </dependency>
     
     <dependency>
       <!-- Pick up the Clojure dependency as transitive. -->
@@ -66,13 +59,6 @@
          <version>2.5.1</version>
          <scope>provided</scope>
      </dependency>
-     
-    <dependency>
-        <groupId>jline</groupId>
-        <artifactId>jline</artifactId>
-        <version>0.9.94</version>
-        <scope>provided</scope>
-    </dependency>     
 
   </dependencies>
 
