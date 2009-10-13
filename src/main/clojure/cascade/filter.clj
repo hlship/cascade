@@ -15,11 +15,15 @@
 (ns 
   #^{:doc "Servlet API Filter that directs requests into Cascade"}
   cascade.filter
-  (:require (cascade dispatcher exception))
-  (:use (cascade config logging path-map pipeline urls)
-        (cascade.internal utils))
-  (:import (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
-  (javax.servlet.http HttpServletRequest HttpServletResponse))
+  (:require 
+  	(cascade exception))
+  (:use
+	  (clojure stacktrace)	
+  	(cascade config dispatcher logging path-map pipeline urls exception)
+    (cascade.internal utils))
+  (:import
+  	(javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
+  	(javax.servlet.http HttpServletRequest HttpServletResponse))
   (:gen-class
     :state context
     :init psuedo-constructor
@@ -51,9 +55,14 @@
     :otherwise false))
 
 (defn handle-request-exception
+  "Prints the exception (including stack trace) to the console then renders the exception-report view."
   [env exception]
   ;; TODO: A try..catch here in case just reporting the exception fails!
-  (call-pipeline :request-exception env exception))
+  (debug "Request exception: %s" exception)
+  (let [#^Throwable root (root-cause exception)]
+  	(.printStackTrace root))
+  	
+  (render-view (assoc-in env [:cascade :exception] exception) #'exception-report))
 
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,

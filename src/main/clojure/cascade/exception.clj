@@ -18,10 +18,9 @@
   (:require  	
   	(clojure.contrib (str-utils2 :as s2)))
   (:use 
-  	(clojure stacktrace)
   	cascade 
   	(cascade.internal utils)
-  	(cascade config logging pipeline renderer)))
+  	(cascade config logging pipeline renderer dispatcher)))
   
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties  
 (def throwable-properties (keys (bean (Throwable.))))  
@@ -194,12 +193,4 @@
 			]		  	
     ]
   ])
-  
-(create-pipeline :request-exception
-  (fn [env exception]
-    (debug "Request exception: %s" exception)
-    (let [#^Throwable root (root-cause exception)]
-    	(.printStackTrace root))
-    	
-    (call-pipeline :render-view (assoc-in env [:cascade :exception] exception) #'exception-report)))
             

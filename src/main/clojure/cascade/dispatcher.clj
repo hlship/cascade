@@ -19,64 +19,78 @@
   (:use (cascade config dom logging path-map pipeline fail func-utils)
         (cascade.internal utils)))
 
-(create-pipeline :render-view-as-xml
-  (fn [env view-fn]
-    (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
-    (let [#^ServletResponse response (-> env :servlet-api :response)
-          dom (view-fn env)]
-      (with-open [writer (.getWriter response)]
-        (render-xml dom writer)))
-    true))
+(defn render-view-as-xml
+  "Renders the provided view function as an XML stream."
+	[env view-fn]
+  (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
+  (let [#^ServletResponse response (-> env :servlet-api :response)
+        dom (view-fn env)]
+    (with-open [writer (.getWriter response)]
+      (render-xml dom writer)))
+  true)
 
-(create-pipeline :render-view
-  (fn [env view-fn]
-    ;; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
-    (call-pipeline :render-view-as-xml env view-fn)))
+(defn render-view
+  "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
+   the moment, this simply invoke render-view-as-xml."
+  [env view-fn]
+  ;; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
+  (render-view-as-xml env view-fn))
 
-(create-pipeline :view
-  (fn [env view-fn]
-    (call-pipeline :render-view env view-fn)))
+(defn handle-view-request
+  "A pipeline that calls render-view."  
+  [env view-fn]
+  (render-view env view-fn))
 
-(deffilter :is-view-fn
+(defn verify-is-view-fn
+  "A filter that verifies tha the provided function is in fact a view function (by checking
+   its meta-data)."
   [delegate env view-fn]
   (if (and view-fn (= (^view-fn :cascade-type) :view))
     (delegate env view-fn)
     false))
+       
+(decorate handle-view-request verify-is-view-fn)    
 
-(create-pipeline :default-handle-action
-  (fn [env action-fn]
-    (debug "Invoking action function %s" (qualified-function-name action-fn))
-    (let [result (action-fn env)]
-      (cond
-        ;;  TODO: This should be an multimethod for extensibility
-        (true? result) true
-        (function? result) (call-pipeline :view result)
-        :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn))))))
+(defn default-handle-action
+  "Default dispatcher to an action function, responsible for passing the env to the
+   function, and for interpreting the return value."
+  [env action-fn]
+  (debug "Invoking action function %s" (qualified-function-name action-fn))
+  (let [result (action-fn env)]
+    (cond
+      ;;  TODO: This should be an multimethod for extensibility
+      (true? result) true
+      (function? result) (render-view env result)
+      :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn)))))
+  
+(defn handle-action-request
+	[env action-fn]
+  (default-handle-action env action-fn))
 
-(create-pipeline :action
-  (fn [env action-fn]
-    (call-pipeline :default-handle-action env action-fn)))
-
-(deffilter :is-action-fn
+(defn verify-is-action-fn
   [delegate env action-fn]
   (if (and action-fn (= (^action-fn :cascade-type) :action))
     (delegate env action-fn)
     false))    
+    
+(decorate handle-action-request verify-is-action-fn)     
 
 (defn dispatch-named-function-to-pipeline
-  [env pipeline]
+	"Expects the namespace name and the function name to be the 2nd and 3rd terms of the split path, uses this
+	 to identify a function, which is passed (with the env) to the request-handler function."
+  [env request-handler]
   (let [split-path (-> env :cascade :split-path)
         [_ ns-name fn-name] split-path
         fn-namespace (and ns-name (find-ns (symbol ns-name)))
         named-function (and fn-namespace fn-name (ns-resolve fn-namespace (symbol fn-name)))
         new-env (assoc-in env [:cascade :extra-path] (drop 3 split-path))]
-    (call-pipeline pipeline new-env named-function)))
+    (request-handler new-env named-function)))
 
 (defn named-view-dispatcher 
   "Mapped to /view, this attempts to identify a namespace and a view function
   which is then invoked to render a DOM which is then streamed to the client."
   [env]
-  (dispatch-named-function-to-pipeline env :view))
+  (dispatch-named-function-to-pipeline env handle-view-request))
   
 (defn named-action-dispatcher
   "Mapped to /action, attempts to identify a namespace and an action function,
@@ -84,18 +98,18 @@
   or it may return a rendering hint. Rendering hints are view functions (to render that view)
   or other values as yet unspecified."
   [env]
-  (dispatch-named-function-to-pipeline env :action))
+  (dispatch-named-function-to-pipeline env handle-action-request))
 
 (defn invoke-mapped-function
   "Called from path-dispatcher to try one of a series of functions that may match the request path."
   [env request-path [path function]]
   (let [function-meta ^function
         type (function-meta :cascade-type)
-        pipeline (read-config :type-to-pipeline type)
+        handler-fn (read-config :type-to-handler type)
         new-env (assoc-in env [:cascade :extra-path] (drop (count path) request-path))]
-    (fail-if (nil? pipeline) "Function %s defines a :cascade-type of %s which is not supported."
+    (fail-if (nil? handler-fn) "Function %s defines a :cascade-type of %s which is not supported."
       (qualified-function-name function) type)    
-    (call-pipeline pipeline new-env function)))
+    (handler-fn new-env function)))
         
 (defn path-dispatcher
   "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration."
@@ -109,8 +123,6 @@
 (add-function-to-config :dispatchers "action" #'named-action-dispatcher)
 (add-function-to-config :dispatchers "" #'path-dispatcher)
 
-(assoc-in-config [:type-to-pipeline :view] :render-view)    
-(assoc-in-config [:type-to-pipeline :action] :default-handle-action)    
+(assoc-in-config [:type-to-handler :view] #'render-view)    
+(assoc-in-config [:type-to-handler :action] #'default-handle-action)    
 
-(assoc-in-config [:filters :view] :is-view-fn)
-(assoc-in-config [:filters :action] :is-action-fn)
