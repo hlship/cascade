@@ -28,7 +28,7 @@
     (assoc-in-config [selector key] function)))
     
 (defn find-matching-functions
-  "Given the request path (as a split path, or vector of terms), finds all mapped functions in the configuration
+  "Given the request path (as a split path, i.e. a vector of terms), finds all mapped functions in the configuration
   (within the selector key) that can apply to
   the request path. The return value is a seq of pairs; each pair is a split path to match against the request path,
   and a corresponding function. The seq is sorted in descending order by path count."  

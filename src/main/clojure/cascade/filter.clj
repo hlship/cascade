@@ -45,10 +45,9 @@
   "Checks to see if the request is for a static file, which is passed through to the servlet container."
   [#^ServletContext context path]
   (cond
-    ; TODO: This was critical for Tapestry, but may not be needed for Cascade since it will not
-    ; look like a component event request.
-    (= path "/favicon.ico") true  ;  whether it exists or not!
-
+		; Incoming requests for the context end up with a path of "/", which WILL be considered
+		; a static file. TODO: need to extend this for subdirs?
+  	(= path "/") false
     ; If we can get a non-nil URL to the resource inside the context then it's a real static file
     ; to be ignored.
     (.getResource context path) true
