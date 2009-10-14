@@ -109,15 +109,17 @@
 
 (defn -doFilter 
   [this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
-  (debug "Filtering %s" request)
   (let [path (get-path request)
+  	    qs (.getQueryString request)
+  	    debug-path (if (nil? qs) path (str path "?" qs))
         context @(.context this)]
-  (when (or 
-          (static-file? context path) 
-          (not (pass-to-dispatchers request response context path)))
-    ; Let the servlet container process this normally.
-    (debug "Not handled; forwarding to next in chain")
-    (.doFilter chain request response))))
+	  (debug "Filtering %s" debug-path)
+	  (when (or 
+	          (static-file? context path) 
+	          (not (pass-to-dispatchers request response context path)))
+	    ; Let the servlet container process this normally.
+	    (debug "Not handled; forwarding to next in chain")
+	    (.doFilter chain request response))))
 
 
 
