@@ -75,6 +75,9 @@
         <include name="LICENSE*" />
         <include name="README*" />
       </fileset>
+      <fileset dir="target/classes">
+        <include name="cascade/filter.class"/>
+      </fileset>
     </jar>
     <jar destfile="${jar.file}" index="true">
       <fileset dir="target/classes" />
