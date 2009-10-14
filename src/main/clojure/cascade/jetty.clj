@@ -15,23 +15,31 @@
 (ns 
   #^{:doc "Run Jetty server embedded"}
   cascade.jetty
+  (:use
+  	(clojure.contrib str-utils))
   (:require cascade.filter)
-  (:import (org.eclipse.jetty.server Server)
-           (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
+  (:import 
+  	(org.eclipse.jetty.server Server)
+    (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
 
 (defn run-jetty
   "Starts an instance of the Jetty Server running.
   webapp defines the folder containing ordinary static resources (the docroot). 
-  The default for the port parameter is 8080. Returns the new Jetty Server instance. No web.xml is necessary, a
-  cascade.filter will automatically be installed."
-  ([webapp] (run-jetty webapp 8080))
-  ([#^String webapp port] 
+  Returns the new Jetty Server instance. No web.xml is necessary, a
+  cascade.filter will automatically be installed. Any provided namespace-symbols will be
+  loaded at filter startup (you will specify namespaces containing views and actions)."
+  [#^String webapp port & namespaces] 
   
   (let [server (Server. port)
-        context (ServletContextHandler. server "/" false false)]
-  (doto context
-    (.setResourceBase webapp)
-    (.setClassLoader (.. (Thread/currentThread) getContextClassLoader))
-    (.addFilter cascade.filter "/*" FilterMapping/DEFAULT)
-  (.addServlet DefaultServlet "/*")) 
-  (doto server (.setHandler context) .start .join))))
+        context (ServletContextHandler. server "/" false false)
+        namespace-list (str-join "," (map name namespaces))]
+	  (doto context
+	    (.setResourceBase webapp)
+	    (.setClassLoader (.. (Thread/currentThread) getContextClassLoader))
+		  ; Add a servlet to vend out ordinary static files. Also, filters don't work without a servlet to
+		  ; filter around!
+		  (.addServlet DefaultServlet "/*"))
+	    
+	  (.setInitParameter (.addFilter context cascade.filter "/*" FilterMapping/DEFAULT) "cascade.namespaces" namespace-list)
+	  	  
+	  (doto server (.setHandler context) .start .join)))

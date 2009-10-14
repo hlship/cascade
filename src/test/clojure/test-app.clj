@@ -1,6 +1,5 @@
 (set! *warn-on-reflection* true)
 
-(require 'app1.views)
 (use 'cascade.jetty)
 
-(pr (run-jetty "src/test/webapp"))
+(pr (run-jetty "src/test/webapp" 8080 'app1.views))

@@ -19,6 +19,7 @@
   	(cascade exception))
   (:use
 	  (clojure stacktrace)	
+	  (clojure.contrib str-utils)
   	(cascade config dispatcher logging path-map pipeline urls exception)
     (cascade.internal utils))
   (:import
@@ -94,8 +95,16 @@
   [this #^FilterConfig filter-config]
   
   (reset! (.context this) (.getServletContext filter-config))
+  
+  (info "Cascade startup")
+  
+  (let [namespace-list (.getInitParameter filter-config "cascade.namespaces")
+  		  namespace-names (and namespace-list (re-split #"," namespace-list))]
+		(doseq [#^String ns-name namespace-names]
+			(info "Loading namespace: %s" ns-name)
+			(require (symbol (.trim ns-name)))))  		  
 
-  (info "Cascade Filter Startup\nConfiguration:\n%s" (ppstring @configuration))
+  (info "Configuration:\n%s" (ppstring @configuration))
 
   ; TODO: require a set of clojure namespaces defined in web.xml, if available 
 
@@ -103,7 +112,7 @@
 
 (defn -destroy 
   [this]
-  (debug "Cascade Filter Shutdown")
+  (debug "Cascade shutdown")
   nil)
 
 (defn -doFilter 
