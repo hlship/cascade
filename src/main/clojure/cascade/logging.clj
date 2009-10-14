@@ -19,21 +19,22 @@
 (defn #^Logger get-logger [#^String name]
   (LoggerFactory/getLogger name))  
 
-; My Macro-Fu is inadequate to avoid cut-and-paste here. Also the Logger interface makes it hard
-; (there's no log-at-level method, so you have to invoke specific methods) and the . special form
-; doesn't support dynamically calling a method, etc., etc.
-
+(defmacro log*
+	[check-fn log-fn fmt & args]
+  (let [logger-name (name (ns-name *ns*))]
+    `(let [logger# (get-logger ~logger-name)]
+      (and 
+        (. logger# ~check-fn)
+        (. logger# ~log-fn (format ~fmt ~@args))))))
+	
 (defmacro debug
-  [format & args]
-  (let [logger-name (name (ns-name *ns*))]
-    `(let [logger# (get-logger ~logger-name)]
-      (and (.isDebugEnabled logger#)
-        (.debug logger# (format ~format ~@args))))))
-        
+  [fmt & args]
+  `(log* isDebugEnabled debug ~fmt ~@args))
+  
 (defmacro info
-  [format & args]
-  (let [logger-name (name (ns-name *ns*))]
-    `(let [logger# (get-logger ~logger-name)]
-      (and (.isInfoEnabled logger#)
-        (.info logger# (format ~format ~@args))))))        
-        
+	[fmt & args]
+	`(log* isInfoEnabled info ~fmt ~@args))          
+
+(defmacro error
+	[fmt & args]
+	`(log* isErrorEnabled error ~fmt ~@args))       
