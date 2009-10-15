@@ -12,18 +12,20 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Script that loads all tests for execution.
+(ns cascade.test-change-tracker
+  (:use 
+    (cascade change-tracker)
+    (clojure (test :only [is are deftest]))))
 
-(use 'clojure.test)
+(deftest test-splitp
+	(are [predicate input expected-matches expected-non-matches]
+		(let [[actual-matches actual-non-matches] (splitp predicate input)]
+			(is (= actual-matches expected-matches))
+			(is (= actual-non-matches expected-non-matches)))
+			
+			 keyword? [:foo 'bar "baz"] [:foo] ['bar "baz"]
+			
+			 empty? [] [] []
+			
+			 symbol? nil [] []))	
 
-(set! *warn-on-reflection* true)
-
-(def spaces (map #(symbol (str "cascade.test-" %)) [
-  "utils" "config" "cascade" "change-tracker" "parse-functions" "path-map" "pipeline" "urls" "map-utils" "viewbuilder"]))
-
-(println "Loading code ...")
-(time (apply use (sort spaces)))
-  
-(println "Executing tests ...")
-
-(time (apply run-tests (map find-ns spaces)))

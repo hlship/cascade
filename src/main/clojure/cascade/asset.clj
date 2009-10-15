@@ -43,8 +43,6 @@
 ;; TODO: Whitelist of regexps to allow access to classpath assets. Maybe
 ;; a blacklist as well.
 
-(def #^ClassLoader context-class-loader (.getContextClassLoader (Thread/currentThread)))
-
 (defn get-classpath-asset
   "Locates an asset on the classpath. Throws RuntimeException if the asset does not exist.
   Returns an asset map. The path is relative to the classpath root and should not

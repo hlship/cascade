@@ -20,7 +20,7 @@
   (:use
 	  (clojure stacktrace)	
 	  (clojure.contrib str-utils)
-  	(cascade config dispatcher logging path-map pipeline urls exception)
+  	(cascade config change-tracker dispatcher logging path-map pipeline urls exception)
     (cascade.internal utils))
   (:import
   	(javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
@@ -104,14 +104,15 @@
 			(info "Loading namespace: %s" ns-name)
 			(require (symbol (.trim ns-name)))))  		  
 
-  (info "Configuration:\n%s" (ppstring @configuration))
+  (start-scan-thread)
 
-  ; TODO: require a set of clojure namespaces defined in web.xml, if available 
+  (info "Configuration:\n%s" (ppstring @configuration))
 
   nil)
 
 (defn -destroy 
   [this]
+  (stop-scan-thread)
   (debug "Cascade shutdown")
   nil)
 

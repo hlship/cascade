@@ -12,14 +12,49 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-; Contains the basic dispatchers
-
 (ns #^{:doc "Maps path prefixs to view, action and dispatcher functions"}
   cascade.path-map
+  (:require
+  	(clojure.contrib (str-utils2 :as s2)))
   (:use 
-    (cascade config urls func-utils fail)))
+    (cascade change-tracker logging config urls func-utils fail)))
+      
+(def #^ClassLoader context-class-loader (.getContextClassLoader (Thread/currentThread)))
+      
+(def tracked-namespaces (atom #{}))      
       
 (def cascade-type-to-virtual-folder { :view "view" :action "action"})      
+
+(defn to-source-path
+	"Converts a namespace to a path (on the classpath) to the source file for
+	 the namespace."
+	[n]
+	(let [ns-str (name (ns-name n))
+			  converted (s2/replace (s2/replace ns-str \- \_) \. \/)]
+		  (str converted ".clj")))
+
+(defn start-tracking
+	[n]
+	(let [source-path (to-source-path n)
+			  source-url (.getResource context-class-loader source-path)]
+		(track-resource source-url
+			(fn []
+				; Unmark it as tracked (to force a later start-tracking call).
+				(swap! tracked-namespaces disj n)
+				; Now, reload the namespace.
+				(debug "Reloading namespace %s" (ns-name n))
+				(require :reload (ns-name n))))))
+				
+(defn add-tracked-namespace
+	"Adds a namespace to those that are tracked for reload on change (if not already tracked)."
+	[n]
+	(swap! tracked-namespaces
+		(fn [tracked]
+			(if-not (contains? tracked n)
+				(do 
+					(start-tracking n)
+					(conj tracked n))
+				tracked))))
       
 (defn add-function-to-config
   [selector path function]
@@ -42,6 +77,7 @@
   :path meta-data key. Does nothing if the extracted path is nil."
   [function]
   (let [path (^function :path)]
+  	(add-tracked-namespace (^function :ns))
     (if path
       (add-function-to-config :mapped-functions path function))))
       
