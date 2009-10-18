@@ -14,10 +14,10 @@
 
 (ns cascade.test-utils
   (:use
-    (clojure (test :only [is are deftest]) )
-    (clojure.contrib pprint duck-streams str-utils)
+    (clojure (test :exclude [function?]))
+    (clojure.contrib pprint duck-streams str-utils macro-utils)
     cascade.config
-    (cascade func-utils)
+    (cascade func-utils utils)
     (cascade.internal utils)))
 
 (deftest classpath-resource-does-not-exist
@@ -82,3 +82,16 @@
   (is (= (qualified-function-name #'map) "clojure.core/map"))
   (is (= (qualified-function-name #'function?) "cascade.internal.utils/function?")))  
   
+(deftest test-lcond
+	(let [f #(lcond (nil? %) "nil"
+								  :let [x2 (* 2 %)]
+								  true x2)]
+		(is (= (f nil) "nil"))
+		(is (= (f 5) 10))))
+		
+(deftest empty-lcond-is-nil
+	(is (nil? (lcond))))
+	
+(deftest lcond-requires-even-clauses
+	(is (thrown-with-msg? RuntimeException #".* lcond requires an even number of forms"
+		(mexpand-all `(lcond (= 1 2) :b :c)))))
