@@ -12,7 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.utils)
+(ns cascade.utils
+	(:use
+		(clojure.contrib pprint macro-utils)))
 
 (defmacro lcond
 	"A reimplementation of Clojure's cond, with the addition of a special :let
@@ -29,4 +31,7 @@
 				 	`(let [~@expr] (lcond ~@rst))
 				 	`(if ~tst ~expr (lcond ~@rst))))))
 
-
+(defmacro debug-form
+	"Expands all macros in a form, recursively, and prints the result. Returns nil."
+	[form]
+	`(pprint (mexpand-all '~form))) 
