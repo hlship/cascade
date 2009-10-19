@@ -150,7 +150,8 @@
   Formats a detailed HTML report of the exception and the overall environment."
   [env]
   (let [#^HttpServletRequest request (-> env :servlet-api :request)
-  		  #^HttpSession session (.getSession request false)]
+  		  #^HttpSession session (.getSession request false)
+  		  path-sep (System/getProperty "path.separator")]
     (template
 	    :html [
 	    :head [
@@ -202,7 +203,23 @@
 						(template
 							:h2 [  "Session" ]
 							
-							(render session)))		  	
+							(render session)))
+							
+					:h2 [ "System Properties" ]
+					
+					:dl [
+						(template-for [name (sort (seq (.keySet (System/getProperties))))
+													:let [value (System/getProperty name)]]
+							:dt [ name ]
+							:dd [ 
+								(if (or (.endsWith name "path") (.endsWith name "dirs"))
+									(template :ul [
+										(template-for [v (.split value path-sep)]
+											:li [ v ])
+									])
+									value)
+							 ])
+					]														  	
 				]		  	
 	    ]
 	  ])))
