@@ -20,7 +20,7 @@
   (:use 
   	cascade 
   	(cascade.internal utils)
-  	(cascade config logging pipeline renderer dispatcher)))
+  	(cascade config logging pipeline renderer dispatcher utils)))
   
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties  
 (def throwable-properties (keys (bean (Throwable.))))  
@@ -29,8 +29,12 @@
   "Returns the CSS class name for a stack frame element, or nil.  Useful values are :c-omitted-frame
    or :c-usercode-frame."
   [#^StackTraceElement element]
-  (cond
-  	(.startsWith (.getClassName element) "clojure.lang.") :c-omitted-frame))
+  (lcond
+  	:let [class-name (.getClassName element)]
+  	(or
+  		(.startsWith class-name "clojure.lang.")
+  		(.startsWith class-name "sun.")
+  		(.startsWith class-name "java.lang.reflect.")) :c-omitted-frame))
        
 (defn convert-clojure-frame
 	"Converts a stack frame into DOM nodes representing the Clojure namespace and function name(s),
