@@ -16,9 +16,26 @@
   #^{:doc "Request dispatch to views and actions"}
   cascade.dispatcher
   (:import (javax.servlet ServletResponse))
-  (:use (cascade config dom logging path-map pipeline fail func-utils)
-        (cascade.internal utils)))
+  (:use 
+  	cascade
+  	(cascade config dom logging path-map pipeline fail func-utils)
+    (cascade.internal utils)))
 
+(defn prepare-dom-for-render
+	"Post-processes the DOM after the view has constructed it, but before it has been rendered out
+	 as the response. This is a chance to make modifications to the DOM to support global concerns.
+	 This function is often decorated with filters to add new functionality. It is passed
+	 a seq of DOM nodes and should return the same, or a modified set of DOM nodes."
+	 [dom-nodes]
+	 ; Return unchanged
+	 dom-nodes)
+	 
+(decorate prepare-dom-for-render 
+	(fn [delegate dom-nodes]
+		(delegate 
+			(extend-dom dom-nodes [:html :head] :top 
+				(template :meta { :name "generator" :content "Cascade http://github.com/hlship/cascade" })))))	 
+	
 (defn render-view-as-xml
   "Renders the provided view function as an XML stream."
 	[env view-fn]
@@ -26,7 +43,7 @@
   (let [#^ServletResponse response (-> env :servlet-api :response)
         dom (view-fn env)]
     (with-open [writer (.getWriter response)]
-      (render-xml dom writer)))
+      (render-xml (prepare-dom-for-render dom) writer)))
   true)
 
 (defn render-view
