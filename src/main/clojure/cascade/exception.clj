@@ -14,7 +14,9 @@
 
 (ns #^{:doc "Exception reporting view and pipeline"}
   cascade.exception
-  (:import (java.lang Throwable StackTraceElement))
+  (:import
+  	(javax.servlet.http HttpServletRequest HttpSession) 
+  	(java.lang Throwable StackTraceElement))
   (:require  	
   	(clojure.contrib (str-utils2 :as s2)))
   (:use 
@@ -51,8 +53,6 @@
      
 (defn transform-stack-frame
   [#^StackTraceElement element]
-  ;; TODO: some regexp matching to identify Clojure stack frames and transform them into a better format.
-  ;; Also, mark a lot of the clojure's API classes as "uninteresting".
   { 
   	:element element
   	:method-name
@@ -92,8 +92,8 @@
 (defn expand-exception-stack
     "Expands a simple exception into a seq of exception maps, representing the stack of exceptions (the first or outer
     exceptions wrap the later, inner, deeper exceptions). Each map has keys :class-name, :message, :stack-trace and :properties.
-    :class is the name of the exception class, :message is the message associated with the exception,
-    :stack-trace is a via transform-stack-trace (and will only be present in the last, or deepest, exception map),
+    :class-name is the name of the exception class, :message is the message associated with the exception,
+    :stack-trace is via transform-stack-trace (and will only be present in the last, or deepest, exception map),
     and :properties is a map of additional JavaBean properties of the map that should be presented to the user. The values
     of the :properties map are Java objects, not necesarilly strings, and will need further transformation to be
     presented."
@@ -149,52 +149,61 @@
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
   Formats a detailed HTML report of the exception and the overall environment."
   [env]
-  :html [
-    :head [
-      :title [ exception-banner ]
-      (include-js-library env (read-config :jquery-path))
-      (include-js-library env "cascade/exception-report.js")
-      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
-     ]
-    :body [
-      :h1 {:class "c-exception-report" } [ exception-banner ]
-      
-      :p {:class :c-exception-controls } [
-        :input { :type :checkbox :id :omitted-toggle }
-        " "
-        :label { :for :omitted-toggle } [ "Display hidden detail" ]
-      ]
-      
-      :ul { :class :c-exception-report } [
-        (template-for [m (expand-exception-stack (-> env :cascade :exception))]
-        	; TODO: Smarter logic about which frames to be hidden
-        	; Currently, assumes only the deepest is interesting.
-        	; When we add some additonal levels of try/catch & report
-        	; it may be useful to display some of the outer exceptions as well
-          :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
-      ]
-
-			:div { :class :c-env-data } [
-		  	
-		  	:h2 [ "Environment" ]
-		  	
-		  	:dl [
-		  	  :dt [ "Clojure Version" ]
-		  	  :dd [ (render *clojure-version*) ]
-		  	  :dt [ "Cascade Version" ]
-		  	  :dd [ "TBD" ]
-		  	  :dt [ "Application Version" ]
-		  	  :dd [ (read-config :application-version) ]
-		  	]
-		  	
-		  	:h2 [ "Request" ]
-		  
-		  	(render (-> env :servlet-api :request))
-		  	
-		  	:h2 [ "Servlet Context" ]
-		  	
-		  	(render (-> env :servlet-api :context))
-			]		  	
-    ]
-  ])
+  (let [#^HttpServletRequest request (-> env :servlet-api :request)
+  		  #^HttpSession session (.getSession request false)]
+    (template
+	    :html [
+	    :head [
+	      :title [ exception-banner ]
+	      (include-js-library env (read-config :jquery-path))
+	      (include-js-library env "cascade/exception-report.js")
+	      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
+	     ]
+	    :body [
+	      :h1 {:class "c-exception-report" } [ exception-banner ]
+	      
+	      :p {:class :c-exception-controls } [
+	        :input { :type :checkbox :id :omitted-toggle }
+	        " "
+	        :label { :for :omitted-toggle } [ "Display hidden detail" ]
+	      ]
+	      
+	      :ul { :class :c-exception-report } [
+	        (template-for [m (expand-exception-stack (-> env :cascade :exception))]
+	        	; TODO: Smarter logic about which frames to be hidden
+	        	; Currently, assumes only the deepest is interesting.
+	        	; When we add some additonal levels of try/catch & report
+	        	; it may be useful to display some of the outer exceptions as well
+	          :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
+	      ]
+	
+				:div { :class :c-env-data } [
+			  	
+			  	:h2 [ "Environment" ]
+			  	
+			  	:dl [
+			  	  :dt [ "Clojure Version" ]
+			  	  :dd [ (render *clojure-version*) ]
+			  	  :dt [ "Cascade Version" ]
+			  	  :dd [ "TBD" ]
+			  	  :dt [ "Application Version" ]
+			  	  :dd [ (read-config :application-version) ]
+			  	]
+			  	
+			  	:h2 [ "Request" ]
+			  
+			  	(render request)
+			  	
+			  	:h2 [ "Servlet Context" ]
+			  	
+			  	(render (-> env :servlet-api :context))
+	
+					(if session
+						(template
+							:h2 [  "Session" ]
+							
+							(render session)))		  	
+				]		  	
+	    ]
+	  ])))
             

@@ -16,7 +16,7 @@
   cascade.renderer
   (:import
     (javax.servlet ServletContext)
-  	(javax.servlet.http HttpServletRequest)
+  	(javax.servlet.http HttpServletRequest HttpSession)
   	(java.util Enumeration))
   (:use
   	cascade))
@@ -52,6 +52,13 @@
 	[title]
 	(template :div {:class :c-env-data-section } [ title ]))
 	  		 
+(defn definition-list
+	[& terms]
+	(template :dl [
+		(template-for [[term value] (partition 2 terms)]
+			:dt [ term] :dd [ value ])
+		]))
+			  		 
 (defn render-parameters	 
 	[#^HttpServletRequest request]
   (let [parameter-names (sort (seq (.. request getParameterMap keySet)))]
@@ -63,7 +70,7 @@
 						:dt [ name ]
 						:dd [ (render-values (seq (.getParameterValues request name))) ])
 				]))))
-
+		
 (defn render-headers
  	[#^HttpServletRequest request]
  	(let [header-names (sort (enumeration-to-seq (.getHeaderNames request)))]
@@ -86,51 +93,54 @@
 						:dt [ name ]
 						:dd [ (render (access-fn name)) ])
 				]))))		
-				
+										
 (defmethod render HttpServletRequest
   [#^HttpServletRequest request]
-  (let [context-path (.getContextPath request)]	  
-	  (template
-	  
-	  	:dl [
-	  	  :dt [ "Context Path" ]
-	  	  :dd [
-	  	    (if-not (= context-path "")
+  (let [context-path (.getContextPath request)]
+  	(template  
+	  	(definition-list
+	  		  	
+	  		"Context Path" (if-not (= context-path "")
 	  	    	context-path
 	  	    	(template :em [ "none (deployed as root)" ]))
-	  	  ]
-	  	    	
-	  	  :dt [ "Request URI" ]
-	  	  :dd [ (.getRequestURI request) ]
-	  	  
-	  	  :dt [ "Locale" ]
-	  	  :dd [ (str (.getLocale request)) ]
-	  	  
-	  	  :dt [ "Secure" ]
-	  	  :dd [ (str (.. request isSecure)) ]
-	  	  
-	  	  :dt [ "Server Name" ]
-	  	  :dd [ (.getServerName request) ]
-	  	  
-	  	]
 	  	
-	  	(render-parameters request)
+	  		"Request URI" (.getRequestURI request)
+	  		
+	  		"Locale" (str (.getLocale request))
+	  		
+	  		"Secure" (str (.. request isSecure))
+	  		
+	  		"Server Name" (.getServerName request))
+		  	    	
+			(render-parameters request)
 	  	(render-headers request)
-	  	(render-attributes (.getAttributeNames request) #(.getAttribute request %)))))		
+	  	(render-attributes (.getAttributeNames request) #(.getAttribute request %)))))	
 						 
 (defmethod render ServletContext
 	[#^ServletContext context]
 	(template
-		:dl [
-		  :dt [ "Version" ]
-		  :dd [ (.getMajorVersion context) "." (.getMinorVersion context) ]
-		  
-		  :dt [ "Server Info" ]
-		  :dd [ (.getServerInfo context) ]
-		  
-		  :dt [ "Context Name" ]
-		  :dd [ (.getServletContextName context) ]
-		]
-		
-		(render-attributes (.getAttributeNames context) #(.getAttribute context %))))
+		(definition-list
+			"Version"  (str (.getMajorVersion context) "." (.getMinorVersion context))
+			
+			"Server Info" (.getServerInfo context)
+			
+			"Context Name" (.getServletContextName context))
+
+	(render-attributes (.getAttributeNames context) #(.getAttribute context %))))
 		 
+(defn
+	to-date
+	[long-date]
+	(format "%tc" long-date))
+		 
+(defmethod render HttpSession
+	[#^HttpSession session]
+	(template
+		(definition-list
+			"Id" (.getId session)
+			"New" (str (.isNew session))
+			"Creation Time" (to-date (.getCreationTime session))
+			"Last Accessed" (to-date (.getLastAccessedTime session)))
+
+    (render-attributes (.getAttributeNames session) #(.getAttribute session %))))
+		

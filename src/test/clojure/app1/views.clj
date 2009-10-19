@@ -106,6 +106,7 @@
   {:path "force-failure"}
   [env]
   (.setAttribute (-> env :servlet-api :request) "an-attribute" "a value")
+  (.. (-> env :servlet-api :request) (getSession true) (setAttribute "my-session-attribute" "my-session-value"))
   (page-template env "Force Failure"
     (block [env]
       :p [
