@@ -13,14 +13,16 @@
 ; and limitations under the License.
 
 (ns 
-  #^{:doc "DOM node and rendering"}
+  #^{:doc "DOM node structure, rendering and manipulation"}
   cascade.dom
   (:import
   	(clojure.lang Keyword)
   	(java.io Writer))
-  (:use cascade.internal.utils))
-
-; TODO: Split out rendering (that may be internal).
+  (:require 
+  	(clojure [zip :as z]))
+  (:use 
+  	(cascade fail utils logging)
+ 		cascade.internal.utils))
 
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
@@ -43,7 +45,7 @@
 (declare render-xml)
   
 (defmulti to-attr-string
-  "Converts an attribute value to a string (which will be enclosed in quotes)."
+  "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."
   class)
   
 (defmethod to-attr-string String
@@ -59,6 +61,7 @@
   (name kw)) 
   
 (defn- write
+	"Write a number of strings to the writer."
   [#^Writer out & strings]
   (doseq [#^String s strings]
     (.write out s)))
@@ -86,7 +89,7 @@
     ; Write out normal attributes
 
     (doseq [{attr-name :name attr-value :value} (element-node :attributes)]
-        ; TODO: URL escaping here, or elsewhere?
+        ; TODO: Escape embedded quotes in the value.
         (if-not (nil? attr-value)
         	(write out " " (name attr-name) "=\"" (to-attr-string attr-value) "\"")))
 
@@ -108,3 +111,83 @@
   ; TODO: Render out the <?xml version="1.0"?> P.I.?
   (doseq [node dom-nodes]
     (render-node-xml node out)))
+  
+(defn element?
+  "Returns true if the dom node is type :element."
+  [node]
+  (= :element (node :type)))    
+    
+(defn dom-zipper
+	[root-node]
+	(fail-unless (element? root-node) "Root node for dom-zipper must be an element node.")
+	(z/zipper 
+		element? ; can have children 
+		:content ; children are (already) a seq in the :content key
+		(fn [node children] (assoc node :content children)) 
+		root-node))    
+    
+(defn navigate-dom-path
+	"Starting from the root location (from dom-zipper) search for the first element child
+	 that matches the first element in the path. The search continues looking for a child that
+	 matches each successive keyword in the path. Returns the zipper loc for the final match or
+	 nil if the path could not be resolved."
+	[root-loc path]
+	(fail-if (empty? path) "Must supply at least one keyword as the path.")
+	(loop	[loc root-loc
+				 target-element (first path)
+				 remaining-path (rest path)]
+		(lcond			
+			(nil? loc) nil
+			:let [n (z/node loc)]
+			(and (element? n) (= (n :name) target-element))
+				(if (empty? remaining-path)
+					loc
+					(recur (z/down loc) (first remaining-path) (rest remaining-path)))
+			true (recur (z/right loc) target-element remaining-path))))
+
+(defn update-dom
+	"Updates the DOM using a DOM zipper, a position (:before, :after, :top, :bottom)
+	and a seq of new nodes. Returns a DOM zipper loc from which the entire DOM tree can
+	be retrieved."
+	[loc position new-nodes]
+	(cond
+		(= position :before) (reduce z/insert-left loc new-nodes)
+		(= position :top) (reduce z/insert-child loc (reverse new-nodes))
+		(= position :after) (reduce z/insert-right loc (reverse new-nodes))
+		(= position :bottom) (reduce z/append-child loc new-nodes)
+		true (fail "Unexpected position: %s" position)))
+
+(defn extend-root-element
+	"Extends the DOM from the root DOM element, returning a new DOM.
+	The path is a seq of keywords, used to walk down to a specifc element in
+	the DOM. The new nodes (often via the template macro) will be inserted
+	according to position. :before, :after, :top (left-most, first children)
+	:bottom (right-most, last children). Returns the modified root DOM node, or 
+	(if the path was unable to locate a specific element), the original root DOM node."
+	[dom-node path position new-nodes]
+	(lcond
+		:let [root-loc (dom-zipper dom-node)
+				  loc (navigate-dom-path root-loc path)]
+		(nil? loc) dom-node
+		true (z/root (update-dom loc position new-nodes))))
+		
+(defn extend-dom 
+	"Extends a DOM (a set of root DOM nodes), adding new nodes at a specific position. Uses the path 
+	 (a series of keywords, representing elements) to locate an element within the DOM
+	 then adds the new nodes at the position (position can be :top :bottom :before :after).
+	 Assumes that the first element node in dom-nodes
+	 is the root of the element tree (other nodes are possibly text or comments). 
+	 Does nothing if the targetted node can't be found. Returns a new
+	 sequence of dom nodes."
+	[dom-nodes path position new-nodes]
+	(loop [result []
+		     queue dom-nodes]
+     (lcond
+     		; Never found an element node? Return the original nodes unchanged.
+     		(empty? queue) dom-nodes      
+     		
+     		:let [node (first queue)]
+     		
+     		(= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
+     		
+     		true (recur (conj result node) (rest queue))))) 
