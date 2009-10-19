@@ -25,13 +25,14 @@
 (defn run-jetty
   "Starts an instance of the Jetty Server running.
   webapp defines the folder containing ordinary static resources (the docroot). 
-  Returns the new Jetty Server instance. No web.xml is necessary, a
+  Returns the new Jetty Server instance. The instance is started with session support, but
+  without security support. No web.xml is necessary, a
   cascade.filter will automatically be installed. Any provided namespace-symbols will be
-  loaded at filter startup (you will specify namespaces containing views and actions)."
+  loaded at filter startup (this is to specify namespaces containing views and actions)."
   [#^String webapp port & namespaces] 
   
   (let [server (Server. port)
-        context (ServletContextHandler. server "/" false false)
+        context (ServletContextHandler. server "/" true false)
         namespace-list (str-join "," (map name namespaces))]
 	  (doto context
 	    (.setResourceBase webapp)
