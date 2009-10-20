@@ -88,3 +88,12 @@
 				[:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p/>Cascade!</body></html>"
 				[:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p/>Cascade!</body></html>")))				
 		
+(deftest test-encode-string
+	(are [input output]
+		(is (= (encode-string input) output))
+		"one < 2" "one &lt; 2"
+		"two > one" "two &gt; one"
+		"Calvin & Hobbes" "Calvin &amp; Hobbes"
+		(str "What's this: " (char 128) (char 31)) "What's this: &#x80;&#x1f;"))
+		
+(run-tests)

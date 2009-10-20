@@ -16,10 +16,6 @@
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (cascade dom)
         (cascade.internal utils parser)))
-        
-(defn text-node
-  [text]
-  (struct-map dom-node :type :text :value text))
 
 (defn map-to-attribute-nodes
   "Converts a map that defines the attributes for an element into a seq of

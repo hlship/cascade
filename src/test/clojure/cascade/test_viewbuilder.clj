@@ -14,7 +14,8 @@
 
 (ns cascade.test-viewbuilder
   (:use
-    (clojure (test :only [is are deftest]) )
+    (clojure (test :only [is are deftest]))
+    cascade.dom
     cascade.internal.viewbuilder))
     
 (deftest test-convert-render-result

@@ -19,7 +19,8 @@
   	(clojure.lang Keyword)
   	(java.io Writer))
   (:require 
-  	(clojure [zip :as z]))
+  	(clojure [zip :as z])
+  	(clojure.contrib [str-utils2 :as s2]))
   (:use 
   	(cascade fail utils logging)
  		cascade.internal.utils))
@@ -38,19 +39,46 @@
   :type ; :element, :attribute, :text
   ; TODO: :ns-prefix
   :name ; element tag or attribute name (as a keyword)
-  :value ; attribute value or literal text
+  :value ; attribute value or literal text (text must be encoded)
   :attributes ; attribute dom-nodes within element dom-nodes
   :content) ; dom-nodes for any children
   
 (declare render-xml)
+
+(def min-safe 32)
+(def max-safe 127)
+
+(defn char-to-entity
+	"Converts a single character to an entity, returning the entity or the original character."	
+	[ch]
+	(lcond
+		(= ch \<) "&lt;"
+		(= ch \>) "&gt;"
+		(= ch \&) "&amp;"
+		:let [chint (int ch)]
+		(or (< chint min-safe) (> chint max-safe)) (format "&#x%x;" chint)
+		true ch))
   
+(defn encode-string
+  "Encodes a string, replacing all non-ASCII characters with XML escape codes. In addition,
+  unsafe characters are replaced with HTML entities."
+ 	[s]
+ 	; Could rewrite to more efficiently determine if out == s
+ 	(let [out (s2/map-str #(char-to-entity %) s)]
+ 		(if (= s out) s out)))
+    
+(defn text-node
+	"Creates a text node from the string. The string is encoded when the node is constructed."
+  [text]
+  (struct-map dom-node :type :text :value (encode-string text)))
+      
 (defmulti to-attr-string
   "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."
   class)
   
 (defmethod to-attr-string String
   [str-value]
-  str-value)
+  (encode-string str-value))
   
 (defmethod to-attr-string Number
   [#^Number numeric-value]
@@ -58,7 +86,7 @@
 
 (defmethod to-attr-string Keyword
   [kw]
-  (name kw)) 
+  (encode-string (name kw))) 
   
 (defn- write
 	"Write a number of strings to the writer."
@@ -71,9 +99,8 @@
     (node :type)))
 
 (defmethod render-node-xml :text
-  [text-node out]
-  ; TODO: entity filtering, also a :raw-text (for pre-filtered?)
-  (write out (text-node :value)))
+  [node out]
+  (write out (node :value)))
 
 (defmethod render-node-xml :comment
   [comment-node out]
