@@ -36,7 +36,7 @@
 ; for production).
 
 (defstruct dom-node
-  :type ; :element, :attribute, :text
+  :type ; :element, :attribute, :text, :raw
   ; TODO: :ns-prefix
   :name ; element tag or attribute name (as a keyword)
   :value ; attribute value or literal text (text must be encoded)
@@ -45,19 +45,25 @@
   
 (declare render-xml)
 
-(def min-safe 32)
-(def max-safe 127)
+(def char-to-entity-map 
+	(merge 
+		; Start with whitespace plus all ASCII printable
+		(reduce #(assoc %1 (char %2) (char %2)) {}
+			(concat [9 10 13] (range 32 126)))
+		
+		; Then merge in the characters that must be XML entities	
+		{
+			\< "&lt;"
+			\> "&gt;"
+			\& "&amp;"
+		}))
 
 (defn char-to-entity
 	"Converts a single character to an entity, returning the entity or the original character."	
 	[ch]
-	(lcond
-		(= ch \<) "&lt;"
-		(= ch \>) "&gt;"
-		(= ch \&) "&amp;"
-		:let [chint (int ch)]
-		(or (< chint min-safe) (> chint max-safe)) (format "&#x%x;" chint)
-		true ch))
+	(or
+		(char-to-entity-map ch)
+		(format "&#x%x;" (int ch))))
   
 (defn encode-string
   "Encodes a string, replacing all non-ASCII characters with XML escape codes. In addition,

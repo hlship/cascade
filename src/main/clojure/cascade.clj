@@ -113,4 +113,9 @@
   [env asset-path]
   (to-asset-path env (get-classpath-asset asset-path)))
   
+(defn raw
+	"Wraps a string as a :text DOM node, but does not do any filtering of the value."
+	[s]
+  (struct-map dom-node :type :text :value s))
+  
 			       

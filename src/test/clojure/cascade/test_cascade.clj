@@ -140,7 +140,7 @@
   [env]
   (let [copyright (template  
     linebreak :hr :p [ 
-      "&copy; 2009 " 
+      (raw "&copy; 2009 ") 
       :a {:href "mailto:hlship@gmail.com"} [ "Howard M. Lewis Ship" ]
     ] linebreak)]
     (template
