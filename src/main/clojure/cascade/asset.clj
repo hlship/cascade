@@ -28,6 +28,9 @@
 (assoc-in-config :application-version
   (Long/toHexString (System/nanoTime)))
   
+(assoc-in-config :asset-blacklist
+	[#"\.class$", #"\.clj$"])
+  
 ;; Assets represents files stored either under the web context or stored within the classpath.
 ;; Identifying an asset will eventually incorporate a locale-specific search. Ultimately,
 ;; assets will be (optionally) GZip compressed, for clients which support GZip compression.
@@ -40,17 +43,24 @@
 
 ;; TODO: lots of caching
 
-;; TODO: Whitelist of regexps to allow access to classpath assets. Maybe
-;; a blacklist as well.
-
+(defn is-allowed-path
+	"Apply blacklist rules to see if the path is allowed (not on the blacklist)."
+	[path]
+	(not-any? #(re-find % path) (read-config :asset-blacklist)))
+	
+(defn fail-if-blacklisted
+	"Throws RuntimeException if the path is on the blacklist."
+	[path]
+	(fail-unless (is-allowed-path path) "Asset '%s' is on the blacklist." path))	
+	
 (defn get-classpath-asset
   "Locates an asset on the classpath. Throws RuntimeException if the asset does not exist.
   Returns an asset map. The path is relative to the classpath root and should not
   start with a slash."
   [path]
   (let [asset-url (.getResource context-class-loader path)]
-    (fail-if (nil? asset-url) "Asset '%s' not found on the classpath." asset-url)
-    ;; TODO: Implement whitelist, verify that path is valid on the whitelist.
+    (fail-if (nil? asset-url) "Asset '%s' not found on the classpath." path)
+    (fail-if-blacklisted path)
     { :type :classpath
       :path path
       ::URL asset-url }))
@@ -81,9 +91,10 @@
   (let [#^HttpServletResponse response (-> env :servlet-api :response)
         [_ _ application-version & asset-path-terms] (-> env :cascade :split-path)
         asset-path (s2/join "/" asset-path-terms)
+        ; TODO: Should we just ignore bad requests, let the container send a 404?
     		_ (fail-if (nil? application-version) "Invalid classpath asset URL.")
     		_ (fail-unless (= application-version (read-config :application-version)) "Incorrect application version.")    		
-    		; TODO Check whitelist/blacklist
+				_ (fail-if-blacklisted asset-path)
     		; TODO Gzip, etc.
     		asset-url (.getResource context-class-loader asset-path)
     		_ (fail-if (nil? asset-url) "Could not locate classpath asset %s." asset-path)
