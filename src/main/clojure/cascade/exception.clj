@@ -20,6 +20,7 @@
   (:require  	
   	(clojure.contrib (str-utils2 :as s2)))
   (:use 
+  	clojure.stacktrace
   	cascade 
   	(cascade.internal utils)
   	(cascade config logging pipeline renderer dispatcher utils)))
@@ -145,82 +146,105 @@
   	; Force open/close tags for stupid browser compatibility       
   	:script { :type "text/javascript" :src (classpath-asset-path env path) } [ linebreak ]))
 
+(defn render-system-properties
+	[]
+	(let [path-sep (System/getProperty "path.separator")]
+		(template	
+			:dl [
+				(template-for [name (sort (seq (.keySet (System/getProperties))))
+											:let [value (System/getProperty name)]]
+					:dt [ name ]
+					:dd [ 
+						(if (or (.endsWith name "path") (.endsWith name "dirs"))
+							(template :ul [
+								(template-for [v (.split value path-sep)]
+									:li [ v ])
+							])
+							value)
+					 ])
+			])))														  	
+	
+(defn render-environment
+	[env]
+	(let
+		[#^HttpServletRequest request (-> env :servlet-api :request)
+	   session (.getSession request false)]
+		(template
+			:div { :class :c-env-data } [
+	  	
+		  	:h2 [ "Environment" ]
+		  	
+		  	:dl [
+		  	  :dt [ "Clojure Version" ]
+		  	  :dd [ (render *clojure-version*) ]
+		  	  :dt [ "Cascade Version" ]
+		  	  :dd [ "TBD" ]
+		  	  :dt [ "Application Version" ]
+		  	  :dd [ (read-config :application-version) ]
+		  	]
+		  	
+		  	:h2 [ "Request" ]
+		  
+		  	(render request)
+		  	
+		  	:h2 [ "Servlet Context" ]
+		  	
+		  	(render (-> env :servlet-api :context))
+		
+				(if session
+					(template
+						:h2 [  "Session" ]
+						
+						(render session)))
+						
+				:h2 [ "System Properties" ]
+				
+				(render-system-properties)
+					
+		])))
+
+(defn render-exception-report-detail
+	[env exception]
+	(template
+		:p { :class :c-exception-controls } [
+			:input { :type :checkbox :id :omitted-toggle }
+       " "
+      :label { :for :omitted-toggle } [ "Display hidden detail" ]
+    ]
+      
+    :ul { :class :c-exception-report } [
+      (template-for [m (expand-exception-stack exception)]
+	    	; TODO: Smarter logic about which frames to be hidden
+	    	; Currently, assumes only the deepest is interesting.
+	    	; When we add some additonal levels of try/catch & report
+	    	; it may be useful to display some of the outer exceptions as well
+	      :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
+	  ]
+
+		(render-environment env)))		  
+
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
   Formats a detailed HTML report of the exception and the overall environment."
   [env]
-  (let [#^HttpServletRequest request (-> env :servlet-api :request)
-  		  #^HttpSession session (.getSession request false)
-  		  path-sep (System/getProperty "path.separator")]
+  (let [production-mode (read-config :production-mode)
+  		  #^Throwable exception (-> env :cascade :exception)]
     (template
 	    :html [
-	    :head [
-	      :title [ exception-banner ]
-	      (include-js-library env (read-config :jquery-path))
-	      (include-js-library env "cascade/exception-report.js")
-	      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
-	     ]
-	    :body [
-	      :h1 {:class "c-exception-report" } [ exception-banner ]
-	      
-	      :p {:class :c-exception-controls } [
-	        :input { :type :checkbox :id :omitted-toggle }
-	        " "
-	        :label { :for :omitted-toggle } [ "Display hidden detail" ]
-	      ]
-	      
-	      :ul { :class :c-exception-report } [
-	        (template-for [m (expand-exception-stack (-> env :cascade :exception))]
-	        	; TODO: Smarter logic about which frames to be hidden
-	        	; Currently, assumes only the deepest is interesting.
-	        	; When we add some additonal levels of try/catch & report
-	        	; it may be useful to display some of the outer exceptions as well
-	          :li { :class (if (nil? (m :stack-trace)) :c-omitted) } [ (render-exception-map m) ])
-	      ]
-	
-				:div { :class :c-env-data } [
-			  	
-			  	:h2 [ "Environment" ]
-			  	
-			  	:dl [
-			  	  :dt [ "Clojure Version" ]
-			  	  :dd [ (render *clojure-version*) ]
-			  	  :dt [ "Cascade Version" ]
-			  	  :dd [ "TBD" ]
-			  	  :dt [ "Application Version" ]
-			  	  :dd [ (read-config :application-version) ]
-			  	]
-			  	
-			  	:h2 [ "Request" ]
-			  
-			  	(render request)
-			  	
-			  	:h2 [ "Servlet Context" ]
-			  	
-			  	(render (-> env :servlet-api :context))
-	
-					(if session
-						(template
-							:h2 [  "Session" ]
-							
-							(render session)))
-							
-					:h2 [ "System Properties" ]
-					
-					:dl [
-						(template-for [name (sort (seq (.keySet (System/getProperties))))
-													:let [value (System/getProperty name)]]
-							:dt [ name ]
-							:dd [ 
-								(if (or (.endsWith name "path") (.endsWith name "dirs"))
-									(template :ul [
-										(template-for [v (.split value path-sep)]
-											:li [ v ])
-									])
-									value)
-							 ])
-					]														  	
-				]		  	
-	    ]
+		    :head [
+		      :title [ exception-banner ]
+		      (include-js-library env (read-config :jquery-path))
+		      (include-js-library env "cascade/exception-report.js")
+		      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
+		     ]
+		    :body [
+		      :h1 {:class "c-exception-report" } [ exception-banner ]
+		      
+		      (if production-mode
+		      	(template :div { :class :c-exception-message } [
+								(.getMessage (root-cause exception))
+							])		      		
+		        (render-exception-report-detail env exception))	  	
+		    ]
 	  ])))
             

@@ -17,8 +17,16 @@
   cascade.config
   (:use cascade.fail))
 
+(defn get-boolean-system-property
+	[property-name default-value]
+	(let [value (System/getProperty property-name)]
+		(if value
+			(Boolean/valueOf value)
+			default-value)))
+
 (def configuration (atom {
   :jquery-path "cascade/jquery-1.3.2.js"
+  :production-mode (get-boolean-system-property "cascade.production-mode" true)
   }))
 
 (defn- to-key-path
@@ -44,14 +52,15 @@
   (swap! configuration (fn [current] (assoc-in current (to-key-path key) value))))
   
 (defn find-config
-  "Obtains a value inside the configuraiton from a nested set of keys. May return nil."
-  [& keys]
-  (get-in @configuration keys))
+  "Obtains a value inside the configuration from a nested set of keys. key may be a single key or a seq of keys. May return nil."
+  [key]
+  (get-in @configuration (to-key-path key)))
   
 (defn read-config
-  "Obtains a value inside the configuration from a nested set of keys. Throws RuntimeException if the value could not be found."
-  [& keys]
-  (or 
-    (get-in @configuration keys)
-    (fail "Configuration key: %s was nil." keys)))
+  "Obtains a value inside the configuration from a key or seq of keys. Throws RuntimeException if the value could not be found."
+  [key]
+  (let [result (find-config key)]
+  	(if (nil? result)
+	    (fail "Configuration key %s was nil." key))
+	  result))
 

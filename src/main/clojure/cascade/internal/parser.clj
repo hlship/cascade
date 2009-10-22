@@ -90,6 +90,7 @@
       
       (when-not (empty? remaining-forms)
         (fail "Incomplete parse of %s, %s forms remain, starting with %s."
+          forms
           (count remaining-forms)
           (first remaining-forms)))
 

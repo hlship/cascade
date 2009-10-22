@@ -36,7 +36,7 @@
   (is (= (@configuration :list) [:barney :fred])))
   
 (deftest missing-key-on-read
-  (is (thrown-with-msg? RuntimeException #"Configuration key: \(:missing-key\) was nil\." (read-config :missing-key))))
+  (is (thrown-with-msg? RuntimeException #"Configuration key :missing-key was nil\." (read-config :missing-key))))
     
 (deftest test-find-config
   (assoc-in-config :mykey :myvalue)

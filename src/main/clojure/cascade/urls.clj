@@ -48,7 +48,7 @@
   or passing it through (a symbol of inline function) otherwise."
   [parser]
   (if (keyword? parser)
-    (read-config :url-parser parser)
+    (read-config [:url-parser parser])
     parser))
           
 (defn parse-url-value

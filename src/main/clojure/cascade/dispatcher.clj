@@ -122,7 +122,7 @@
   [env request-path [path function]]
   (let [function-meta ^function
         type (function-meta :cascade-type)
-        handler-fn (read-config :type-to-handler type)
+        handler-fn (read-config [:type-to-handler type])
         new-env (assoc-in env [:cascade :extra-path] (drop (count path) request-path))]
     (fail-if (nil? handler-fn) "Function %s defines a :cascade-type of %s which is not supported."
       (qualified-function-name function) type)    
