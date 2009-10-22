@@ -111,7 +111,7 @@
           (conj stack (assoc exception-map :stack-trace (transform-stack-trace (.getStackTrace current))))
           (recur next-exception (conj stack exception-map))))))
           
-(def exception-banner "An unexpected exception has occured.")
+(def exception-banner "An unexpected exception has occurred.")
     
 (defn render-exception-map
   "Renders an individual exception map. "
