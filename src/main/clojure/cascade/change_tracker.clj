@@ -110,7 +110,9 @@
 	[]
 	(swap! thread-info assoc :shutdown true)
 	
-	(.interrupt (@thread-info :thread))
+	(let [#^Thread thread (@thread-info :thread)]
+		(if thread
+			(.interrupt thread)))
 	
 	; Release the (soon to stop) thread to the GC.
 	(swap! thread-info dissoc :thread))

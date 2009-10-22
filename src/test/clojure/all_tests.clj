@@ -28,3 +28,5 @@
 (println "Executing tests ...")
 
 (time (apply run-tests (map find-ns spaces)))
+
+(shutdown-agents)
