@@ -38,10 +38,10 @@
 (defstruct dom-node
   :type ; :element, :attribute, :text, :raw
   ; TODO: :ns-prefix
-  :name ; element tag or attribute name (as a keyword)
-  :value ; attribute value or literal text (text must be encoded)
-  :attributes ; attribute dom-nodes within element dom-nodes
-  :content) ; dom-nodes for any children
+  :name ; element tag (for :element)
+  :attributes ; seq of attribute/value pairs (for :element)
+  :value ; attribute value or literal text (text must be encoded), nested nodes for :element
+)
   
 (declare render-xml)
 
@@ -115,13 +115,13 @@
 (defmethod render-node-xml :element
   [element-node out]
   (let [element-name (name (element-node :name))
-        content (element-node :content)]
+        content (element-node :value)]
 
     (write out "<" element-name)
 
     ; Write out normal attributes
 
-    (doseq [{attr-name :name attr-value :value} (element-node :attributes)]
+    (doseq [[attr-name attr-value] (element-node :attributes)]
         ; TODO: Escape embedded quotes in the value.
         (if-not (nil? attr-value)
         	(write out " " (name attr-name) "=\"" (to-attr-string attr-value) "\"")))
@@ -155,8 +155,8 @@
 	(fail-unless (element? root-node) "Root node for dom-zipper must be an element node.")
 	(z/zipper 
 		element? ; can have children 
-		:content ; children are (already) a seq in the :content key
-		(fn [node children] (assoc node :content children)) 
+		:value ; children are (already) a seq in the :value key
+		(fn [node children] (assoc node :value children)) 
 		root-node))    
     
 (defn navigate-dom-path
@@ -206,7 +206,7 @@
 		
 (defn extend-dom 
 	"Extends a DOM (a set of root DOM nodes), adding new nodes at a specific position. Uses the path 
-	 (a series of keywords, representing elements) to locate an element within the DOM
+	 (a seq of keywords, representing elements) to locate an element within the DOM
 	 then adds the new nodes at the position (position can be :top :bottom :before :after).
 	 Assumes that the first element node in dom-nodes
 	 is the root of the element tree (other nodes are possibly text or comments). 

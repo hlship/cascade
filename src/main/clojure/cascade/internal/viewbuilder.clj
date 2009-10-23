@@ -16,23 +16,13 @@
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (cascade dom)
         (cascade.internal utils parser)))
-
-(defn map-to-attribute-nodes
-  "Converts a map that defines the attributes for an element into a seq of
-element DOM nodes."
-  ; TODO: Would it be advantageous to do this conversion at macro evaluation time,
-  ; rather than runtime?
-  [attribute-map]
-  (if attribute-map
-    (for [[k v] attribute-map]
-      (struct-map dom-node :type :attribute :name k :value v))))  
   
 (defn element-node
   [name attributes content]
   (struct-map dom-node :type :element 
                        :name name
-                       :attributes (map-to-attribute-nodes attributes)                        
-                       :content content))  
+                       :attributes (seq attributes)                        
+                       :value content))  
 
 ; TODO: Turn this into a multimethod to make it more extensible.
 (defn convert-render-result
