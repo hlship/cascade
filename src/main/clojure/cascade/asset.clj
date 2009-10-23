@@ -34,7 +34,6 @@
 ;; Assets represents files stored either under the web context or stored within the classpath.
 ;; Identifying an asset will eventually incorporate a locale-specific search. Ultimately,
 ;; assets will be (optionally) GZip compressed, for clients which support GZip compression.
-;; For JavaScript assets, there will eventually be a aggregation option.
 ;; Once an asset is located, it is represented as a map, with keys:
 ;;   :type (:context or :classpath)
 ;;   :path string -- path relative to the "root" (the web context, or the root of the classpath), no leading slash
@@ -62,8 +61,30 @@
     (fail-if (nil? asset-url) "Asset '%s' not found on the classpath." path)
     (fail-if-blacklisted path)
     { :type :classpath
-      :path path
-      ::URL asset-url }))
+      :path path 
+    }))
+
+(defn get-context-asset
+	"Locates an asset in the web application context. Throws RuntimeException if the asset
+	does not exist. Returns an asset map. The path is relative to the web context root and should
+	not start with a slash."
+	[env path]
+	(let [#^ServletContext context (-> env :servlet-api :context)
+			  asset-url (.getResource context (str "/" path))]
+  	(fail-if (nil? asset-url) "Asset '%s' not found in the context." path)
+  	{ :type :context
+  		:path path
+  	}))
+			  
+(assoc-in-config [:asset-resolver :classpath] (fn [env path] (get-classpath-asset path)))
+(assoc-in-config [:asset-resolver :context] #'get-context-asset)
+
+(defn get-asset
+	"Gets an asset within a domain (defined by type, :context or :classpath). Throws RuntimeException if
+	the asset can not be found, or if the asset is blacklisted. The behavior of this method can be
+	extended via the :asset-resolver configuration key, which is a map to function that take an env and a path."	
+	[env type path]
+	((read-config [:asset-resolver type]) env path))
     
 (defmulti to-asset-path
   "Converts an asset map into a URL path that can be used by the client to obtain the contents of the asset."
@@ -75,8 +96,13 @@
         ;; TODO: Servlet 2.5 defines a ServletContext.getContextPath()
         context-path (.getContextPath request)]
         (str context-path "/asset/classpath/" (read-config :application-version) "/" (asset-map :path))))      
-  
-  
+
+; TODO: Alias to a asset URL for gzip compression, far future expires header, etc.
+(defmethod to-asset-path :context
+	[env asset-map]
+	(str "/" (asset-map :path)))
+   
+    
 (defn get-mime-type 
   "Determine the MIME type of the path."  
   [env path]

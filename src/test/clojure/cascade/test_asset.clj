@@ -13,8 +13,11 @@
 ; and limitations under the License.
 
 (ns cascade.test-asset
+	(:import
+		java.net.URL
+		javax.servlet.ServletContext)
 	(:use
-		(cascade asset)
+		(cascade asset mock)
 		(clojure test)))
 		
 (deftest blacklist
@@ -36,3 +39,33 @@
 	(is
 		(thrown? RuntimeException
 			(get-classpath-asset "java/lang/Object.class"))))
+	
+(deftest get-classpath-alias-via-generic
+	(let [path "cascade/cascade.css"
+				asset-map (get-asset nil :classpath path)]
+		(is (= asset-map { :type :classpath :path path }))))			
+			
+(deftest context-asset-found
+	(with-mocks
+		[context ServletContext]
+		(:train
+			(expect .getResource context "/images/banner.jpg" (URL. "file:fake-url")))
+		(:test
+			(let [env { :servlet-api { :context context }}
+						asset-map (get-asset env :context "images/banner.jpg" )]
+				(is (= asset-map { :type :context :path "images/banner.jpg" }))))))
+
+(deftest context-asset-missing
+	(with-mocks
+		[context ServletContext]
+		(:train
+			(expect .getResource context "/images/missing.jpg" nil))
+		(:test
+			(let [env { :servlet-api { :context context }}]
+				(is 
+					(thrown-with-msg? RuntimeException #".*Asset 'images/missing.jpg' not found in the context.*"
+						(get-asset env :context "images/missing.jpg")))))))
+
+						
+(run-tests)								
+				
