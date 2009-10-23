@@ -43,7 +43,7 @@
   :value ; attribute value or literal text (text must be encoded), nested nodes for :element
 )
   
-(declare render-xml)
+(declare render-xml debug-dom)
 
 (def char-to-entity-map 
 	(merge 
@@ -144,6 +144,29 @@
   ; TODO: Render out the <?xml version="1.0"?> P.I.?
   (doseq [node dom-nodes]
     (render-node-xml node out)))
+
+(defmulti render-node-debug
+  (fn [node & rest] 
+    (node :type)))
+  	
+(defmethod render-node-debug :text
+	[node]
+	(node :value))
+	
+(defmethod render-node-debug :comment
+	[node]
+	[:comment (node :value)])
+	
+(defmethod render-node-debug :element
+	[node]
+	(let [content (node :value)]
+		[(node :name) (node :attributes) (if content (debug-dom content))]))		  	
+  
+(defn debug-dom
+	"Renders DOM nodes to a format similar to the template DSL. Returns a seq."
+	[dom-nodes]
+	(for [node dom-nodes]
+		(render-node-debug node)))
   
 (defn element?
   "Returns true if the dom node is type :element."
