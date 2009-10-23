@@ -18,40 +18,60 @@
   (:import (javax.servlet ServletResponse))
   (:use 
   	cascade
-  	(cascade config dom logging path-map pipeline fail func-utils)
+  	(cascade asset config dom logging path-map pipeline fail func-utils)
     (cascade.internal utils)))
 
 (defn prepare-dom-for-render
 	"Post-processes the DOM after the view has constructed it, but before it has been rendered out
 	 as the response. This is a chance to make modifications to the DOM to support global concerns.
-	 This function is often decorated with filters to add new functionality. It is passed
-	 a seq of DOM nodes and should return the same, or a modified set of DOM nodes."
-	 [dom-nodes]
+	 This function is often decorated with filters to add new functionality. It is passed the
+	 env and a seq of DOM nodes and should return the same DOM nodes, or a modified set of DOM nodes."
+	 [env dom-nodes]
 	 ; Return unchanged
 	 dom-nodes)
 	 
 (decorate prepare-dom-for-render 
-	(fn [delegate dom-nodes]
-		(delegate 
+	(fn [delegate env dom-nodes]
+		(delegate env
 			(extend-dom dom-nodes [:html :head] :top 
 				(template :meta { :name "generator" :content "Cascade http://github.com/hlship/cascade" })))))	 
-	
+
+(defn add-script-links-for-imported-javascript-libraries
+	[env dom-nodes]
+	(let [aggregation (-> env :cascade :resource-aggregation)
+				libraries (@aggregation :libraries)]
+		(extend-dom dom-nodes [:html :head] :top
+			(template-for [asset-map libraries
+										 :let [path (to-asset-path env asset-map)]]
+				; The linebreak is to keep some braindead browsers from getting confused.									 
+				:script { :type "text/javascript" :src path } [ linebreak ]))))									 
+
+(decorate prepare-dom-for-render
+	(fn [delegate env dom-nodes]
+		(delegate env (add-script-links-for-imported-javascript-libraries env dom-nodes))))
+
 (defn render-view-as-xml
-  "Renders the provided view function as an XML stream."
+  "Renders the provided view function as an XML stream. Returns true."
 	[env view-fn]
-  (debug "Rendering view function %s as XML" (qualified-function-name view-fn))
+  (debug "Rendering view function %s" (qualified-function-name view-fn))
   (let [#^ServletResponse response (-> env :servlet-api :response)
-        dom (view-fn env)]
+        dom (view-fn env)
+        _ (debug "Preparing DOM for render")
+        prepared (prepare-dom-for-render env dom)]
+    ; (debug "Prepared DOM:\n%s" (ppstring prepared))
+		(debug "Streaming XML response")  		   
     (with-open [writer (.getWriter response)]
-      (render-xml (prepare-dom-for-render dom) writer)))
+      (render-xml prepared writer)))
   true)
 
 (defn render-view
   "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
-   the moment, this simply invoke render-view-as-xml."
+   the moment, this simply sets up for resource aggegation and invokes render-view-as-xml."
   [env view-fn]
-  ;; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
-  (render-view-as-xml env view-fn))
+  (let [aggregation (atom { :libraries [] :pre [] :init [] })
+  		  new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
+  	; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
+  	(render-view-as-xml new-env view-fn)))
 
 (defn handle-view-request
   "A pipeline that calls render-view."  

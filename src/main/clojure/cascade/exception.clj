@@ -140,12 +140,6 @@
 	              ]))
 	        ])))))
 
-(defn include-js-library
-  [env path]
-  (template
-  	; Force open/close tags for stupid browser compatibility       
-  	:script { :type "text/javascript" :src (classpath-asset-path env path) } [ linebreak ]))
-
 (defn render-system-properties
 	[]
 	(let [path-sep (System/getProperty "path.separator")]
@@ -205,6 +199,8 @@
 
 (defn render-exception-report-detail
 	[env exception]
+	(import-javascript-library env :classpath (read-config :jquery-path))
+	(import-javascript-library env :classpath "cascade/exception-report.js")
 	(template
 		:p { :class :c-exception-controls } [
 			:input { :type :checkbox :id :omitted-toggle }
@@ -233,8 +229,6 @@
 	    :html [
 		    :head [
 		      :title [ exception-banner ]
-		      (include-js-library env (read-config :jquery-path))
-		      (include-js-library env "cascade/exception-report.js")
 		      :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
 		     ]
 		    :body [
