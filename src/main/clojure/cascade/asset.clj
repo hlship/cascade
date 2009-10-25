@@ -19,7 +19,7 @@
   	(javax.servlet ServletContext) 
   	(javax.servlet.http HttpServletRequest HttpServletResponse))
   (:require 
-  	(clojure.contrib (str-utils2 :as s2)))
+    (clojure.contrib [str-utils2 :as s2]))
   (:use 
     (clojure.contrib duck-streams)
   	(cascade config fail path-map logging)))

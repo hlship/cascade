@@ -15,7 +15,7 @@
 (ns #^{:doc "Maps path prefixs to view, action and dispatcher functions"}
   cascade.path-map
   (:require
-  	(clojure.contrib (str-utils2 :as s2)))
+    (clojure.contrib [str-utils2 :as s2]))
   (:use 
     (cascade change-tracker logging config urls func-utils fail)))
       

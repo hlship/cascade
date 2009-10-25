@@ -18,7 +18,7 @@
   	(javax.servlet.http HttpServletRequest HttpSession) 
   	(java.lang Throwable StackTraceElement))
   (:require  	
-  	(clojure.contrib (str-utils2 :as s2)))
+    (clojure.contrib [str-utils2 :as s2]))
   (:use 
   	clojure.stacktrace
   	cascade 
