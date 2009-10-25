@@ -145,7 +145,7 @@
 	(let [path-sep (System/getProperty "path.separator")]
 		(template	
 			:dl [
-				(template-for [name (sort (seq (.keySet (System/getProperties))))
+				(template-for [#^String name (sort (seq (.keySet (System/getProperties))))
 											:let [value (System/getProperty name)]]
 					:dt [ name ]
 					:dd [ 
@@ -224,7 +224,8 @@
   Formats a detailed HTML report of the exception and the overall environment."
   [env]
   (let [production-mode (read-config :production-mode)
-  		  #^Throwable exception (-> env :cascade :exception)]
+  		  #^Throwable exception (-> env :cascade :exception)
+  		  #^Throwable root (root-cause exception)]
     (template
 	    :html [
 		    :head [
@@ -236,7 +237,7 @@
 		      
 		      (if production-mode
 		      	(template :div { :class :c-exception-message } [
-								(.getMessage (root-cause exception))
+								(.getMessage root)
 							])		      		
 		        (render-exception-report-detail env exception))	  	
 		    ]
