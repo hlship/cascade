@@ -49,6 +49,9 @@
 		; Incoming requests for the context end up with a path of "/", which WILL be considered
 		; a static file. TODO: need to extend this for subdirs?
   	(= path "/") false
+  	; Always treat this as a static file even if it doesn't exist; otherwise is routes
+  	; requests to the function mapped to "/"!
+  	(= path "/favicon.ico") true
     ; If we can get a non-nil URL to the resource inside the context then it's a real static file
     ; to be ignored.
     (.getResource context path) true
