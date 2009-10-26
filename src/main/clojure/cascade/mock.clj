@@ -33,18 +33,20 @@
   The forms identify the code to execute, each form is a list that starts with a keyword that identifies
   the execution state; the remaining forms are executed at that stage. The two stages are :train and :test.
   The macro ensures that the controls are switched to replay mode after training, and are verified
-  after testing."
+  after testing. In addition, a :binding clause will identify var symbols and local bindings in effect
+  for the :train and :test phases (the symbols and bindings should not be in a vector)."
   [mock-defs & forms]
   (fail-unless (even? (count mock-defs)) "Must have an even number of mock defs (alternating symbols and classes).")
   (let [control (gensym "control")
         mock-pairs (partition 2 mock-defs)
         mock-inits (mapcat (fn [[mock-name mock-class]] (mock-init control mock-name mock-class)) mock-pairs)
-        mapped-forms (list-to-map-of-seqs [:train :test] forms)]
+        mapped-forms (list-to-map-of-seqs [:binding :train :test] forms)]
         `(let [~control (EasyMock/createControl)
               ~@mock-inits]
-            ~@(mapped-forms :train)
-            (.replay ~control)
-            ~@(mapped-forms :test)
+            (binding [~@(mapped-forms :binding)]  
+	            ~@(mapped-forms :train)
+	            (.replay ~control)
+	            ~@(mapped-forms :test))
             (.verify ~control))))
 
 (defmacro expect
