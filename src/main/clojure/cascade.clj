@@ -119,20 +119,23 @@
   (struct-map dom-node :type :text :value s))
   
 (defn import-javascript-library
-	"Imports a JavaScript library from the given path. type identifies where it comes from (:classpath or :context).
+	"Imports a JavaScript library from the given path. type identifies where it comes from (:classpath or :context,
+	the two parameter version assumes :context).
 	Path should not start with a slash. Duplicate imports of the same library are ignored.
 	Imported libraries are added as &lt;script&gt; links
 	to the final page at the top of the &lt;html&gt;/&lt;head&gt; element (if present). Returns nil." 
-	[env type path]
-	(let [asset-map (get-asset env type path)
-			  aggregation (-> env :cascade :resource-aggregation)
-			  libraries (@aggregation :libraries)]
-		(when-not (contains? libraries asset-map)
-			(debug "Importing library: %s" (ppstring asset-map))
-			; Note: under some race conditions, we could end up with the same map added twice.
-			; That may be an issue when we have true parallel rendering.
-			(swap! aggregation update-in [:libraries] conj asset-map))))
-			
+	([env path]
+		(import-javascript-library env :context path))
+	([env type path]
+		(let [asset-map (get-asset env type path)
+				  aggregation (-> env :cascade :resource-aggregation)
+				  libraries (@aggregation :libraries)]
+			(when-not (contains? libraries asset-map)
+				(debug "Importing library: %s" (ppstring asset-map))
+				; Note: under some race conditions, we could end up with the same map added twice.
+				; That may be an issue when we have true parallel rendering.
+				(swap! aggregation update-in [:libraries] conj asset-map)))))
+				
 						  
 			  
 			  
