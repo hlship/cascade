@@ -127,7 +127,7 @@
 	([env path]
 		(import-javascript-library env :context path))
 	([env type path]
-		(let [asset-map (get-asset env type path)
+		(let [asset-map (get-asset type path)
 				  aggregation (-> env :cascade :resource-aggregation)
 				  libraries (@aggregation :libraries)]
 			(when-not (contains? libraries asset-map)

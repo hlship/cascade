@@ -17,7 +17,7 @@
 		java.net.URL
 		javax.servlet.ServletContext)
 	(:use
-		(cascade asset mock)
+		(cascade asset mock config)
 		(clojure test)))
 		
 (deftest blacklist
@@ -42,30 +42,31 @@
 	
 (deftest get-classpath-alias-via-generic
 	(let [path "cascade/cascade.css"
-				asset-map (get-asset nil :classpath path)]
+				asset-map (get-asset :classpath path)]
 		(is (= asset-map { :type :classpath :path path }))))			
 			
 (deftest context-asset-found
 	(with-mocks
 		[context ServletContext]
+		(:binding
+			configuration (atom (assoc @configuration :servlet-context context)))
 		(:train
 			(expect .getResource context "/images/banner.jpg" (URL. "file:fake-url")))
 		(:test
-			(let [env { :servlet-api { :context context }}
-						asset-map (get-asset env :context "images/banner.jpg" )]
-				(is (= asset-map { :type :context :path "images/banner.jpg" }))))))
+			(let [path "images/banner.jpg"
+					  asset-map (get-asset :context path)]
+				(is (= asset-map { :type :context :path path }))))))
 
 (deftest context-asset-missing
 	(with-mocks
 		[context ServletContext]
+		(:binding
+			configuration (atom (assoc @configuration :servlet-context context)))
 		(:train
 			(expect .getResource context "/images/missing.jpg" nil))
 		(:test
-			(let [env { :servlet-api { :context context }}]
-				(is 
-					(thrown-with-msg? RuntimeException #".*Asset 'images/missing.jpg' not found in the context.*"
-						(get-asset env :context "images/missing.jpg")))))))
-
+			(is 
+				(thrown-with-msg? RuntimeException #".*Asset 'images/missing.jpg' not found in the context.*"
+					(get-asset :context "images/missing.jpg"))))))
 						
-(run-tests)								
 				

@@ -68,23 +68,23 @@
 	"Locates an asset in the web application context. Throws RuntimeException if the asset
 	does not exist. Returns an asset map. The path is relative to the web context root and should
 	not start with a slash."
-	[env path]
-	(let [#^ServletContext context (-> env :servlet-api :context)
+	[path]
+	(let [#^ServletContext context (read-config :servlet-context)
 			  asset-url (.getResource context (str "/" path))]
   	(fail-if (nil? asset-url) "Asset '%s' not found in the context." path)
   	{ :type :context
   		:path path
   	}))
 			  
-(assoc-in-config [:asset-resolver :classpath] (fn [env path] (get-classpath-asset path)))
+(assoc-in-config [:asset-resolver :classpath] #'get-classpath-asset)
 (assoc-in-config [:asset-resolver :context] #'get-context-asset)
 
 (defn get-asset
 	"Gets an asset within a domain (defined by type, :context or :classpath). Throws RuntimeException if
 	the asset can not be found, or if the asset is blacklisted. The behavior of this method can be
 	extended via the :asset-resolver configuration key, which is a map to function that take an env and a path."	
-	[env type path]
-	((read-config [:asset-resolver type]) env path))
+	[type path]
+	((read-config [:asset-resolver type]) path))
     
 (defmulti to-asset-path
   "Converts an asset map into a URL path that can be used by the client to obtain the contents of the asset."
@@ -105,8 +105,8 @@
     
 (defn get-mime-type 
   "Determine the MIME type of the path."  
-  [env path]
-  (let [#^ServletContext context (-> env :servlet-api :context)]
+  [path]
+  (let [#^ServletContext context (read-config :servlet-context)]
     (or
       (.getMimeType context path)
       ;; TODO: internal configuration lookup
@@ -124,7 +124,7 @@
     		; TODO Gzip, etc.
     		asset-url (.getResource context-class-loader asset-path)
     		_ (fail-if (nil? asset-url) "Could not locate classpath asset %s." asset-path)
-    	  mime-type (get-mime-type env asset-path)
+    	  mime-type (get-mime-type asset-path)
         output-stream (.getOutputStream (doto response (.setContentType mime-type)))]
         (with-open [input-stream (.openStream asset-url)]
           (copy input-stream output-stream)

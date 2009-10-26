@@ -97,7 +97,9 @@
   "Filter lifecycle method used to print startup messages and capture the ServletContext."
   [this #^FilterConfig filter-config]
   
-  (reset! (.context this) (.getServletContext filter-config))
+  (let [context (.getServletContext filter-config)]
+  	(assoc-in-config :servlet-context context)
+  	(reset! (.context this) context))
   
   (info "Cascade startup")
   
