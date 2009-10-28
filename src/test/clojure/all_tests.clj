@@ -23,8 +23,9 @@
   "parse-functions" "path-map" "pipeline" "urls" "viewbuilder"]))
 
 (println "Loading code ...")
+
 (time (apply use (sort spaces)))
-  
+
 (println "Executing tests ...")
 
 (time (apply run-tests (map find-ns spaces)))

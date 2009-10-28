@@ -16,7 +16,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse)
     (java.io PrintWriter CharArrayWriter))
-  (:use 
+  (:use
     cascade
     (cascade dom mock)
     (cascade.internal utils)
@@ -28,7 +28,7 @@
   (let [writer (CharArrayWriter.)]
     (render-xml dom writer)
     (.toString writer)))
-  
+
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
 
@@ -43,9 +43,8 @@
         trimmed-render (minimize-ws rendered)]
       (is (= trimmed-render trimmed-expected))))
 
-
 (defview #^{:custom :bit-of-meta-data} simple-view
-  [env] 
+  [env]
   :p [ (env :message) ])
 
 (deftest simple-defview
@@ -56,7 +55,7 @@
     (is (= (md :name) 'simple-view) "standard meta-data")
     (is (= (md :custom) :bit-of-meta-data) "added meta-data")
     (is (= (md :cascade-type) :view) "cascade-added meta-data")))
-  
+
 (defview attributes-view
   [env]
   :p {:id "outer"} [
@@ -66,27 +65,26 @@
      linebreak
      :hr
      (env :copyright)
-  ])  
-  
+  ])
+
 (deftest attribute-rendering
-  (render-test  attributes-view "attribute-rendering" {:message "Nested Text" 
+  (render-test  attributes-view "attribute-rendering" {:message "Nested Text"
     :copyright "(c) 2009 HLS"
     :inner "frotz"}))
-  
+
 (defview special-attribute-values-view
    [env]
    :p {:class :foo :height 0 :skipped nil } [ "some text" ])
-   
+
 (deftest special-attribute-values
-  (render-test special-attribute-values-view "special-attribute-values" nil))  
-  
-  
+  (render-test special-attribute-values-view "special-attribute-values" nil))
+
 (defn fetch-accounts
   [env]
   [{:name "Dewey" :id 595}
    {:name "Cheatum" :id 1234}
    {:name "Howe" :id 4328}])
-   
+
 (defview list-accounts
   [env]
   :html [
@@ -103,8 +101,6 @@
 
 (deftest inline-macro
     (render-test list-accounts "inline-macro" nil))
-    
-    
 ; Ugh: all the good names are taken by clojure.core!
 
 (defn looper
@@ -113,7 +109,7 @@
   [env source value-key body]
   (for [value source]
        (body (assoc env value-key value))))
-       
+
 (defview list-accounts-with-loop
   {:path "accounts/list" }
   [env]
@@ -131,20 +127,20 @@
           :li [ (-> env :acct :name) ] linebreak))
       ]
     ]
-  ])            
-       
+  ])
+
 (deftest block-macro
   (render-test list-accounts-with-loop "block-macro" nil))
-  
+
 (defn symbol-view
   [env]
-  (let [copyright (template  
-    linebreak :hr :p [ 
-      (raw "&copy; 2009 ") 
+  (let [copyright (template
+    linebreak :hr :p [
+      (raw "&copy; 2009 ")
       :a {:href "mailto:hlship@gmail.com"} [ "Howard M. Lewis Ship" ]
     ] linebreak)]
     (template
-      :html [ 
+      :html [
         :head [ :title [ "Symbol Demo" ]]
         :body [
           copyright
@@ -174,27 +170,23 @@
     :doc "doc meta"
     :other-meta :data
     :cascade-type :view))
-  
+
 (deftest test-link-map
   (are [f extra-path query-params expected-path]
     (let [link (link-map-from-function f extra-path query-params)]
       (is (= (link :path) expected-path))
       (is (= (link :parameters) query-params)))
-      
       list-accounts-with-loop nil nil "accounts/list"
-      
       list-accounts-with-loop [5050 true] nil "accounts/list/5050/true"
-      
       simple-view nil nil "view/cascade.test-cascade/simple-view"
-      
-      simple-view nil {:foo :bar} "view/cascade.test-cascade/simple-view"))  
-  
+      simple-view nil {:foo :bar} "view/cascade.test-cascade/simple-view"))
+
 (deftest test-link
   (with-mocks [request HttpServletRequest
                response HttpServletResponse]
-    (:train 
+    (:train
       (expect .getContextPath request "/ctx")
       (expect .encodeURL response "/ctx/accounts/list" "*encoded*"))
     (:test
       (is (= (link {:servlet-api {:request request :response response}} list-accounts-with-loop)
-             "*encoded*")))))  
+             "*encoded*")))))

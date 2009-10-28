@@ -16,7 +16,7 @@
   (:use
     (clojure test)
     (cascade.internal parse-functions)))
-    
+
 (deftest test-simple-fn
   (let [[n p b forms] (parse-function-def '(my-fn [a b] c d))]
     (are [value expected]
@@ -35,7 +35,7 @@
       p '[a b]
       forms '(c))
     (is (= (^n :doc) "Test"))))
-    
+
 (deftest meta-data-applied-to-symbol
   (let [[n p b forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
     (are [value expected]
@@ -48,7 +48,7 @@
       (= (^n k) v)
       :doc "Next"
       :key :value)))
-      
+
 (deftest binding-vector
   (let [[n p b forms] (parse-function-def '(a-fn "Next" [a b] [c d] :gnip :gnop))]
     (are [value expected]
@@ -57,4 +57,3 @@
       p '[a b]
       b '[c d]
       forms '(:gnip :gnop))))
-      

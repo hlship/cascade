@@ -12,45 +12,47 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Functions used when encoding data into portions of a URL"} 
+(ns #^{:doc "Functions used when encoding data into portions of a URL"}
   cascade.urls
-  (:import 
+  (:import
     (clojure.lang Keyword Symbol)
     (javax.servlet.http HttpServletRequest))
   (:require
-    (clojure.contrib [str-utils2 :as s2]))    
-  (:use 
+    (clojure.contrib [str-utils2 :as s2]))
+  (:use
     (cascade config fail logging)
     (cascade.internal utils)
     (clojure.contrib seq-utils)))
-  
+
 (defmulti to-url-string
   "Used to encode a value for inclusion as a query parameter value, or as extra path data.
   Dispatches on the class of the single parameter."
   class)
-  
-;; TODO: Encode quotes and such inside the string.  
-(defmethod to-url-string String [s] s)
-(defmethod to-url-string Number [#^Number n] (.toString n))
+;; TODO: Encode quotes and such inside the string.
 
+(defmethod to-url-string String [s] s)
+
+(defmethod to-url-string Number [#^Number n] (.toString n))
 ;;  Assumes that keyword and symbols names are already URL safe
+
 (defmethod to-url-string Keyword [kw] (name kw))
+
 (defmethod to-url-string Symbol [sym] (name sym))
 
 (defn parse-int [s] (Integer/parseInt s))
 
-(doseq [[k f] [[:int #'parse-int] 
+(doseq [[k f] [[:int #'parse-int]
                [:str #'str]]]
   (assoc-in-config [:url-parser k] f))
 
-(defn get-parser-fn 
+(defn get-parser-fn
   "Converts a parser into a parser function, looking for it in configuration (under :url-parser) if a keyword,
   or passing it through (a symbol of inline function) otherwise."
   [parser]
   (if (keyword? parser)
     (read-config [:url-parser parser])
     parser))
-          
+
 (defn parse-url-value
   "Used internally to parse a URL value. Nil values stay nil, but others are subject to exceptions
   if improperly formed. The parser-fn is passed the value if not nil."
@@ -62,13 +64,13 @@
   passed through the parser function. Indexes outside the bounds of the extra-path seq are treated as nil."
   [extra-path index parser-fn]
   (parse-url-value (nth extra-path index nil) parser-fn))
-        
+
 (defn parse-query-parameter-value
   "Parses a value specified as a query parameter. The parameter-name is the string used to identify the parameter, and the extracted parameter value
   is passed through the parser function."
   [#^HttpServletRequest request parameter-name parser-fn]
   (parse-url-value (.getParameter request parameter-name) parser-fn))
-        
+
 (defn create-positional-binding
   [extra-path-symbol bound-symbol parser index]
   `[~bound-symbol (parse-extra-path-value ~extra-path-symbol ~index ~(get-parser-fn parser))])
@@ -104,7 +106,6 @@
     (do
       (fail-unless (vector? symbol-mappings) "parse-url expects a vector of symbol mappings.")
       (fail-unless (even? (count symbol-mappings)) "parse-url requires an even number of symbol mappings.")
-
       (let [symbol-pairs (partition 2 symbol-mappings)
             [query-parameter-pairs positional-pairs] (separate #(vector? (nth % 1)) symbol-pairs)
             positional-bindings (construct-positional-bindings env-symbol positional-pairs)
@@ -126,7 +127,7 @@
     (.append (to-url-string value))))
 
 (defn construct-absolute-path
-  "Converts a link map into a absolute path, including query parameters."  
+  "Converts a link map into a absolute path, including query parameters."
   [context-path link-map]
   (loop [#^StringBuilder sb (doto (StringBuilder.)
                               (.append context-path)
@@ -139,7 +140,7 @@
       (do
         (.append sb sep)
         (add-query-parameter sb ((first param-pairs) 0) ((first param-pairs) 1))
-        (recur sb "&" (next param-pairs))))))          
+        (recur sb "&" (next param-pairs))))))
 
 (defn link-map-from-path
   "Constructs a link map a path, extra path info, and optional query parameters. Applications should
@@ -150,4 +151,4 @@
             fn-path
             (str fn-path "/" (s2/join "/" (map str extra-path-info))))
     :parameters query-parameters
-  })           
+  })

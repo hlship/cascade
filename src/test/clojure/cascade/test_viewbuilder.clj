@@ -17,13 +17,10 @@
     (clojure (test :only [is are deftest]))
     cascade.dom
     cascade.internal.viewbuilder))
-    
+
 (deftest test-convert-render-result
   (let [fake-dom-node {:foo :bar}]
     (are [input output] (= (convert-render-result input) output)
-      
       fake-dom-node fake-dom-node
-      
       "any string" (text-node "any string")
-      
       123.4 (text-node "123.4"))))

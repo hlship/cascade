@@ -17,49 +17,75 @@
   cascade.dispatcher
   (:import (javax.servlet ServletResponse))
   (:use 
-  	cascade
-  	(cascade asset config dom logging path-map pipeline fail func-utils)
+    cascade
+    (cascade asset config dom logging path-map pipeline fail func-utils)
     (cascade.internal utils)))
 
 (defn prepare-dom-for-render
-	"Post-processes the DOM after the view has constructed it, but before it has been rendered out
-	 as the response. This is a chance to make modifications to the DOM to support global concerns.
-	 This function is often decorated with filters to add new functionality. It is passed the
-	 env and a seq of DOM nodes and should return the same DOM nodes, or a modified set of DOM nodes."
-	 [env dom-nodes]
-	 ; Return unchanged
-	 dom-nodes)
-	 
+  "Post-processes the DOM after the view has constructed it, but before it has been rendered out
+   as the response. This is a chance to make modifications to the DOM to support global concerns.
+   This function is often decorated with filters to add new functionality. It is passed the
+   env and a seq of DOM nodes and should return the same DOM nodes, or a modified set of DOM nodes."
+   [env dom-nodes]
+   ; Return unchanged
+   dom-nodes)
+   
 (decorate prepare-dom-for-render 
-	(fn [delegate env dom-nodes]
-		(delegate env
-			(extend-dom dom-nodes [:html :head] :top 
-				(template :meta { :name "generator" :content "Cascade http://github.com/hlship/cascade" })))))	 
+  (fn [delegate env dom-nodes]
+    (delegate env
+      (extend-dom dom-nodes [:html :head] :top 
+        (template :meta { :name "generator" :content "Cascade http://github.com/hlship/cascade" })))))   
 
 (defn add-script-links-for-imported-javascript-libraries
-	[env dom-nodes]
-	(let [aggregation (-> env :cascade :resource-aggregation)
-				libraries (@aggregation :libraries)]
-		(extend-dom dom-nodes [:html :head] :top
-			(template-for [asset-map libraries
-										 :let [path (to-asset-path env asset-map)]]
-				; The linebreak is to keep some braindead browsers from getting confused.									 
-				:script { :type "text/javascript" :src path } [ linebreak ]))))									 
+  [env dom-nodes]
+  (let [aggregation (-> env :cascade :resource-aggregation)
+        libraries (@aggregation :libraries)]
+    (extend-dom dom-nodes [:html :head] :top
+      (template-for [asset-map libraries
+                     :let [path (to-asset-path env asset-map)]]
+        ; The linebreak is to keep some braindead browsers from getting confused.
+        :script { :type "text/javascript" :src path } [ linebreak ]))))
+
+(defn add-script-block-for-initialization
+  [env dom-nodes]
+  (let [aggregation (-> env :cascade :resource-aggregation)
+        immediate (@aggregation :immediate)
+        onready (@aggregation :onready)]
+    ; (debug "Adding initialization script block to %s" (ppstring (debug-dom dom-nodes)))
+    (extend-dom dom-nodes [:html :body] :bottom
+      (template
+        ; this could be done more efficiently
+        :script {:type "text/javascript"} [
+          (for [line immediate]
+            [line linebreak])
+          (when-not (empty? onready)
+            (import-jquery env)
+            (interpose "\n"
+              (concat [ "jQuery(document).ready(function() {" ]
+                onready
+                [ "});"])))            
+        ]))))
 
 (decorate prepare-dom-for-render
-	(fn [delegate env dom-nodes]
-		(delegate env (add-script-links-for-imported-javascript-libraries env dom-nodes))))
+  (fn [delegate env dom-nodes]
+    (delegate env (add-script-links-for-imported-javascript-libraries env dom-nodes))))
+    
+; This decoration comes first in execution order, to ensure that the jQuery library (if added)
+; gets reflected in the rendered DOM.
+
+(decorate prepare-dom-for-render
+  (fn [delegate env dom-nodes]
+    (delegate env (add-script-block-for-initialization env dom-nodes))))     
 
 (defn render-view-as-xml
   "Renders the provided view function as an XML stream. Returns true."
-	[env view-fn]
+  [env view-fn]
   (debug "Rendering view function %s" (qualified-function-name view-fn))
   (let [#^ServletResponse response (-> env :servlet-api :response)
         dom (view-fn env)
-        _ (debug "Preparing DOM for render")
+        _ (debug "Preparing DOM for render:\n%s" (ppstring (debug-dom dom)))
         prepared (prepare-dom-for-render env dom)]
-    ; (debug "Prepared DOM:\n%s" (ppstring prepared))
-		(debug "Streaming XML response")  		   
+    (debug "Streaming XML response")         
     (with-open [writer (.getWriter response)]
       (render-xml prepared writer)))
   true)
@@ -68,10 +94,10 @@
   "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
    the moment, this simply sets up for resource aggegation and invokes render-view-as-xml."
   [env view-fn]
-  (let [aggregation (atom { :libraries [] :pre [] :init [] })
-  		  new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
-  	; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
-  	(render-view-as-xml new-env view-fn)))
+  (let [aggregation (atom { :libraries [] :immediate [] :onready [] })
+        new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
+    ; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
+    (render-view-as-xml new-env view-fn)))
 
 (defn handle-view-request
   "A pipeline that calls render-view."  
@@ -101,7 +127,7 @@
       :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn)))))
   
 (defn handle-action-request
-	[env action-fn]
+  [env action-fn]
   (default-handle-action env action-fn))
 
 (defn verify-is-action-fn
@@ -109,12 +135,12 @@
   (if (and action-fn (= (^action-fn :cascade-type) :action))
     (delegate env action-fn)
     false))    
-    
+
 (decorate handle-action-request verify-is-action-fn)     
 
 (defn dispatch-named-function-to-pipeline
-	"Expects the namespace name and the function name to be the 2nd and 3rd terms of the split path, uses this
-	 to identify a function, which is passed (with the env) to the request-handler function."
+  "Expects the namespace name and the function name to be the 2nd and 3rd terms of the split path, uses this
+   to identify a function, which is passed (with the env) to the request-handler function."
   [env request-handler]
   (let [split-path (-> env :cascade :split-path)
         [_ ns-name fn-name] split-path

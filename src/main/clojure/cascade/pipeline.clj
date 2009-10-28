@@ -19,16 +19,13 @@
     (cascade.internal utils)))
 
 (defmacro decorate
-	"Decorates a function with a filter. The filter will be passed the decorated function
-	 as its first argument (called the 'delegate'), and all remaining arguments after that. The filter may
-	 decide what parameters to pass to the delegate (or to not invoke the delegate at all), and
-	 may also apply other concerns, such as exception handling, or conversion of return values.  A function
-	 may be decorated multiple times, with later filters wrapping around the earlier ones."
-	[decorated-fn filter-fn]
-	`(let [var#  #'~decorated-fn
-				 delegate# (deref var#)
-   			 bridge# (fn [& args#] (apply ~filter-fn delegate# args#))]
-		(alter-var-root var# (constantly bridge#))))
-
- 
-
+  "Decorates a function with a filter. The filter will be passed the decorated function
+   as its first argument (called the 'delegate'), and all remaining arguments after that. The filter may
+   decide what parameters to pass to the delegate (or to not invoke the delegate at all), and
+   may also apply other concerns, such as exception handling, or conversion of return values.  A function
+   may be decorated multiple times, with later filters wrapping around the earlier ones."
+  [decorated-fn filter-fn]
+  `(let [var#  #'~decorated-fn
+         delegate# (deref var#)
+          bridge# (fn [& args#] (apply ~filter-fn delegate# args#))]
+    (alter-var-root var# (constantly bridge#))))

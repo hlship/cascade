@@ -18,26 +18,23 @@
     (cascade config pipeline)))
 
 (defn my-to-upper
-	[#^String s]
-	(.toUpperCase s))
-	
+  [#^String s]
+  (.toUpperCase s))
+
 (defn my-in-filter
-	[d #^String s]	 
-	(d (format "%s: (length %d)" s (.length s))))
-	
+  [d #^String s]
+  (d (format "%s: (length %d)" s (.length s))))
+
 (decorate my-to-upper my-in-filter)
 
 (deftest test-decorate-with-in-filter
-	(is (= (my-to-upper "fred") "FRED: (LENGTH 4)")))	     
+  (is (= (my-to-upper "fred") "FRED: (LENGTH 4)")))
 
 (defn my-to-lower
-	[#^String s]
-	(.toLowerCase s))
-	
+  [#^String s]
+  (.toLowerCase s))
 
 (deftest test-decorate-with-out-filter
-	(is (= (my-to-lower "Fred") "fred"))
-	(decorate my-to-lower (fn [delegate s] (format "%s: (length %d)" (delegate s) (.length s))) )
-	(is (= (my-to-lower "Barney") "barney: (length 6)")))	     
-	     
-      
+  (is (= (my-to-lower "Fred") "fred"))
+  (decorate my-to-lower (fn [delegate s] (format "%s: (length %d)" (delegate s) (.length s))) )
+  (is (= (my-to-lower "Barney") "barney: (length 6)")))

@@ -11,7 +11,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns 
+(ns
   #^{:doc "Parser monad used to parse Clojure forms into higher-level structures"}
   cascade.internal.parser
   (:use clojure.contrib.monads
@@ -29,8 +29,7 @@
     (list (first forms) (rest forms))))
 
 (with-monad parser-m
-
-  (defn optional 
+  (defn optional
     [parser]
     (m-plus parser (m-result nil)))
 
@@ -55,10 +54,10 @@
        form))
 
   (def match-keyword
-    (form-test keyword?))  
+    (form-test keyword?))
 
   (def match-string
-    (form-test string?))    
+    (form-test string?))
 
   (def match-map
     (form-test map?))
@@ -74,7 +73,6 @@
 
   (def match-form
     (match-first match-list match-symbol))
-
 )  ;  with-monad parser-m
 
 (defn run-parse
@@ -82,16 +80,12 @@
   either a nil monadic result, or an incomplete parse (that leaves some forms unparsed)."
   [parser forms construct-name]
   (let [monadic-result (parser forms)]
-    
     (when (nil? monadic-result)
       (fail "Parse of %s completed with no result." construct-name))
-      
     (let [[result remaining-forms] monadic-result]
-      
       (when-not (empty? remaining-forms)
         (fail "Incomplete parse of %s, %s forms remain, starting with %s."
           forms
           (count remaining-forms)
           (first remaining-forms)))
-
       result)))

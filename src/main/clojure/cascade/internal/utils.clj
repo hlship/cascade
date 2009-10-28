@@ -11,7 +11,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns 
+(ns
   #^{:doc "Internal private utilities"}
   cascade.internal.utils
   (:import (java.util.regex Matcher MatchResult)
@@ -22,7 +22,7 @@
 
 (declare find-namespace-resource)
 
-(defn ppstring 
+(defn ppstring
   "Pretty-print a collection to a string."
   [coll]
   (with-out-str (pprint coll)))
@@ -78,7 +78,7 @@ if the collection is null or empty."
         (or (symbol? current) (keyword? current))
           (recur result (cons (find-config [configuration-key current]) remaining))
         (function? current) (recur (conj result current) remaining)))))
-    
+
 (defn apply-until-non-nil
   "Works through a sequence of functions, apply the argseq to each of them until a function
   returns a non-nil value"
@@ -98,10 +98,9 @@ if the collection is null or empty."
     ; TODO: We do this pretty late in case someone's been changing @configuration
     ; but it might be nice to cache this rather than compute it each time.
     (apply-until-non-nil (expand-function-list :chains selector) params)))
-      
+
 (defn blank?
   [#^String s]
-  (or 
+  (or
     (nil? s)
     (= 0 (.length s))))
-    

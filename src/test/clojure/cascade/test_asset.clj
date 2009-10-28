@@ -13,60 +13,57 @@
 ; and limitations under the License.
 
 (ns cascade.test-asset
-	(:import
-		java.net.URL
-		javax.servlet.ServletContext)
-	(:use
-		(cascade asset mock config)
-		(clojure test)))
-		
+  (:import
+    java.net.URL
+    javax.servlet.ServletContext)
+  (:use
+    (cascade asset mock config)
+    (clojure test)))
+
 (deftest blacklist
-	(is (is-allowed-path "foo/bar.baz"))
-	
-	(are [path]
-		(is 
-			(thrown-with-msg? RuntimeException #".*on the blacklist.*"
-			(fail-if-blacklisted path)))
-		"any-package/any-class.class"
-		"any-package/any-source.clj"))	
+  (is (is-allowed-path "foo/bar.baz"))
+  (are [path]
+    (is
+      (thrown-with-msg? RuntimeException #".*on the blacklist.*"
+      (fail-if-blacklisted path)))
+    "any-package/any-class.class"
+    "any-package/any-source.clj"))
 
 (deftest missing-classpath-asset
-	(is
-		(thrown-with-msg? RuntimeException #".*'missing\.file' not found.*"
-			(get-classpath-asset "missing.file"))))
-			
+  (is
+    (thrown-with-msg? RuntimeException #".*'missing\.file' not found.*"
+      (get-classpath-asset "missing.file"))))
+
 (deftest get-classpath-asset-enforces-blacklist
-	(is
-		(thrown? RuntimeException
-			(get-classpath-asset "java/lang/Object.class"))))
-	
+  (is
+    (thrown? RuntimeException
+      (get-classpath-asset "java/lang/Object.class"))))
+
 (deftest get-classpath-alias-via-generic
-	(let [path "cascade/cascade.css"
-				asset-map (get-asset :classpath path)]
-		(is (= asset-map { :type :classpath :path path }))))			
-			
+  (let [path "cascade/cascade.css"
+        asset-map (get-asset :classpath path)]
+    (is (= asset-map { :type :classpath :path path }))))
+
 (deftest context-asset-found
-	(with-mocks
-		[context ServletContext]
-		(:binding
-			configuration (atom (assoc @configuration :servlet-context context)))
-		(:train
-			(expect .getResource context "/images/banner.jpg" (URL. "file:fake-url")))
-		(:test
-			(let [path "images/banner.jpg"
-					  asset-map (get-asset :context path)]
-				(is (= asset-map { :type :context :path path }))))))
+  (with-mocks
+    [context ServletContext]
+    (:binding
+      configuration (atom (assoc @configuration :servlet-context context)))
+    (:train
+      (expect .getResource context "/images/banner.jpg" (URL. "file:fake-url")))
+    (:test
+      (let [path "images/banner.jpg"
+            asset-map (get-asset :context path)]
+        (is (= asset-map { :type :context :path path }))))))
 
 (deftest context-asset-missing
-	(with-mocks
-		[context ServletContext]
-		(:binding
-			configuration (atom (assoc @configuration :servlet-context context)))
-		(:train
-			(expect .getResource context "/images/missing.jpg" nil))
-		(:test
-			(is 
-				(thrown-with-msg? RuntimeException #".*Asset 'images/missing.jpg' not found in the context.*"
-					(get-asset :context "images/missing.jpg"))))))
-						
-				
+  (with-mocks
+    [context ServletContext]
+    (:binding
+      configuration (atom (assoc @configuration :servlet-context context)))
+    (:train
+      (expect .getResource context "/images/missing.jpg" nil))
+    (:test
+      (is
+        (thrown-with-msg? RuntimeException #".*Asset 'images/missing.jpg' not found in the context.*"
+          (get-asset :context "images/missing.jpg"))))))

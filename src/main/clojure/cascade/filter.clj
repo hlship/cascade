@@ -12,24 +12,24 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns 
+(ns
   #^{:doc "Servlet API Filter that directs requests into Cascade"}
   cascade.filter
-  (:require 
-  	(cascade exception))
+  (:require
+    (cascade exception))
   (:use
-	  (clojure stacktrace)	
-	  (clojure.contrib str-utils)
-  	(cascade config change-tracker dispatcher logging path-map pipeline urls exception)
+    (clojure stacktrace)
+    (clojure.contrib str-utils)
+    (cascade config change-tracker dispatcher logging path-map pipeline urls exception)
     (cascade.internal utils))
   (:import
-  	(javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
-  	(javax.servlet.http HttpServletRequest HttpServletResponse))
+    (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
+    (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:gen-class
     :state context
     :init psuedo-constructor
     :implements [javax.servlet.Filter]))
-
+    
 (defn get-path
   "Extracts the complete path (including extra path info) from the request."
   [#^HttpServletRequest request]
@@ -41,17 +41,17 @@
       ; and puts the true path into path-info
       (zero? (.length path-info)) servlet-path
     :otherwise (str servlet-path path-info))))
-
+    
 (defn static-file?
   "Checks to see if the request is for a static file, which is passed through to the servlet container."
   [#^ServletContext context path]
   (cond
-		; Incoming requests for the context end up with a path of "/", which WILL be considered
-		; a static file. TODO: need to extend this for subdirs?
-  	(= path "/") false
-  	; Always treat this as a static file even if it doesn't exist; otherwise is routes
-  	; requests to the function mapped to "/"!
-  	(= path "/favicon.ico") true
+    ; Incoming requests for the context end up with a path of "/", which WILL be considered
+    ; a static file. TODO: need to extend this for subdirs?
+    (= path "/") false
+    ; Always treat this as a static file even if it doesn't exist; otherwise is routes
+    ; requests to the function mapped to "/"!
+    (= path "/favicon.ico") true
     ; If we can get a non-nil URL to the resource inside the context then it's a real static file
     ; to be ignored.
     (.getResource context path) true
@@ -63,26 +63,25 @@
   ;; TODO: A try..catch here in case just reporting the exception fails!
   (debug "Request exception: %s" exception)
   (let [#^Throwable root (root-cause exception)]
-  	(.printStackTrace root))
-  	
+    (.printStackTrace root))
   (render-view (assoc-in env [:cascade :exception] exception) #'exception-report))
 
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
-  false otherwise (i.e., forward to the servlet container for normal processing)." 
+  false otherwise (i.e., forward to the servlet container for normal processing)."
   [#^HttpServletRequest request #^HttpServletResponse response context path]
   (let [split (split-path path)
         env { :servlet-api { :request request
-                             :response response 
+                             :response response
                              :context context }
               :cascade { :path path
                          :split-path split } }]
-    (try 
+    (try
       (let [matches (find-matching-functions :dispatchers split)
             dispatchers (for [[path function] matches] function)]
         (apply-until-non-nil dispatchers [env]))
       (catch Throwable t (handle-request-exception env t)))))
-    
+
 ;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")
 ;; Just couldn't bring myself to call this namespace "CascadeFilter".
 
@@ -93,47 +92,38 @@
   ; No super-class constructor, state is an atom whichs stores the servlet context
   [[] (atom nil)])
 
-(defn -init 
+(defn -init
   "Filter lifecycle method used to print startup messages and capture the ServletContext."
   [this #^FilterConfig filter-config]
-  
   (let [context (.getServletContext filter-config)]
-  	(assoc-in-config :servlet-context context)
-  	(reset! (.context this) context))
-  
+    (assoc-in-config :servlet-context context)
+    (reset! (.context this) context))
   (info "Cascade startup")
-  
   (let [namespace-list (.getInitParameter filter-config "cascade.namespaces")
-  		  namespace-names (and namespace-list (re-split #"," namespace-list))]
-		(doseq [#^String ns-name namespace-names]
-			(info "Loading namespace: %s" ns-name)
-			(require (symbol (.trim ns-name)))))  		  
-
+        namespace-names (and namespace-list (re-split #"," namespace-list))]
+    (doseq [#^String ns-name namespace-names]
+      (info "Loading namespace: %s" ns-name)
+      (require (symbol (.trim ns-name)))))
   (start-scan-thread)
-
   (info "Configuration:\n%s" (ppstring @configuration))
-
   nil)
 
-(defn -destroy 
+(defn -destroy
   [this]
   (stop-scan-thread)
   (debug "Cascade shutdown")
   nil)
 
-(defn -doFilter 
+(defn -doFilter
   [this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
   (let [path (get-path request)
-  	    qs (.getQueryString request)
-  	    debug-path (if (nil? qs) path (str path "?" qs))
+        qs (.getQueryString request)
+        debug-path (if (nil? qs) path (str path "?" qs))
         context @(.context this)]
-	  (debug "Filtering %s" debug-path)
-	  (when (or 
-	          (static-file? context path) 
-	          (not (pass-to-dispatchers request response context path)))
-	    ; Let the servlet container process this normally.
-	    (debug "Not handled; forwarding to next in chain")
-	    (.doFilter chain request response))))
-
-
-
+    (debug "Filtering %s" debug-path)
+    (when (or
+            (static-file? context path)
+            (not (pass-to-dispatchers request response context path)))
+      ; Let the servlet container process this normally.
+      (debug "Not handled; forwarding to next in chain")
+      (.doFilter chain request response))))

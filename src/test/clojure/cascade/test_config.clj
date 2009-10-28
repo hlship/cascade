@@ -16,29 +16,29 @@
   (:use
     (clojure test)
     cascade.config))
-    
+
 (deftest test-assoc-in-config-single
   (assoc-in-config :single :barney)
   (is (= (@configuration :single) :barney))
   (assoc-in-config :single :wilma)
   (is (= (@configuration :single) :wilma)))
-  
+
 (deftest test-assoc-in-config
   (assoc-in-config :nested { :fred :flinstone })
   (assoc-in-config [:nested :fred] :murray)
   (assoc-in-config [:nested :barney] :rubble)
-  (is (= (@configuration :nested) { :fred :murray :barney :rubble})))    
-  
+  (is (= (@configuration :nested) { :fred :murray :barney :rubble})))
+
 (deftest test-add-to-config
   (add-to-config :list :fred)
   (is (= (@configuration :list) [:fred]))
   (add-to-config :list :barney)
   (is (= (@configuration :list) [:barney :fred])))
-  
+
 (deftest missing-key-on-read
   (is (thrown-with-msg? RuntimeException #"Configuration key :missing-key was nil\." (read-config :missing-key))))
-    
+
 (deftest test-find-config
   (assoc-in-config :mykey :myvalue)
   (is (nil? (find-config :missing-key)))
-  (is (= (find-config :mykey) :myvalue)))    
+  (is (= (find-config :mykey) :myvalue)))

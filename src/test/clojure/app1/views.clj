@@ -15,40 +15,12 @@
 (ns app1.views
   (:import (java.util Date))
   (:use cascade))
-  
-(defview itworks
-  {:path "working"}
-  [env]
-  :html [
-    :head [ :title [ "It Works!"]]
-    :body [
-      :h1 [ "It Works!"]
-      
-      :p  [ 
-        "Current date and time: " 
-        :span { :id "time"} [ (.toString (Date.)) ]
-      ]
-      
-      :p [
-        "Let's count:"
-        :ul [
-          (for [x (range 10 0 -1)]
-            (template :li [ (str x) " ..." ] )
-          )
-        ]
-      ]
-      
-      :hr
-      
-      (render-link env itworks ["extra"] { :class "nav" } "refresh")
-    ]
-  ])  
 
 (declare show-counter)
 
 (defaction increment-count
   {:path "count/increment"}
-  [env] 
+  [env]
   [count :int]
   (send-redirect env (link env show-counter [(inc count)])))
 
@@ -72,8 +44,28 @@
         (body-block env)
       ]
     ]))
-          
-    
+
+(defview itworks
+  {:path "working"}
+  [env]
+  (page-template env "It works!"
+    (block [env]
+      :p  [
+        "Current date and time: "
+        :span { :id "time"} [ (.toString (Date.)) ]
+      ]
+      :p [
+        "Let's count:"
+        :ul [
+          (for [x (range 10 0 -1)]
+            (template :li [ (str x) " ..." ] )
+          )
+        ]
+      ]
+      :hr
+      (render-link env itworks ["extra"] { :class "nav" } "refresh")
+    )))
+
 (defview show-counter
   {:path "count/current"}
   [env]
@@ -90,7 +82,7 @@
         (render-link env increment-count [ count ] "here to increment")
         "."
       ]
-      :p [ 
+      :p [
         "Click "
         (render-link env adjust-count {:operation :reset} "here to reset")
         "."
@@ -101,7 +93,6 @@
         "."
       ])))
 
-
 (defview fail-view
   {:path "force-failure"}
   [env]
@@ -110,17 +101,27 @@
   (page-template env "Force Failure"
     (block [env]
       :p [
-        "Five / 0 =" 
+        "Five / 0 ="
         :strong [ (/ 5 0) ]
         ])))
-        
+
+(defview simple-javascript
+  [env]
+  (page-template env "Simple Javascript"
+    (block [env]
+      :p { :id "message" }
+      (import-jquery env)
+      (javascript env :immediate "MESSAGE = 'ready event did fire.';")
+      (javascript env "jQuery('%s').text(MESSAGE);" "message"))))
+
 (defview index-view
   {:path ""}
   [env]
   (page-template env "Test Application"
     (block [env]
       :ul [
-			  :li [ (render-link env itworks "Simple Output") ]
-			  :li [ (render-link env fail-view "Forced Exception") ]
-			  :li [ (render-link env show-counter [0] "Simple Actions") ]    				
-      ])))        
+        :li [ (render-link env itworks "Simple Output") ]
+        :li [ (render-link env fail-view "Forced Exception") ]
+        :li [ (render-link env show-counter [0] "Simple Actions") ]
+        :li [ (render-link env simple-javascript "Simple JavaScript") ]
+      ])))

@@ -13,19 +13,15 @@
 ; and limitations under the License.
 
 (ns cascade.test-change-tracker
-  (:use 
+  (:use
     (cascade change-tracker)
     (clojure (test :only [is are deftest]))))
 
 (deftest test-splitp
-	(are [predicate input expected-matches expected-non-matches]
-		(let [[actual-matches actual-non-matches] (splitp predicate input)]
-			(is (= actual-matches expected-matches))
-			(is (= actual-non-matches expected-non-matches)))
-			
-			 keyword? [:foo 'bar "baz"] [:foo] ['bar "baz"]
-			
-			 empty? [] [] []
-			
-			 symbol? nil [] []))	
-
+  (are [predicate input expected-matches expected-non-matches]
+    (let [[actual-matches actual-non-matches] (splitp predicate input)]
+      (is (= actual-matches expected-matches))
+      (is (= actual-non-matches expected-non-matches)))
+       keyword? [:foo 'bar "baz"] [:foo] ['bar "baz"]
+       empty? [] [] []
+       symbol? nil [] []))

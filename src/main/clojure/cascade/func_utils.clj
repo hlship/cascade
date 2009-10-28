@@ -11,7 +11,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns 
+(ns
   #^{:doc "Meta utilities for functions"}
   cascade.func-utils)
 

@@ -16,15 +16,15 @@
   (:use (clojure.contrib monads [pprint :only (pprint)])
         (cascade dom)
         (cascade.internal utils parser)))
-  
+
 (defn element-node
   [name attributes content]
-  (struct-map dom-node :type :element 
+  (struct-map dom-node :type :element
                        :name name
-                       :attributes (seq attributes)                        
-                       :value content))  
-
+                       :attributes (seq attributes)
+                       :value content))
 ; TODO: Turn this into a multimethod to make it more extensible.
+
 (defn convert-render-result
   [any]
   "Checks the result of invoking a rending function or closure, to ensure that only
@@ -32,15 +32,12 @@
   (cond
     ; A map is assumed to be a DOM node
     (map? any) any
-    
     (string? any) (text-node any)
-    
     (number? any) (text-node (str any))
-    
-    true (throw (RuntimeException. 
+    true (throw (RuntimeException.
       (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))
-     
+
 (defn combine
   "Given the results of rendering (where each step provides a render result), combine the results
 into a single sequence of DOM nodes. Each of the render results should be a DOM node,
@@ -57,9 +54,8 @@ which are converted into :text DOM nodes."
         :otherwise (recur (conj output (convert-render-result current)) remainder)))))
 
 (with-monad parser-m
-
   (declare parse-embedded-template)
-  
+
   (def parse-text
     (domonad [text match-string]
       `(text-node ~text)))
@@ -68,32 +64,31 @@ which are converted into :text DOM nodes."
     ; An attribute or element name is either a keyword or a form that yields a keyword.
     ; TODO: support for qualified names ([:prefix :name]).
     (match-first match-keyword))
-    
+
   (def parse-body
     (domonad [body match-vector]
-      (parse-embedded-template body)))    
-        
+      (parse-embedded-template body)))
+
   (def parse-element
     (domonad [name parse-name
-              attributes (optional match-map) 
+              attributes (optional match-map)
               body (optional parse-body)]
        `(element-node ~name ~attributes ~body)))
-  
+
   ; Accept a single form that will act as a renderer, returning a render
   ; result, which will be combined with other render results via the
   ; parse-forms parser.
   (def parse-form
        (domonad [form match-form]
          form))
-      
+
   (def parse-single-form
     (match-first parse-text parse-element parse-form))
-              
+
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      `(combine ~@forms))) 
-  
-) ; with-monad parser-m     
+      `(combine ~@forms)))
+) ; with-monad parser-m
 
 (defn parse-embedded-template
   "Used as part of (defview) or (deffragment) to convert the a form, the embedded template, into

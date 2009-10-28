@@ -14,12 +14,12 @@
 
 (ns #^{:doc "Utilities for building and manipulating maps"}
   cascade.map-utils
-  (:use 
+  (:use
     (cascade fail)))
 
 (defn list-to-map-of-seqs
   "Converts a seq into a map based on a set of predetermined keys. Each form in forms is a seq; the
-  first value in the seq is the key, which must match a value from keys. The remainder is the 
+  first value in the seq is the key, which must match a value from keys. The remainder is the
   value for that key. This is patterned on the (ns) macro's format."
   [keys forms]
   (let [keys-set (set keys)
@@ -27,4 +27,4 @@
         extracted-values (map rest forms)]
     (doseq [key extracted-keys]
       (fail-unless (contains? keys-set key) (format "Key %s is not allowed; keys must be one of %s." key keys)))
-    (zipmap extracted-keys extracted-values)))    
+    (zipmap extracted-keys extracted-values)))

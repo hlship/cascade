@@ -16,8 +16,7 @@
   (:use
     (cascade map-utils)
     (clojure (test :only [is are deftest]))))
-    
-    
+
 (deftest test-list-to-map
   (is (= (list-to-map-of-seqs [:foo :bar :baz] [[:foo :f1 :f2 :f3] [:bar :b1 :b2] [:baz]])
         {:foo [:f1 :f2 :f3] :bar [:b1 :b2] :baz []})))

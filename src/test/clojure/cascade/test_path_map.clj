@@ -13,19 +13,21 @@
 ; and limitations under the License.
 
 (ns cascade.test-path-map
-  (:use 
+  (:use
     (cascade config path-map urls pipeline)
     (cascade.internal utils)
     (clojure [test :only [deftest is are]])))
-    
+
 (defn fn-ab [env])
+
 (defn fn-c [env])
+
 (defn fn-any [env])
 
 (defn find-fns
   [path]
   (for [[path function] (find-matching-functions :mapped-functions (split-path path))] function))
-  
+
 (deftest test-find-mappings
   (binding [configuration (atom { :mapped-functions { ["a" "b"] fn-ab
                                                       ["c"] fn-c
@@ -37,11 +39,15 @@
       "c" [fn-c fn-any]
       "d" [fn-any]
       "" [fn-any])))
-      
-(defn valid-view-fn {:cascade-type :view} [])      
-(defn valid-action-fn {:cascade-type :action} [])      
-(defn pathed-action-fn {:cascade-type :action :path "do/something"} [])      
+
+(defn valid-view-fn {:cascade-type :view} [])
+
+(defn valid-action-fn {:cascade-type :action} [])
+
+(defn pathed-action-fn {:cascade-type :action :path "do/something"} [])
+
 (defn pathed-view-fn {:cascade-type :view :path "show/something"} [])
+
 (defn unknown-type-fn {:cascade-type :willow}[])
 
 (deftest test-path-for-function
@@ -51,12 +57,11 @@
     valid-action-fn "action/cascade.test-path-map/valid-action-fn"
     pathed-action-fn "do/something"
     pathed-view-fn "show/something"))
-    
+
 (deftest not-a-valid-function-for-path-for-function
-  (is (thrown-with-msg? RuntimeException 
+  (is (thrown-with-msg? RuntimeException
       #"^Function cascade\.internal\.utils/function\? is neither a view function nor an action function\.$"
     (path-for-function function?))))
-    
+
 (deftest unknown-cascade-type-for-path-for-function
   (is (thrown? RuntimeException (path-for-function unknown-type-fn))))
-  

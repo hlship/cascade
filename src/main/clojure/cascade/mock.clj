@@ -18,15 +18,15 @@
   (:use
     (cascade map-utils fail)
     (cascade.internal utils)))
-    
+
 (defn new-mock
   [#^IMocksControl control #^String mock-name #^Class mock-class]
   (.createMock control mock-name mock-class))
 
 (defn mock-init
   [control mock-name mock-class]
-  `(~mock-name (new-mock ~control ~(name mock-name) ~mock-class)))      
-    
+  `(~mock-name (new-mock ~control ~(name mock-name) ~mock-class)))
+
 (defmacro with-mocks
   "Defines a set of mocks and executes training and test code for them. mock-defs is a vector of alternating
   symbols and classes to mock, an implicit let will be used to assign a mock instance to each symbol.
@@ -43,10 +43,10 @@
         mapped-forms (list-to-map-of-seqs [:binding :train :test] forms)]
         `(let [~control (EasyMock/createControl)
               ~@mock-inits]
-            (binding [~@(mapped-forms :binding)]  
-	            ~@(mapped-forms :train)
-	            (.replay ~control)
-	            ~@(mapped-forms :test))
+            (binding [~@(mapped-forms :binding)]
+              ~@(mapped-forms :train)
+              (.replay ~control)
+              ~@(mapped-forms :test))
             (.verify ~control))))
 
 (defmacro expect
