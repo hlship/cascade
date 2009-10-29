@@ -12,9 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.test-map-utils
+(ns cascade.test-collection-utils
   (:use
-    (cascade map-utils)
+    (cascade collection-utils)
     (clojure (test :only [is are deftest]))))
 
 (deftest test-list-to-map
@@ -25,3 +25,8 @@
   (is
     (thrown-with-msg? RuntimeException #"Key :baz is not allowed; keys must be one of \[:foo :bar\]\."
       (list-to-map-of-seqs [:foo :bar] [[:baz]]))))
+      
+(deftest test-conj-if-missing
+  (let [coll [:foo :bar]]
+    (is (identical? (conj-if-missing coll :foo) coll))
+    (is (= (conj-if-missing coll :baz) [:foo :bar :baz]))))      

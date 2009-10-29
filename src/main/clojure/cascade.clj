@@ -17,7 +17,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
-    (cascade asset config dom path-map fail urls logging)
+    (cascade asset config dom path-map fail urls logging collection-utils)
     (cascade.internal utils viewbuilder parse-functions)))
 
 (defmacro template

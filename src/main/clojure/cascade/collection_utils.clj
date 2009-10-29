@@ -12,9 +12,10 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Utilities for building and manipulating maps"}
-  cascade.map-utils
+(ns #^{:doc "Utilities for collections"}
+  cascade.collection-utils
   (:use
+    (clojure.contrib seq-utils)
     (cascade fail)))
 
 (defn list-to-map-of-seqs
@@ -28,3 +29,10 @@
     (doseq [key extracted-keys]
       (fail-unless (contains? keys-set key) (format "Key %s is not allowed; keys must be one of %s." key keys)))
     (zipmap extracted-keys extracted-values)))
+    
+(defn conj-if-missing
+  "Conjoins x into the collection if not already present."
+  [coll x]
+  (if (includes? coll x)
+    coll
+    (conj coll x)))    

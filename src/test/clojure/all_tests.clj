@@ -18,9 +18,9 @@
 
 (set! *warn-on-reflection* true)
 
-(def spaces (map #(symbol (str "cascade.test-" %)) [
-  "asset" "utils" "config" "cascade" "change-tracker" "dom" "map-utils"
-  "parse-functions" "path-map" "pipeline" "urls" "viewbuilder"]))
+(def spaces (map #(symbol (str "cascade.test-" %)) (sort [
+  "asset" "utils" "config" "cascade" "change-tracker" "dom" "collection-utils"
+  "parse-functions" "path-map" "pipeline" "urls" "viewbuilder"])))
 
 (println "Loading code ...")
 
