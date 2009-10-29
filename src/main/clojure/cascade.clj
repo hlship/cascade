@@ -130,11 +130,9 @@
     (let [asset-map (get-asset type path)
           aggregation (-> env :cascade :resource-aggregation)
           libraries (@aggregation :libraries)]
-      (when-not (contains? libraries asset-map)
-        (debug "Importing library: %s" (ppstring asset-map))
-        ; Note: under some race conditions, we could end up with the same map added twice.
-        ; That may be an issue when we have true parallel rendering.
-        (swap! aggregation update-in [:libraries] conj asset-map)))))
+      (swap! aggregation update-in [:libraries] conj-if-missing asset-map))
+    nil))
+        
 
 (defn import-jquery
   [env]
@@ -143,10 +141,11 @@
 
 (defn javascript
   "Adds initialization JavaScript. type should be either :immediate or :onready. If ommitted (recognized
-  when type is a string), then :onready is supplied."
+  when type is a string), then :onready is supplied. Returns nil."
   [env type & args]
   (if (string? type)
-    (apply javascript env :onready args)
+    (apply javascript env :onready type args)
     (let [aggregation (-> env :cascade :resource-aggregation)
           formatted (apply format args)]
-      (swap! aggregation update-in [type] conj formatted))))
+      (swap! aggregation update-in [type] conj formatted)
+      nil)))

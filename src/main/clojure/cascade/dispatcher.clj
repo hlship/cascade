@@ -51,7 +51,6 @@
   (let [aggregation (-> env :cascade :resource-aggregation)
         immediate (@aggregation :immediate)
         onready (@aggregation :onready)]
-    ; (debug "Adding initialization script block to %s" (ppstring (debug-dom dom-nodes)))
     (extend-dom dom-nodes [:html :body] :bottom
       (template
         ; this could be done more efficiently
@@ -83,7 +82,6 @@
   (debug "Rendering view function %s" (qualified-function-name view-fn))
   (let [#^ServletResponse response (-> env :servlet-api :response)
         dom (view-fn env)
-        _ (debug "Preparing DOM for render:\n%s" (ppstring (debug-dom dom)))
         prepared (prepare-dom-for-render env dom)]
     (debug "Streaming XML response")         
     (with-open [writer (.getWriter response)]

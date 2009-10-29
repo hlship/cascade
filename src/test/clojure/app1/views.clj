@@ -16,7 +16,7 @@
   (:import (java.util Date))
   (:use cascade))
 
-(declare show-counter)
+(declare index-view show-counter)
 
 (defaction increment-count
   {:path "count/increment"}
@@ -38,10 +38,14 @@
   [env title body-block]
   (template
     :html [
-      :head [ :title title ]
+      :head [ :title [ title ] ]
       :body [
         :h1 [ title ]
         (body-block env)
+        
+        :hr
+        
+        :p [ "Back to " (render-link env index-view "index") "." ]
       ]
     ]))
 
@@ -112,7 +116,7 @@
       :p { :id "message" }
       (import-jquery env)
       (javascript env :immediate "MESSAGE = 'ready event did fire.';")
-      (javascript env "jQuery('%s').text(MESSAGE);" "message"))))
+      (javascript env "jQuery('#%s').text(MESSAGE);" "message"))))
 
 (defview index-view
   {:path ""}
