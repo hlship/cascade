@@ -91,5 +91,3 @@
     "two > one" "two &gt; one"
     "Calvin & Hobbes" "Calvin &amp; Hobbes"
     (str "What's this: " (char 128) (char 31)) "What's this: &#x80;&#x1f;"))
-
-(run-tests)
