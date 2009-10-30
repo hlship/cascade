@@ -64,7 +64,16 @@
                 onready
                 [ "});"])))            
         ]))))
-
+        
+(defn add-links-for-stylesheets
+  [env dom-nodes]
+    (let [aggregation (-> env :cascade :resource-aggregation)
+          stylesheets (@aggregation :stylesheets)]
+      (extend-dom dom-nodes [:html :head] :top
+        (template-for [asset-map stylesheets
+                       :let [path (to-asset-path env asset-map)]]
+          :link { :rel :stylesheet :type "text/css" :href path })))) 
+                
 (decorate prepare-dom-for-render
   (fn [delegate env dom-nodes]
     (delegate env (add-script-links-for-imported-javascript-libraries env dom-nodes))))
@@ -74,7 +83,11 @@
 
 (decorate prepare-dom-for-render
   (fn [delegate env dom-nodes]
-    (delegate env (add-script-block-for-initialization env dom-nodes))))     
+    (delegate env (add-script-block-for-initialization env dom-nodes))))   
+    
+(decorate prepare-dom-for-render
+  (fn [delegate env dom-nodes]
+    (delegate env (add-links-for-stylesheets env dom-nodes))))      
 
 (defn render-view-as-xml
   "Renders the provided view function as an XML stream. Returns true."
@@ -92,7 +105,7 @@
   "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
    the moment, this simply sets up for resource aggegation and invokes render-view-as-xml."
   [env view-fn]
-  (let [aggregation (atom { :libraries [] :immediate [] :onready [] })
+  (let [aggregation (atom { :libraries [] :immediate [] :onready [] :stylesheets [] })
         new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
     ; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
     (render-view-as-xml new-env view-fn)))

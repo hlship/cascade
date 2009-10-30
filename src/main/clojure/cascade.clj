@@ -118,6 +118,14 @@
   [s]
   (struct-map dom-node :type :text :value s))
 
+(defn import-path
+  "Imports a path into a vector (identified by the key) inside the resource aggregation atom stored in the env."
+  [env key type path]
+  (let [asset-map (get-asset type path)
+        aggregation (-> env :cascade :resource-aggregation)]
+    (swap! aggregation update-in [key] conj-if-missing asset-map))
+  nil)
+
 (defn import-javascript-library
   "Imports a JavaScript library from the given path. type identifies where it comes from (:classpath or :context,
   the two parameter version assumes :context).
@@ -127,13 +135,8 @@
   ([env path]
     (import-javascript-library env :context path))
   ([env type path]
-    (let [asset-map (get-asset type path)
-          aggregation (-> env :cascade :resource-aggregation)
-          libraries (@aggregation :libraries)]
-      (swap! aggregation update-in [:libraries] conj-if-missing asset-map))
-    nil))
+    (import-path env :libraries type path)))
         
-
 (defn import-jquery
   [env]
   "Imports the jQuery library packaged with Cascade."
@@ -149,3 +152,12 @@
           formatted (apply format args)]
       (swap! aggregation update-in [type] conj formatted)
       nil)))
+      
+(defn import-stylesheet
+  "Imports a stylesheet into the rendered document. Like JavaScript libraries, the stylesheet will
+   only be added a single time regardless of how many times it is imported. If the type is omitted,
+   it defaults to :context."
+  ([env path]
+    (import-stylesheet env :context path))
+  ([env type path]
+    (import-path env :stylesheets type path)))

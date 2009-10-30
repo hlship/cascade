@@ -209,15 +209,13 @@
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
   Formats a detailed HTML report of the exception and the overall environment."
   [env]
+  (import-stylesheet env :classpath "cascade/cascade.css")
   (let [production-mode (read-config :production-mode)
         #^Throwable exception (-> env :cascade :exception)
         #^Throwable root (root-cause exception)]
     (template
       :html [
-        :head [
-          :title [ exception-banner ]
-          :link { :rel "stylesheet" :type "text/css" :href (classpath-asset-path env "cascade/cascade.css") }
-         ]
+        :head [ :title [ exception-banner ] ]
         :body [
           :h1 {:class "c-exception-report" } [ exception-banner ]
           (if production-mode
