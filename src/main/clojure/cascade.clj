@@ -156,7 +156,7 @@
 (defn import-stylesheet
   "Imports a stylesheet into the rendered document. Like JavaScript libraries, the stylesheet will
    only be added a single time regardless of how many times it is imported. If the type is omitted,
-   it defaults to :context."
+   it defaults to :context. Returns nil."
   ([env path]
     (import-stylesheet env :context path))
   ([env type path]
