@@ -116,7 +116,9 @@
 (defn raw
   "Wraps a string as a :text DOM node, but does not do any filtering of the value."
   [s]
-  (struct-map dom-node :type :text :value s))
+  (with-meta
+    (struct-map dom-node :type :text :value s)
+    dom-node-meta-data))
 
 (defn import-path
   "Imports a path into a vector (identified by the key) inside the resource aggregation atom stored in the env."

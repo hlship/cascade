@@ -14,15 +14,9 @@
 (ns #^{:doc "Form parser for the template DSL"}
   cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
-        (cascade dom)
+        (cascade dom fail)
         (cascade.internal utils parser)))
 
-(defn element-node
-  [name attributes content]
-  (struct-map dom-node :type :element
-                       :name name
-                       :attributes (seq attributes)
-                       :value content))
 ; TODO: Turn this into a multimethod to make it more extensible.
 
 (defn convert-render-result
@@ -31,7 +25,7 @@
    acceptible values are returned."
   (cond
     ; A map is assumed to be a DOM node
-    (map? any) any
+    (map? any) (if (:cascade-dom-node ^any) any (fail "Not a DOM node: %s" (ppstring any)))
     (string? any) (text-node any)
     (number? any) (text-node (str any))
     true (throw (RuntimeException.

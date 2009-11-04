@@ -14,13 +14,18 @@
 
 (ns cascade.test-viewbuilder
   (:use
-    (clojure (test :only [is are deftest]))
+    (clojure test)
     cascade.dom
     cascade.internal.viewbuilder))
 
 (deftest test-convert-render-result
-  (let [fake-dom-node {:foo :bar}]
+  (let [dom-node (element-node :foo nil nil)]
     (are [input output] (= (convert-render-result input) output)
-      fake-dom-node fake-dom-node
+      dom-node dom-node
       "any string" (text-node "any string")
       123.4 (text-node "123.4"))))
+      
+(deftest combine-a-non-dom-node-is-failure
+  (is
+    (thrown? RuntimeException ; Should check the message, but RE hell
+      (combine {:not-an :element-node}))))

@@ -42,6 +42,17 @@
   :attributes ; seq of attribute/value pairs (for :element)
   :value) ; attribute value or literal text (text must be encoded), nested nodes for :element)
 
+(def dom-node-meta-data {:cascade-dom-node true})
+
+(defn element-node
+  [name attributes content]
+  (with-meta 
+    (struct-map dom-node :type :element
+                       :name name
+                       :attributes (seq attributes)
+                       :value content)
+     dom-node-meta-data))
+
 (declare render-xml debug-dom)
 
 (def char-to-entity-map
@@ -74,7 +85,9 @@
 (defn text-node
   "Creates a text node from the string. The string is encoded when the node is constructed."
   [text]
-  (struct-map dom-node :type :text :value (encode-string text)))
+  (with-meta
+    (struct-map dom-node :type :text :value (encode-string text))
+    dom-node-meta-data))
 
 (defmulti to-attr-string
   "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."
