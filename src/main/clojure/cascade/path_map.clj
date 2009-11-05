@@ -17,7 +17,7 @@
   (:require
     (clojure.contrib [str-utils2 :as s2]))
   (:use
-    (cascade change-tracker logging config urls func-utils fail)))
+    (cascade change-tracker logging config urls func-utils fail view-cache)))
 
 (def #^ClassLoader context-class-loader (.getContextClassLoader (Thread/currentThread)))
 
@@ -43,6 +43,7 @@
         (swap! tracked-namespaces disj n)
         ; Now, reload the namespace.
         (debug "Reloading namespace %s" (ns-name n))
+        (clear-view-cache)
         (require :reload (ns-name n))))))
 
 (defn add-tracked-namespace

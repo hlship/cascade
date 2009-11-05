@@ -14,8 +14,15 @@
 (ns #^{:doc "Form parser for the template DSL"}
   cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
-        (cascade dom fail)
+        (cascade dom fail view-cache)
         (cascade.internal utils parser)))
+
+(def uidgen (atom 0))
+
+(defn mark-as-invariant
+  "Marks a collection object as invariant (setting an invariance level of 1)."
+  [obj]
+  (vary-meta obj assoc :invariant-level 1))
 
 ; TODO: Turn this into a multimethod to make it more extensible.
 
@@ -47,16 +54,38 @@ which are converted into :text DOM nodes."
         (sequential? current) (recur output (concat current remainder))
         :otherwise (recur (conj output (convert-render-result current)) remainder)))))
 
+(defn cache-invariant-form
+  "Returns the form as is, unless it has meta key :invariant-level, in which case the form is wrapped using
+   just-in-time."
+  [form]
+  (if-not (nil? (:invariant-level (meta form)))
+    (let [key (swap! uidgen inc)]
+      `(read-view-cache ~key  ~form))
+    form))                      
+
+(defn invoke-combine
+  "Called to combine some forms (Clojure code forms generated from template forms) together into a call to combine.
+  At a transition point (where some, but not all, of the forms yield invariant results), then the
+  invariant forms will be wrapped with cache-invariant-form."
+  [forms]
+  (let [form-metas (map meta forms)
+        invariant-levels (map :invariant-level form-metas)
+        all-invariant? (not-any? nil? invariant-levels)
+        max-invariant (and all-invariant? (apply max invariant-levels))
+        wrapped-forms (map cache-invariant-form forms)]
+    (if all-invariant?
+      (vary-meta `(combine ~@forms) assoc :invariant-level (inc max-invariant))
+      `(combine ~@wrapped-forms))))
+    
 (with-monad parser-m
   (declare parse-embedded-template)
 
   (def parse-text
     (domonad [text match-string]
-      `(text-node ~text)))
+      (mark-as-invariant `(text-node ~text))))
 
   (def parse-name
     ; An attribute or element name is either a keyword or a form that yields a keyword.
-    ; TODO: support for qualified names ([:prefix :name]).
     (match-first match-keyword))
 
   (def parse-body
@@ -81,11 +110,11 @@ which are converted into :text DOM nodes."
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      `(combine ~@forms)))
+      (invoke-combine forms)))
 ) ; with-monad parser-m
 
 (defn parse-embedded-template
-  "Used as part of (defview) or (deffragment) to convert the a form, the embedded template, into
+  "Used as part of the defview or template macros to convert the forms, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
   (run-parse parse-forms forms "embedded template forms"))
