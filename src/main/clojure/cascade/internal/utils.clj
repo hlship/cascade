@@ -104,15 +104,3 @@ if the collection is null or empty."
   (or
     (nil? s)
     (= 0 (.length s))))
-    
-(defn just-in-time
-  "Wraps the supplied function (of no parameters) in as a just-in-time computation. When the returned object
-  is invoked the first time, the supplied function is evaluated and the result cached. Internally, uses
-  an atom and reset!, but in a race condition, the function may be invoked more than once,
-  so the function should be free of side-effects."
-  [f]
-  (let [result-cache (atom nil)]
-    (fn []
-      (or
-        @result-cache
-        (reset! result-cache (f))))))  

@@ -94,16 +94,3 @@
 (deftest lcond-requires-even-clauses
   (is (thrown-with-msg? RuntimeException #".* lcond requires an even number of forms"
     (mexpand-all `(lcond (= 1 2) :b :c)))))
-    
-(deftest test-just-in-time
-  (let [count (atom 0)
-        f #(swap! count inc)
-        w (just-in-time f)]
-      (is (= @count 0))
-      ; Invoke the wrapepr
-      (is (= (w) 1))
-      (is (= @count 1))
-      ; Invoking the wrapper returns the cached value
-      (is (= (w) 1))
-      ; And doesn't call the underlying wrapped function
-      (is (= @count 1))))    
