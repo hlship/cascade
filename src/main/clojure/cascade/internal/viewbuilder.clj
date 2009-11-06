@@ -19,12 +19,31 @@
 
 (def uidgen (atom 0))
 
+(defn is-invariant-value?
+  "Is the value nil, a keyword, a string or a number?"
+  [value]
+  (cond
+    (nil? value) true
+    (keyword? value) true
+    (string? value) true
+    (number? value) true
+    :otherwise false))
+
+(defn is-invariant-map?
+  "Is the map nil or contain only invariant values?"
+  [m]
+  (and (every? is-invariant-value? (keys m))
+       (every? is-invariant-value? (vals m))))
+
 (defn mark-as-invariant
-  "Marks a collection object as invariant (setting an invariance level of 1)."
+  "Marks a collection object's meta-data as invariant (setting an :invariant-level of 1)."
   [obj]
   (vary-meta obj assoc :invariant-level 1))
 
-; TODO: Turn this into a multimethod to make it more extensible.
+(defn invariant-level-of
+  "Returns the :invariant-level from the form's meta data, or 0."
+  [form]
+  (or (:invariant-level ^form) 0))
 
 (defn convert-render-result
   [any]
@@ -45,22 +64,26 @@ into a single sequence of DOM nodes. Each of the render results should be a DOM 
 or a collection of DOM nodes (or a nested collection of DOM nodes, etc.). Strings are also allowed,
 which are converted into :text DOM nodes."
   [& render-results]
+  ; TODO: Use a transient
   (loop [output []
          queue render-results]
     (let [current (first queue)
           remainder (next queue)]
       (cond
         (nil? current) (if (empty? remainder) output (recur output remainder))
+        ; TODO: mark output of combine as "combined" and treat previously combined
+        ; results optimally.
         (sequential? current) (recur output (concat current remainder))
         :otherwise (recur (conj output (convert-render-result current)) remainder)))))
 
 (defn cache-invariant-form
-  "Returns the form as is, unless it has meta key :invariant-level, in which case the form is wrapped using
-   just-in-time."
+  "Returns the form as is, unless it has meta key :invariant-level (and the actual level is
+   greater than 1), in which case the form is wrapped inside read-view-cache so that it
+   will be evaluated only once."
   [form]
-  (if-not (nil? (:invariant-level (meta form)))
+  (if (< 1 (invariant-level-of form))
     (let [key (swap! uidgen inc)]
-      `(read-view-cache ~key  ~form))
+      `(read-view-cache ~key ~form))
     form))                      
 
 (defn invoke-combine
@@ -96,8 +119,15 @@ which are converted into :text DOM nodes."
     (domonad [name parse-name
               attributes (optional match-map)
               body (optional parse-body)]
-       `(element-node ~name ~attributes ~body)))
-
+      (let [invariant-attributes? (is-invariant-map? attributes)
+            invariant-body? (contains? ^body :invariant-level)
+            invariant-element? (and invariant-attributes? invariant-body?)]
+        (if invariant-element?
+          (vary-meta
+            `(element-node ~name ~attributes ~body)
+              assoc :invariant-level (inc (invariant-level-of body)))
+          `(element-node ~name ~attributes ~(cache-invariant-form body))))))
+          
   ; Accept a single form that will act as a renderer, returning a render
   ; result, which will be combined with other render results via the
   ; parse-forms parser.
