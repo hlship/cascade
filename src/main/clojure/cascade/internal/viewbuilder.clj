@@ -14,7 +14,7 @@
 (ns #^{:doc "Form parser for the template DSL"}
   cascade.internal.viewbuilder
   (:use (clojure.contrib monads [pprint :only (pprint)])
-        (cascade dom fail view-cache)
+        (cascade dom fail view-cache logging)
         (cascade.internal utils parser)))
 
 (def uidgen (atom 0))
@@ -83,6 +83,7 @@ which are converted into :text DOM nodes."
   [form]
   (if (< 1 (invariant-level-of form))
     (let [key (swap! uidgen inc)]
+      (debug "Setting up view cache %d as %s" key form)
       `(read-view-cache ~key ~form))
     form))                      
 
@@ -99,9 +100,9 @@ which are converted into :text DOM nodes."
     (if all-invariant?
       (vary-meta `(combine ~@forms) assoc :invariant-level (inc max-invariant))
       `(combine ~@wrapped-forms))))
-    
+        
 (with-monad parser-m
-  (declare parse-embedded-template)
+  (declare parse-embedded-template nested-parse)
 
   (def parse-text
     (domonad [text match-string]
@@ -113,14 +114,14 @@ which are converted into :text DOM nodes."
 
   (def parse-body
     (domonad [body match-vector]
-      (parse-embedded-template body)))
+      (nested-parse body)))
 
   (def parse-element
     (domonad [name parse-name
               attributes (optional match-map)
               body (optional parse-body)]
       (let [invariant-attributes? (is-invariant-map? attributes)
-            invariant-body? (contains? ^body :invariant-level)
+            invariant-body? (or (empty? body) (contains? ^body :invariant-level))
             invariant-element? (and invariant-attributes? invariant-body?)]
         (if invariant-element?
           (vary-meta
@@ -141,10 +142,16 @@ which are converted into :text DOM nodes."
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
       (invoke-combine forms)))
+            
 ) ; with-monad parser-m
+
+(defn nested-parse
+  "Used to parse the body of an element recursively."
+  [forms]
+  (run-parse parse-forms forms "embedded template forms (nested)"))
 
 (defn parse-embedded-template
   "Used as part of the defview or template macros to convert the forms, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
-  (run-parse parse-forms forms "embedded template forms"))
+  (cache-invariant-form (run-parse parse-forms forms "embedded template forms")))

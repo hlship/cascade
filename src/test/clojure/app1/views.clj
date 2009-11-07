@@ -118,6 +118,16 @@
       (javascript env :immediate "MESSAGE = 'ready event did fire.';")
       (javascript env "jQuery('#%s').text(MESSAGE);" "message"))))
 
+(defview dump-cache
+  [env]
+  (page-template env "Dump View Cache"
+    (block [env]
+      :dl [
+        (template-for [[k v] @cascade.view-cache/cache]
+          :dt [ (str k) ]
+          :dd [ (str v) ])
+      ])))
+
 (defview index-view
   {:path ""}
   [env]
@@ -128,4 +138,5 @@
         :li [ (render-link env fail-view "Forced Exception") ]
         :li [ (render-link env show-counter [0] "Simple Actions") ]
         :li [ (render-link env simple-javascript "Simple JavaScript") ]
+        :li [ (render-link env dump-cache "Dump View Cache") ]
       ])))
