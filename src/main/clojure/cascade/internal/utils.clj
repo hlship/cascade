@@ -44,14 +44,6 @@
         ns-path (.. ns-str (replace \. \/) (replace \- \_))]
     (find-classpath-resource (str ns-path "/" path))))
 
-(defn to-str-list
-  "Creates a comma-seperated list from the collection, or returns \"(none\")
-if the collection is null or empty."
-  [coll]
-  (if (empty? coll)
-    "(none)"
-    (str-join ", " coll)))
-
 (defn to-seq
   "Converts the object to a sequence (a vector) unless it is already sequential."
   [obj]
@@ -62,42 +54,11 @@ if the collection is null or empty."
   [obj]
   (instance? IFn obj))
 
-(defn expand-function-list
-  "Expands a configured function list into a sequence of actual functions. The configuration-key will be
-  :chains or :pipelines, to identify where inside @configuration we search for functions. The values
-  can be a keyword or symbol or an array of keywords or symbols."
-  [configuration-key selector]
-  (loop [result []
-         queue (to-seq selector)]
-    (let [current (first queue)
-          remaining (rest queue)]
-      (cond
-        (empty? queue) result
-        (nil? current) (recur result remaining)
-        (sequential? current) (recur result (concat current remaining))
-        (or (symbol? current) (keyword? current))
-          (recur result (cons (find-config [configuration-key current]) remaining))
-        (function? current) (recur (conj result current) remaining)))))
-
 (defn apply-until-non-nil
   "Works through a sequence of functions, apply the argseq to each of them until a function
   returns a non-nil value"
   [functions argseq]
   (first (remove nil? (map #(apply % argseq) functions))))
-
-(defn create-chain
-  "Function factory for building a chain control structure. The parameters passed to the
-  returned function are
-  passed to every step function in the chain.  Step functions are defined via the keys of the
-  :chain key of the global configuration. Each step can be a function (that should match the arity
-  of the overally chain), or can be a keyword or symbol used to identify another
-  step int the chain, or can be a vector of steps. In this way, chains can be easily
-  composed."
-  [selector]
-  (fn [& params]
-    ; TODO: We do this pretty late in case someone's been changing @configuration
-    ; but it might be nice to cache this rather than compute it each time.
-    (apply-until-non-nil (expand-function-list :chains selector) params)))
 
 (defn blank?
   [#^String s]

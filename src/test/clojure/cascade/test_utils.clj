@@ -32,40 +32,6 @@
   (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
     (slurp "src/test/resources/cascade/test_utils/ns.txt"))))
 
-(deftest to-str-list-conversions
-  (is (= (to-str-list nil) "(none)"))
-  (is (= (to-str-list []) "(none)"))
-  (is (= (to-str-list ["fred"]) "fred"))
-  (is (= (to-str-list ["fred" "barney" "wilma"]) "fred, barney, wilma")))
-
-(defn- test-chain
-  [chains selector expected & params]
-  (binding [configuration (atom { :chains chains})]
-    (let [chain (create-chain selector)]
-      (is (= (apply chain params) expected)))))
-
-(defn- always
-  [result]
-  (fn [] result))
-
-(deftest chain-to-function
-  (test-chain { :test (always :goober) } :test :goober))
-
-(deftest indirect-chain
-  (test-chain { :test :indirect, :indirect (always :final) } :test :final))
-
-(deftest nil-in-chain-ignored
-  (test-chain { :test [ nil :indirect], :indirect (always :final) } :test :final))
-
-(deftest sequence-of-functions-in-chain
-  (test-chain { :test [ (always nil) (always :final)]} :test :final))
-
-(deftest chain-with-multiple-params
-  (let [combiner (fn [& args] (str-join ", " args))]
-    (test-chain {:combiner combiner} :combiner
-       "fred, barney"
-       "fred" "barney")))
-
 (deftest test-function?
   (is (= (function? map) true) "a real function")
   (is (= (function? nil) false) "nil is not a function")
