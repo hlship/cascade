@@ -46,15 +46,17 @@
         (require :reload (ns-name n))))))
 
 (defn add-tracked-namespace
-  "Adds a namespace to those that are tracked for reload on change (if not already tracked)."
+  "Adds a namespace to those that are tracked for reload on change (if not already tracked). Returns nil."
   [n]
-  (swap! tracked-namespaces
-    (fn [tracked]
-      (if-not (contains? tracked n)
-        (do
-          (start-tracking n)
-          (conj tracked n))
-        tracked))))
+  (if-not *compile-files*
+    (swap! tracked-namespaces
+      (fn [tracked]
+        (if-not (contains? tracked n)
+          (do
+            (start-tracking n)
+            (conj tracked n))
+          tracked))))
+   nil)
 
 (defn add-function-to-config
   [selector path function]
