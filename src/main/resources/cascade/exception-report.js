@@ -16,7 +16,7 @@
 // details. Note good form: using jQuery for the call, but mapping it to $ for the duration
 // of the function. This helps when jQuery is mixed with libraries like Prototype.
 
-jQuery(document).ready(function($) {
+jQuery(function($) {
 	var visible = this.checked;
 	$('#omitted-toggle').click(function() {
 		$('LI.c-omitted-frame, .c-omitted').toggle(visible);

@@ -60,7 +60,7 @@
           (when-not (empty? onready)
             (import-jquery env)
             (interpose "\n"
-              (concat [ "jQuery(document).ready(function() {" ]
+              (concat [ "jQuery(function() {" ]
                 onready
                 [ "});"])))            
         ]))))
