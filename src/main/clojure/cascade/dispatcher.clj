@@ -46,25 +46,31 @@
         ; The linebreak is to keep some braindead browsers from getting confused.
         :script { :type "text/javascript" :src path } [ linebreak ]))))
 
+(defn inject-script-block
+  [env dom-nodes immediate onready]
+  (extend-dom dom-nodes [:html :body] :bottom
+    (template
+      ; this could be done more efficiently
+      :script {:type "text/javascript"} [
+        (for [line immediate]
+          [line linebreak])
+        (when-not (empty? onready)
+          (import-jquery env)
+          (interpose "\n"
+            (concat [ "jQuery(function() {" ]
+              onready
+              [ "});"])))            
+      ])))
+
 (defn add-script-block-for-initialization
   [env dom-nodes]
   (let [aggregation (-> env :cascade :resource-aggregation)
         immediate (@aggregation :immediate)
         onready (@aggregation :onready)]
-    (extend-dom dom-nodes [:html :body] :bottom
-      (template
-        ; this could be done more efficiently
-        :script {:type "text/javascript"} [
-          (for [line immediate]
-            [line linebreak])
-          (when-not (empty? onready)
-            (import-jquery env)
-            (interpose "\n"
-              (concat [ "jQuery(function() {" ]
-                onready
-                [ "});"])))            
-        ]))))
-        
+    (if (and (empty? immediate) (empty? onready))
+      dom-nodes
+      (inject-script-block env dom-nodes immediate onready))))
+            
 (defn add-links-for-stylesheets
   [env dom-nodes]
     (let [aggregation (-> env :cascade :resource-aggregation)
