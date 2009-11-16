@@ -17,8 +17,6 @@
         (cascade dom fail)
         (cascade.internal utils parser)))
 
-; TODO: Turn this into a multimethod to make it more extensible.
-
 (defn convert-render-result
   [any]
   "Checks the result of invoking a rending function or closure, to ensure that only
@@ -38,14 +36,14 @@ into a single sequence of DOM nodes. Each of the render results should be a DOM 
 or a collection of DOM nodes (or a nested collection of DOM nodes, etc.). Strings are also allowed,
 which are converted into :text DOM nodes."
   [& render-results]
-  (loop [output []
+  (loop [output (transient [])
          queue render-results]
     (let [current (first queue)
           remainder (next queue)]
       (cond
-        (nil? current) (if (empty? remainder) output (recur output remainder))
+        (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
         (sequential? current) (recur output (concat current remainder))
-        :otherwise (recur (conj output (convert-render-result current)) remainder)))))
+        :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
 
 (with-monad parser-m
   (declare parse-embedded-template)
