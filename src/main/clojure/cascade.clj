@@ -108,6 +108,11 @@
        (.sendRedirect response link-path)
        true))
 
+(defn asset-path
+  "Returns the path to a context asset as a string."
+  [env path]
+  (to-asset-path env (get-context-asset path)))
+
 (defn classpath-asset-path
   "Returns the path to the given classpath asset as a string."
   [env asset-path]
