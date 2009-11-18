@@ -100,7 +100,11 @@
   [env view-fn]
   (debug "Rendering view function %s" (qualified-function-name view-fn))
   (let [#^ServletResponse response (-> env :servlet-api :response)
+        ; Invoke the function, getting back a lazy seq of rendered nodes
         dom (view-fn env)
+        ; Force those nodes to render top to bottom. This is only necessary
+        ; since need to force side effects before calling prepare-dom-for-render
+        _ (force-dom dom)
         prepared (prepare-dom-for-render env dom)]
     (debug "Streaming XML response")         
     (with-open [writer (.getWriter response)]

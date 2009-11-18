@@ -248,3 +248,16 @@
          :let [node (first queue)]
          (= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
          true (recur (conj result node) (rest queue)))))
+         
+         
+(defn force-dom
+  "Forces lazy evaluation of all DOM nodes."
+  [dom-nodes]
+  (loop [queue dom-nodes]
+    (when-not (empty? queue)
+      (let [cursor (first queue)
+            remaining (rest queue)]
+        (if (map? cursor)
+          ; Recursive depth-first
+          (recur (concat (cursor :value) remaining))
+          (recur remaining))))))

@@ -79,7 +79,7 @@ which are converted into :text DOM nodes."
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      `(combine ~@forms)))
+      `(lazy-seq (combine ~@forms))))
 ) ; with-monad parser-m
 
 (defn parse-embedded-template
