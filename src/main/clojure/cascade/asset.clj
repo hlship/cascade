@@ -84,22 +84,23 @@
   [type path]
   ((read-config [:asset-resolver type]) path))
 
+(defn construct-asset-path
+  [env folder asset-map]
+  (let [#^HttpServletRequest request (-> env :servlet-api :request)
+        context-path (.getContextPath request)]
+    (format "%s/asset/%s/%s/%s" context-path folder (read-config :application-version) (asset-map :path))))        
+  
 (defmulti to-asset-path
   "Converts an asset map into a URL path that can be used by the client to obtain the contents of the asset."
   #(:type %2))
 
 (defmethod to-asset-path :classpath
   [env asset-map]
-  (let [#^HttpServletRequest request (-> env :servlet-api :request)
-        ;; TODO: Servlet 2.5 defines a ServletContext.getContextPath()
-        context-path (.getContextPath request)]
-        (str context-path "/asset/classpath/" (read-config :application-version) "/" (asset-map :path))))
-
-; TODO: Alias to a asset URL for gzip compression, far future expires header, etc.
+  (construct-asset-path env "classpath" asset-map))
 
 (defmethod to-asset-path :context
   [env asset-map]
-  (str "/" (asset-map :path)))
+  (construct-asset-path env "context" asset-map))
 
 (defn get-mime-type
   "Determine the MIME type of the path."
@@ -110,24 +111,41 @@
       ;; TODO: internal configuration lookup
       "application/octet-stream")))
 
-(defn classpath-asset-dispatcher
-  [env]
+(defn asset-request-dispatcher
+  "Processes a request for an asset. The domain-name is used in exceptions. url-provider is a function passed
+  an asset-path string that returns a URL for the asset, or nil if not found."
+  [env domain-name url-provider]
   (let [#^HttpServletResponse response (-> env :servlet-api :response)
         [_ _ application-version & asset-path-terms] (-> env :cascade :split-path)
         asset-path (s2/join "/" asset-path-terms)
         ; TODO: Should we just ignore bad requests, let the container send a 404?
-        _ (fail-if (nil? application-version) "Invalid classpath asset URL.")
+        _ (fail-if (nil? application-version) "Invalid %s asset URL." domain-name)
         _ (fail-unless (= application-version (read-config :application-version)) "Incorrect application version.")
-        _ (fail-if-blacklisted asset-path)
-        ; TODO Gzip, etc.
-        asset-url (.getResource context-class-loader asset-path)
-        _ (fail-if (nil? asset-url) "Could not locate classpath asset %s." asset-path)
+        asset-url (url-provider asset-path)
+        _ (fail-if (nil? asset-url) "Could not locate %s asset %s." domain-name asset-path)
         mime-type (get-mime-type asset-path)
         output-stream (.getOutputStream (doto response (.setContentType mime-type)))]
+        ; TODO: far-future expires  
         (with-open [input-stream (.openStream asset-url)]
           (copy input-stream output-stream)
           (.flush output-stream)))
           ; If we got this far, we copied the contents (or failed, throwing an exception)
           true)
 
+(defn classpath-asset-dispatcher
+  [env]
+  (asset-request-dispatcher env "classpath" 
+    (fn [asset-path]
+      (fail-if-blacklisted asset-path)
+      (.getResource context-class-loader asset-path))))
+
+(defn context-asset-dispatcher
+  [env]
+  (asset-request-dispatcher env "context"
+    (fn [asset-path]
+      ; TODO: check for WEB-INF
+      (let [#^ServletContext context (-> env :servlet-api :context)]
+        (.getResource context (str "/" asset-path))))))
+        
 (add-function-to-config :dispatchers "asset/classpath" #'classpath-asset-dispatcher)
+(add-function-to-config :dispatchers "asset/context" #'context-asset-dispatcher)

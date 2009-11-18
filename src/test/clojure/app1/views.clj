@@ -118,6 +118,14 @@
       (javascript env :immediate "MESSAGE = 'ready event did fire.';")
       (javascript env "jQuery('#%s').text(MESSAGE);" "message"))))
 
+(defview context-image
+  [env]
+  (page-template env "Local Image"
+    (block [env]
+      :p [ "The Clojure logo:" ]
+      :img { :src (asset-path env "images/clojure-logo.png") :alt "Clojure Logo" }
+    )))
+
 (defview index-view
   {:path ""}
   [env]
@@ -128,4 +136,8 @@
         :li [ (render-link env fail-view "Forced Exception") ]
         :li [ (render-link env show-counter [0] "Simple Actions") ]
         :li [ (render-link env simple-javascript "Simple JavaScript") ]
+        :li [ (render-link env context-image "Context Image") ]
       ])))
+      
+      
+          
