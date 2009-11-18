@@ -16,6 +16,7 @@
   #^{:doc "Asset management"}
   cascade.asset
   (:import
+    (java.net URL URLConnection)
     (javax.servlet ServletContext)
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:require
@@ -29,6 +30,9 @@
 
 (assoc-in-config :asset-blacklist
   [#"\.class$", #"\.clj$"])
+
+(def ten-years-from-now
+  (+ (System/currentTimeMillis) (* 1000 60 60 24 365 10)))
 
 ;; Assets represents files stored either under the web context or stored within the classpath.
 ;; Identifying an asset will eventually incorporate a locale-specific search. Ultimately,
@@ -111,6 +115,20 @@
       ;; TODO: internal configuration lookup
       "application/octet-stream")))
 
+(defn open-output-stream-for-asset
+  "Configures the response in preperation for writing content."
+  [#^HttpServletResponse response #^URL asset-url #^String mime-type]
+  (let [#^URLConnection connection (.openConnection asset-url)
+        last-modified (.getLastModified connection)
+        content-length (.getContentLength connection)]
+    (if-not (zero? content-length)
+      (.setContentLength response content-length))
+    (doto response
+      (.setDateHeader "Last-Modified" last-modified)
+      (.setDateHeader "Expires"  ten-years-from-now)
+      (.setContentType mime-type))
+    (.getOutputStream response)))
+                 
 (defn asset-request-dispatcher
   "Processes a request for an asset. The domain-name is used in exceptions. url-provider is a function passed
   an asset-path string that returns a URL for the asset, or nil if not found."
@@ -123,14 +141,13 @@
         _ (fail-unless (= application-version (read-config :application-version)) "Incorrect application version.")
         asset-url (url-provider asset-path)
         _ (fail-if (nil? asset-url) "Could not locate %s asset %s." domain-name asset-path)
-        mime-type (get-mime-type asset-path)
-        output-stream (.getOutputStream (doto response (.setContentType mime-type)))]
-        ; TODO: far-future expires  
-        (with-open [input-stream (.openStream asset-url)]
-          (copy input-stream output-stream)
-          (.flush output-stream)))
-          ; If we got this far, we copied the contents (or failed, throwing an exception)
-          true)
+        mime-type (get-mime-type asset-path)]
+    (with-open [output-stream (open-output-stream-for-asset response asset-url mime-type)]  
+      (with-open [input-stream (.openStream asset-url)]
+        (copy input-stream output-stream)
+        (.flush output-stream))))
+  ; If we got this far, we copied the contents (or failed, throwing an exception)
+  true)
 
 (defn classpath-asset-dispatcher
   [env]
