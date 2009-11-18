@@ -122,7 +122,7 @@
   (render-view env view-fn))
 
 (defn verify-is-view-fn
-  "A filter that verifies tha the provided function is in fact a view function (by checking
+  "A filter that verifies that the provided function is in fact a view function (by checking
    its meta-data)."
   [delegate env view-fn]
   (if (and view-fn (= (^view-fn :cascade-type) :view))
