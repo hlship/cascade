@@ -53,7 +53,7 @@
                        :value content)
      dom-node-meta-data))
 
-(declare render-xml debug-dom)
+(declare render-xml)
 
 (def char-to-entity-map
   (merge
@@ -145,32 +145,8 @@
   "Renders a seq of DOM nodes representing a complete document (generally the list will include just
   a single root element node, but text and comments and the like may come into play as well)."
   [dom-nodes out]
-  ; TODO: Render out the <?xml version="1.0"?> P.I.?
   (doseq [node dom-nodes]
     (render-node-xml node out)))
-
-(defmulti render-node-debug
-  (fn [node & rest]
-    (node :type)))
-
-(defmethod render-node-debug :text
-  [node]
-  (node :value))
-
-(defmethod render-node-debug :comment
-  [node]
-  [:comment (node :value)])
-
-(defmethod render-node-debug :element
-  [node]
-  (let [content (node :value)]
-    [(node :name) (node :attributes) (if content (debug-dom content))]))
-
-(defn debug-dom
-  "Renders DOM nodes to a format similar to the template DSL. Returns a seq."
-  [dom-nodes]
-  (for [node dom-nodes]
-    (render-node-debug node)))
 
 (defn element?
   "Returns true if the dom node is type :element."
