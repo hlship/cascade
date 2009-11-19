@@ -17,6 +17,7 @@
   (:import
     (javax.servlet.http HttpServletRequest HttpServletResponse))
   (:use
+    (clojure.contrib.json write)
     (cascade asset config dom path-map fail urls logging collection-utils)
     (cascade.internal utils viewbuilder parse-functions)))
 
@@ -168,3 +169,14 @@
     (import-stylesheet env :context path))
   ([env type path]
     (import-path env :stylesheets type path)))
+    
+(defn render-json
+  "Renders JSON content (typically, a map or a seq) as the response. The response
+  content type is set to \"application/json\". Returns true."
+  [env json-value]
+  (let [#^HttpServletResponse response (-> env :servlet-api :response)]
+    (.setContentType response "application/json")
+    (with-open [writer (.getWriter response)]      
+      (binding [*out* writer]
+        (print-json json-value))))
+  true)        

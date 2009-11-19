@@ -190,3 +190,17 @@
     (:test
       (is (= (link {:servlet-api {:request request :response response}} list-accounts-with-loop)
              "*encoded*")))))
+             
+(deftest test-render-json
+  (let [out-writer (CharArrayWriter.)
+        pw (PrintWriter. out-writer)
+        json-object { :mykey [1 2 3] }]
+    (with-mocks [response HttpServletResponse]
+      (:train
+        (.setContentType response "application/json")
+        (expect .getWriter response pw))
+      (:test
+        (let [env { :servlet-api { :response response }}
+              result (render-json env json-object)]
+           (is (= result true) "should return true")
+           (is (= (.toString out-writer) "{\"mykey\":[1,2,3]}")))))))
