@@ -109,7 +109,7 @@
     (debug "Streaming XML response")
     (.setContentType response "text/html")          
     (with-open [writer (.getWriter response)]      
-      (.write out "<?xml version=\"1.0\"?>\n")      
+      (.write writer "<?xml version=\"1.0\"?>\n")      
       (render-xml prepared writer)))
   true)
 
