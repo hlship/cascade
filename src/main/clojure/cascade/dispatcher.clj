@@ -106,8 +106,10 @@
         ; since need to force side effects before calling prepare-dom-for-render
         _ (force-dom dom)
         prepared (prepare-dom-for-render env dom)]
-    (debug "Streaming XML response")         
-    (with-open [writer (.getWriter response)]
+    (debug "Streaming XML response")
+    (.setContentType response "text/html")          
+    (with-open [writer (.getWriter response)]      
+      (.write out "<?xml version=\"1.0\"?>\n")      
       (render-xml prepared writer)))
   true)
 
