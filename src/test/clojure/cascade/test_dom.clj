@@ -29,7 +29,7 @@
     (render-xml dom-nodes out)
     (.toString out)))
 
-(defn render-node
+(defn render-single-node
   "Render a single node as a string."
   [root-node]
   (render-as-string [root-node]))
@@ -47,8 +47,8 @@
                            :script { :src "a.js" }
                            :script { :src "b.js" }))
                      z/root)]
-    (is (= (render-node start-node) "<html><head/><body/></html>"))
-    (is (= (render-node new-node) "<html><head><script src=\"a.js\"/><script src=\"b.js\"/></head><body/></html>"))))
+    (is (= (render-single-node start-node) "<html><head/><body/></html>"))
+    (is (= (render-single-node new-node) "<html><head><script src=\"a.js\"/><script src=\"b.js\"/></head><body/></html>"))))
 
 (deftest test-navigate-dom-path
   (let [root (first (template
@@ -66,7 +66,7 @@
                         ]]))
         dz (dom-zipper root)]
     (are [path rendered-value]
-      (is (= (render-node (z/node (navigate-dom-path dz path))) rendered-value))
+      (is (= (render-single-node (z/node (navigate-dom-path dz path))) rendered-value))
       [:html :body :p] "<p>Cascade!</p>"
       [:html :head :title] "<title>For Navigation Test</title>")
       (is (nil? (navigate-dom-path dz [:not-html])))

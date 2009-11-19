@@ -36,11 +36,10 @@
 ; for production).
 
 (defstruct dom-node
-  :type ; :element, :attribute, :text, :raw
-  ; TODO: :ns-prefix
+  :type ; :element, :text
   :name ; element tag (for :element)
   :attributes ; seq of attribute/value pairs (for :element)
-  :value) ; attribute value or literal text (text must be encoded), nested nodes for :element)
+  :value) ; literal text (text must be encoded), nested nodes for :element)
 
 (def dom-node-meta-data {:cascade-dom-node true})
 
@@ -53,7 +52,7 @@
                        :value content)
      dom-node-meta-data))
 
-(declare render-xml)
+(declare render-nodes)
 
 (def char-to-entity-map
   (merge
@@ -111,42 +110,54 @@
   (doseq [#^String s strings]
     (.write out s)))
 
-(defmulti render-node-xml
-  (fn [node & rest]
+(defmulti render-node
+  "Renders a single DOM node as a stream of markup characters, which varies based on the :type of the DOM node. 
+  The strategy map holds a number of functions that are used to differentiate XML vs. HTML rendering."
+  (fn [node strategy out]
     (node :type)))
 
-(defmethod render-node-xml :text
-  [node out]
+(defmethod render-node :text
+  [node strategy out]
   (write out (node :value)))
 
-(defmethod render-node-xml :comment
-  [comment-node out]
+(defmethod render-node :comment
+  [comment-node stategy out]
   (write out "<!--" (comment-node :value) "-->"))
 
-(defmethod render-node-xml :element
-  [element-node out]
+(defmethod render-node :element
+  [element-node strategy out]
   (let [element-name (name (element-node :name))
+        attr-quote (strategy :attribute-quote)
         content (element-node :value)]
     (write out "<" element-name)
     ; Write out normal attributes
     (doseq [[attr-name attr-value] (element-node :attributes)]
-        ; TODO: Escape embedded quotes in the value.
         (if-not (nil? attr-value)
-          (write out " " (name attr-name) "=\"" (to-attr-string attr-value) "\"")))
-    ; TODO: ugly gotchas about rendering HTML: can't always close an empty tag (i.e., <script>), etc.
+          (write out 
+            " " (name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
+          
     (if (empty? content)
-      (write out "/>")
+      ((strategy :close-empty-element-renderer) element-name out)
       (do
         (write out ">")
-        (render-xml content out)
+        (render-nodes content strategy out)
         (write out "</" element-name ">")))))
+
+(defn render-nodes
+  [dom-nodes strategy out]
+  (doseq [node dom-nodes]
+    (render-node node strategy out)))
+
+(def xml-strategy {
+  :attribute-quote "\""
+  :close-empty-element-renderer (fn [element-name out] (write out "/>"))
+  })
 
 (defn render-xml
   "Renders a seq of DOM nodes representing a complete document (generally the list will include just
   a single root element node, but text and comments and the like may come into play as well)."
   [dom-nodes out]
-  (doseq [node dom-nodes]
-    (render-node-xml node out)))
+  (render-nodes dom-nodes xml-strategy out))
 
 (defn element?
   "Returns true if the dom node is type :element."
