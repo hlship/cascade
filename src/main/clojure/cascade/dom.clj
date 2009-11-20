@@ -81,12 +81,17 @@
    (let [out (s2/map-str #(char-to-entity %) s)]
      (if (= s out) s out)))
 
+(defn raw-node
+  "Wraps a string as a :text DOM node, but does not do any filtering of the value."
+  [s]
+  (with-meta
+    (struct-map dom-node :type :text :value s)
+    dom-node-meta-data))
+
 (defn text-node
   "Creates a text node from the string. The string is encoded when the node is constructed."
   [text]
-  (with-meta
-    (struct-map dom-node :type :text :value (encode-string text))
-    dom-node-meta-data))
+  (raw-node (encode-string text)))
 
 (defmulti to-attr-string
   "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."

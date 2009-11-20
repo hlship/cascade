@@ -50,7 +50,7 @@ which are converted into :text DOM nodes."
 
   (def parse-text
     (domonad [text match-string]
-      `(text-node ~text)))
+      `(raw-node ~(encode-string text))))
 
   (def parse-name
     ; An attribute or element name is either a keyword or a form that yields a keyword.
