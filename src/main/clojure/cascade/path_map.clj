@@ -76,12 +76,11 @@
 
 (defn add-mapped-function
   "Maps a path to a view or action function. The path string is relative to the context root and is extracted from the
-  :path meta-data key. Does nothing if the extracted path is nil."
-  [function]
-  (let [path (^function :path)]
+  :path meta-data key. The namespace containing the mapped function is tracked for changes."
+  [type function]
+  (let [path (or (^function :path) (str type "/" (qualified-function-name function)))]
     (add-tracked-namespace (^function :ns))
-    (if path
-      (add-function-to-config :mapped-functions path function))))
+    (add-function-to-config :mapped-functions path function)))
 
 (defn path-for-function*
   "Given the meta data for a function, computes the path (as a string, relative to the context root)

@@ -174,31 +174,6 @@
 
 (decorate handle-action-request verify-is-action-fn)     
 
-(defn dispatch-named-function-to-pipeline
-  "Expects the namespace name and the function name to be the 2nd and 3rd terms of the split path, uses this
-   to identify a function, which is passed (with the env) to the request-handler function."
-  [env request-handler]
-  (let [split-path (-> env :cascade :split-path)
-        [_ ns-name fn-name] split-path
-        fn-namespace (and ns-name (find-ns (symbol ns-name)))
-        named-function (and fn-namespace fn-name (ns-resolve fn-namespace (symbol fn-name)))
-        new-env (assoc-in env [:cascade :extra-path] (drop 3 split-path))]
-    (request-handler new-env named-function)))
-
-(defn named-view-dispatcher 
-  "Mapped to /view, this attempts to identify a namespace and a view function
-  which is then invoked to render a DOM which is then streamed to the client."
-  [env]
-  (dispatch-named-function-to-pipeline env handle-view-request))
-  
-(defn named-action-dispatcher
-  "Mapped to /action, attempts to identify a namespace and an action function,
-  which is then invoked. The action may render a response directly (and return true),
-  or it may return a rendering hint. Rendering hints are view functions (to render that view)
-  or other values as yet unspecified."
-  [env]
-  (dispatch-named-function-to-pipeline env handle-action-request))
-
 (defn invoke-mapped-function
   "Called from path-dispatcher to try one of a series of functions that may match the request path."
   [env request-path [path function]]
@@ -210,17 +185,17 @@
       (qualified-function-name function) type)    
     (handler-fn new-env function)))
         
-(defn path-dispatcher
-  "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration."
+(defn mapped-function-dispatcher
+  "Dispatches to a matching view or action function by looking for a match against the :mapped-functions configuration.
+  The extra level of mapping allows for the [:cascade :extra-path] env key to be set before invoking
+  the view or action function."
   [env]
   (let [split-path (-> env :cascade :split-path)
         matches (find-matching-functions :mapped-functions split-path)]
         ;; Invoke each matching function until one returns true
       (first (filter true? (map #(invoke-mapped-function env split-path %) matches)))))
         
-(add-function-to-config :dispatchers "view" #'named-view-dispatcher)
-(add-function-to-config :dispatchers "action" #'named-action-dispatcher)
-(add-function-to-config :dispatchers "" #'path-dispatcher)
+(add-function-to-config :dispatchers "" #'mapped-function-dispatcher)
 
 (assoc-in-config [:type-to-handler :view] #'render-view)    
 (assoc-in-config [:type-to-handler :action] #'default-handle-action)    

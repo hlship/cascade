@@ -34,10 +34,10 @@
   (let [[fn-name fn-params fn-bindings template-forms] (parse-function-def forms)
         env-symbol (first fn-params)
         full-meta (merge ^fn-name {:cascade-type :view})]
-    `(add-mapped-function (defn ~fn-name
-                                ~full-meta
-                                ~fn-params
-                                (parse-url ~env-symbol ~fn-bindings (template ~@template-forms))))))
+    `(add-mapped-function
+      "view"
+      (defn ~fn-name ~full-meta ~fn-params
+        (parse-url ~env-symbol ~fn-bindings (template ~@template-forms))))))
 
 (defmacro defaction
   "Defines a Cascade action function.  An action function may have a doc string and meta data
@@ -46,10 +46,10 @@
   (let [[fn-name fn-params fn-bindings forms] (parse-function-def forms)
         env-symbol (first fn-params)
         full-meta (merge ^fn-name {:cascade-type :action})]
-    `(add-mapped-function (defn ~fn-name
-                                ~full-meta
-                                ~fn-params
-                                (parse-url ~env-symbol ~fn-bindings ~@forms)))))
+    `(add-mapped-function 
+      "action"    
+      (defn ~fn-name ~full-meta ~fn-params
+        (parse-url ~env-symbol ~fn-bindings ~@forms)))))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
