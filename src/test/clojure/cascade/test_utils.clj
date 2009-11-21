@@ -60,3 +60,15 @@
 (deftest lcond-requires-even-clauses
   (is (thrown-with-msg? RuntimeException #".* lcond requires an even number of forms"
     (mexpand-all `(lcond (= 1 2) :b :c)))))
+    
+(deftest test-boolean?
+  (are [val expected]
+    (is (= (boolean? val) expected))
+    true true
+    Boolean/TRUE true
+    false true
+    Boolean/FALSE true
+    nil false
+    "whatever" false
+    0 false
+    1 false))    
