@@ -31,8 +31,10 @@
     (zipmap extracted-keys extracted-values)))
     
 (defn conj-if-missing
-  "Conjoins x into the collection if not already present."
+  "Conjoins x into the collection if not already present. If the collection is nil, then a vector
+  is created."
   [coll x]
-  (if (includes? coll x)
-    coll
-    (conj coll x)))    
+  (cond
+    (nil? coll) [x]
+    (includes? coll x) coll
+    true (conj coll x)))

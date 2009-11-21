@@ -117,9 +117,9 @@
   "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
    the moment, this simply sets up for resource aggegation and invokes render-view-as-xml."
   [env view-fn]
-  (let [aggregation (atom { :libraries [] :immediate [] :onready [] :stylesheets [] })
+  (let [aggregation (atom { })
         new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
-    ; TODO: Eventually we may have a render as HTML pipeline based on view function meta-data.
+    ; TODO: Eventuallyÿ we may have a render as HTML pipeline based on view function meta-data.
     (render-view-as-xml new-env view-fn)))
 
 (defn handle-view-request

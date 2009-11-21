@@ -29,4 +29,7 @@
 (deftest test-conj-if-missing
   (let [coll [:foo :bar]]
     (is (identical? (conj-if-missing coll :foo) coll))
-    (is (= (conj-if-missing coll :baz) [:foo :bar :baz]))))      
+    (is (= (conj-if-missing coll :baz) [:foo :bar :baz]))))
+    
+(deftest conj-if-missing-creates-vector
+  (is (= (conj-if-missing nil :foo) [:foo])))          
