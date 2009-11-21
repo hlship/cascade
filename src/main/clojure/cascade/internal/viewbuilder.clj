@@ -19,13 +19,13 @@
 
 (defn convert-render-result
   [any]
-  "Checks the result of invoking a rending function or closure, to ensure that only
+  "Checks the result of invoking a rendering function (or evaluating a symbol), to ensure that only
    acceptible values are returned."
   (cond
     ; A map is assumed to be a DOM node
     (map? any) (if (:cascade-dom-node ^any) any (fail "Not a DOM node: %s" (ppstring any)))
     (string? any) (text-node any)
-    (number? any) (text-node (str any))
+    (number? any) (raw-node (str any))
     true (throw (RuntimeException.
       (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."
     (pr-str any))))))
@@ -54,7 +54,6 @@ which are converted into :text DOM nodes."
 
   (def parse-name
     ; An attribute or element name is either a keyword or a form that yields a keyword.
-    ; TODO: support for qualified names ([:prefix :name]).
     (match-first match-keyword))
 
   (def parse-body
@@ -69,7 +68,7 @@ which are converted into :text DOM nodes."
 
   ; Accept a single form that will act as a renderer, returning a render
   ; result, which will be combined with other render results via the
-  ; parse-forms parser.
+  ; parse-forms parser. This form may be a symbol or a list (a function call).
   (def parse-form
        (domonad [form match-form]
          form))
@@ -79,6 +78,12 @@ which are converted into :text DOM nodes."
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
+      ; We really want to evaluate the forms top to bottom. Without the lazy sequence,
+      ; evaluation would be bottom to top. It would not matter, except for the 
+      ; issue of JavaScript library and stylesheet injection, which implies as specific
+      ; ordering. Perhaps there's a solution related to monads, as a way of dealing with
+      ; the ordering issues without the expense of lazy evaluation (and forcing the entire
+      ; DOM tree to be realized).
       `(lazy-seq (combine ~@forms))))
 ) ; with-monad parser-m
 
