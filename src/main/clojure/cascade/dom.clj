@@ -188,7 +188,7 @@
 (defn element?
   "Returns true if the dom node is type :element."
   [node]
-  (= :element (node :type)))
+  (= :element (:type node)))
 
 (defn dom-zipper
   [root-node]
@@ -266,11 +266,7 @@
 (defn force-dom
   "Forces lazy evaluation of all DOM nodes."
   [dom-nodes]
-  (loop [queue dom-nodes]
-    (when-not (empty? queue)
-      (let [cursor (first queue)
-            remaining (rest queue)]
-        (if (map? cursor)
-          ; Recursive depth-first
-          (recur (concat (cursor :value) remaining))
-          (recur remaining))))))
+  (doseq [top dom-nodes
+          node (tree-seq element? :value  top)])
+  nil)  
+    
