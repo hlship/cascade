@@ -18,7 +18,7 @@
   (:import (javax.servlet ServletResponse))
   (:use 
     cascade
-    (cascade asset config dom logging path-map pipeline fail func-utils)
+    (cascade asset config dom logging path-map pipeline fail func-utils utils)
     (cascade.internal utils)))
 
 (defn prepare-dom-for-render
@@ -103,7 +103,7 @@
         ; Invoke the function, getting back a lazy seq of rendered nodes
         dom (view-fn env)
         ; Force those nodes to render top to bottom. This is only necessary
-        ; since need to force side effects before calling prepare-dom-for-render
+        ; since we need to force side effects before calling prepare-dom-for-render
         _ (force-dom dom)
         prepared (prepare-dom-for-render env dom)]
     (debug "Streaming XML response")
@@ -139,13 +139,16 @@
 
 (defn default-handle-action
   "Default dispatcher to an action function, responsible for passing the env to the
-   function, and for interpreting the return value."
+   function, and for interpreting the return value. Actions may return a boolean: true
+   means that the action already provided a response, nil or false indicates that the servlet
+   container should provide a default response. Actions may also return a function, which
+   must be a view function, which will be rendered. Other return values are an error."
   [env action-fn]
   (debug "Invoking action function %s" (qualified-function-name action-fn))
   (let [result (action-fn env)]
-    (cond
-      ;;  TODO: This should be an multimethod for extensibility
-      (true? result) true
+    (cond      
+      (boolean? result) result
+      (nil? result) false
       (function? result) (render-view env result)
       :otherwise (fail "Unexpected response value %s from %s." (ppstring result) (qualified-function-name action-fn)))))
   
