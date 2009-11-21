@@ -60,11 +60,14 @@
 (defn handle-request-exception
   "Prints the exception (including stack trace) to the console then renders the exception-report view."
   [env exception]
-  ;; TODO: A try..catch here in case just reporting the exception fails!
   (debug "Request exception: %s" exception)
   (let [#^Throwable root (root-cause exception)]
     (.printStackTrace root))
-  (render-view (assoc-in env [:cascade :exception] exception) #'exception-report))
+  (try
+    (render-view (assoc-in env [:cascade :exception] exception) #'exception-report)
+    (catch Exception e
+      (error "Unable to render exception report view: %s" e)
+      (.printStackTrace e))))    
 
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,

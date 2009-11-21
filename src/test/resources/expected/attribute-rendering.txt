@@ -1,2 +1,2 @@
 <p id="outer"><em id="frotz">Nested Text</em>
-<hr/>(c) 2009 HLS</p>
+<hr>(c) 2009 HLS</p>

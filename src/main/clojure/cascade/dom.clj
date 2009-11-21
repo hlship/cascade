@@ -162,8 +162,29 @@
   "Renders a seq of DOM nodes representing a complete document (generally the list will include just
   a single root element node, but text and comments and the like may come into play as well)."
   [dom-nodes out]
+  (write out "<?xml version=\"1.0\"?>\n")
   (render-nodes dom-nodes xml-strategy out))
 
+(def html-must-close-elements #{"script"})
+
+(defn html-empty-element-renderer
+  [element-name out]
+  (if (contains? html-must-close-elements element-name)
+    (write out "></" element-name))
+  (write out ">"))
+
+(def html-strategy {
+  :attribute-quote "\""
+  :close-empty-element-renderer #'html-empty-element-renderer
+  })
+
+(defn render-html
+  "Renders a seq of DOM nodes representing a complete document (as with render-xml) but with HTML
+  output semantics: attributes are still quoted, but tags may not be balanced (the end tag
+  may be ommitted if the element has no content)."
+  [dom-nodes out]
+  (render-nodes dom-nodes html-strategy out))  
+  
 (defn element?
   "Returns true if the dom node is type :element."
   [node]

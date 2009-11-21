@@ -26,7 +26,7 @@
 (defn render-as-string
   [dom-nodes]
   (let [out (StringWriter.)]
-    (render-xml dom-nodes out)
+    (render-html dom-nodes out)
     (.toString out)))
 
 (defn render-single-node
@@ -39,7 +39,7 @@
   (reduce z/append-child loc children))
 
 (deftest dom-zipping
-  (let [start-node (first (template :html [ :head :body ]))
+  (let [start-node (first (template :html [ :head [ "head text" ] :body [ "body text" ] ]))
         new-node (-> (dom-zipper start-node)
                      z/down
                      (zip-append-children
@@ -47,8 +47,8 @@
                            :script { :src "a.js" }
                            :script { :src "b.js" }))
                      z/root)]
-    (is (= (render-single-node start-node) "<html><head/><body/></html>"))
-    (is (= (render-single-node new-node) "<html><head><script src=\"a.js\"/><script src=\"b.js\"/></head><body/></html>"))))
+    (is (= (render-single-node start-node) "<html><head>head text</head><body>body text</body></html>"))
+    (is (= (render-single-node new-node) "<html><head>head text<script src=\"a.js\"></script><script src=\"b.js\"></script></head><body>body text</body></html>"))))
 
 (deftest test-navigate-dom-path
   (let [root (first (template
@@ -75,14 +75,14 @@
 (deftest test-extend-dom
     ; to simplify tests, not using attributes
     (let [new-nodes (template :script [ "a.js" ] :script [ "b.js" ])
-          dom-nodes (template :html [ :head [ :script [ "x.js" ] :meta  [ "via cascade" ]] :body [:p "Cascade!" ]])]
+          dom-nodes (template :html [ :head [ :script [ "x.js" ] :meta  [ "via cascade" ]] :body [:p ["Cascade!" ]]])]
       (are [path position expected-text]
         (is (= (render-as-string (extend-dom dom-nodes path position new-nodes)) expected-text))
-        [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p/>Cascade!</body></html>"
-        [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p/>Cascade!</body></html>"
-        [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p/>Cascade!</body></html>"
-        [:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p/>Cascade!</body></html>"
-        [:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p/>Cascade!</body></html>")))
+        [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+        [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+        [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+        [:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
+        [:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
 
 (deftest test-encode-string
   (are [input output]

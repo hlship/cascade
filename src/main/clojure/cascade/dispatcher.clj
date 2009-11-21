@@ -43,8 +43,7 @@
     (extend-dom dom-nodes [:html :head] :top
       (template-for [asset-map libraries
                      :let [path (to-asset-path env asset-map)]]
-        ; The linebreak is to keep some braindead browsers from getting confused.
-        :script { :type "text/javascript" :src path } [ linebreak ]))))
+        :script { :type "text/javascript" :src path }))))
 
 (defn inject-script-block
   [env dom-nodes immediate onready]
@@ -95,9 +94,8 @@
   (fn [delegate env dom-nodes]
     (delegate env (add-links-for-stylesheets env dom-nodes))))      
 
-(defn render-view-as-xml
-  "Renders the provided view function as an XML stream. Returns true."
-  [env view-fn]
+(defn do-render
+  [env view-fn markup-type content-type markup-renderer-fn]
   (debug "Rendering view function %s" (qualified-function-name view-fn))
   (let [#^ServletResponse response (-> env :servlet-api :response)
         ; Invoke the function, getting back a lazy seq of rendered nodes
@@ -106,21 +104,33 @@
         ; since we need to force side effects before calling prepare-dom-for-render
         _ (force-dom dom)
         prepared (prepare-dom-for-render env dom)]
-    (debug "Streaming XML response")
-    (.setContentType response "text/html")          
+    (debug "Streaming %s response" markup-type)
+    (.setContentType response content-type)          
     (with-open [writer (.getWriter response)]      
-      (.write writer "<?xml version=\"1.0\"?>\n")      
-      (render-xml prepared writer)))
+      (markup-renderer-fn prepared writer)))
   true)
+  
+(defn render-view-as-xml
+  "Renders the provided view function as an XML stream. Returns true."
+  [env view-fn]
+  (do-render env view-fn "XML" "text/html" render-xml))
+  
+(defn render-view-as-html
+  "Renders the provided view function as an HTML markup stream. Returns true."
+  [env view-fn]
+  (do-render env view-fn "HTML" "text/html" render-html))
+
+(assoc-in-config [:view-renderer :html] #'render-view-as-html)
+(assoc-in-config [:view-renderer :xml] #'render-view-as-xml)
 
 (defn render-view
-  "Renders a view; in the future this will use meta-data to determine the correct way to do this, for 
-   the moment, this simply sets up for resource aggegation and invokes render-view-as-xml."
+  "Renders a views a view. The function's :view-renderer meta key is used to select
+  the style of rendering. This should be either :html or :xml and defaults to :html."
   [env view-fn]
-  (let [aggregation (atom { })
-        new-env (assoc-in env [:cascade :resource-aggregation] aggregation)]
-    ; TODO: Eventuallyÿ we may have a render as HTML pipeline based on view function meta-data.
-    (render-view-as-xml new-env view-fn)))
+  (let [render-type (or (^view-fn :view-renderer) :html)
+        view-renderer (read-config [:view-renderer render-type])
+        new-env (assoc-in env [:cascade :resource-aggregation] (atom {}))]
+    (view-renderer new-env view-fn)))
 
 (defn handle-view-request
   "A pipeline that calls render-view."  

@@ -26,7 +26,7 @@
 (defn render
   [dom]
   (let [writer (CharArrayWriter.)]
-    (render-xml dom writer)
+    (render-html dom writer)
     (.toString writer)))
 
 (defn minimize-ws [string]
@@ -34,7 +34,7 @@
 
 (defn render-test
   [view-fn name env]
-  (let [input-path (str "expected/" name ".xml")
+  (let [input-path (str "expected/" name ".txt")
         expected (slurp* (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
         dom (view-fn env)
