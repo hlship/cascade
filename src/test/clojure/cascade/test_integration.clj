@@ -68,8 +68,52 @@
   (.click selenium (str "link=" label))
   (wait-for-page-to-load))
 
+(defn is-title
+  [expected]
+  (is (= (.getTitle selenium) expected)))
+  
+(defn is-text
+  [locator expected]
+  (is (= (.getText selenium locator) expected)))
+
 (deftest test-index-page
   (open)
-  (is (= (.getTitle selenium) "Test Application"))
+  (is-title "Test Application")
   (click-link "Simple Output")
-  (is (= (.getTitle selenium) "It works!")))
+  (is-title "It works!")
+  (click-link "index")
+  (is-title "Test Application"))
+  
+(deftest simple-actions
+  (open)
+  (click-link "Simple Actions")
+  (is-title "Current Count")
+  (is-text "current" "0")
+  (click-link "here to increment")
+  (is-text "current" "1")
+  (click-link "here to decrement")
+  (is-text "current" "0")
+  (click-link "here to reset")
+  (is-text "current" "1"))
+  
+(deftest simple-javascript
+  (open)
+  (click-link "Simple JavaScript")
+  (is-text "message" "ready event did fire."))
+  
+(deftest context-image
+  (open)
+  (click-link "Context Image")
+  (is-title "Local Image")
+  (let [path (.getAttribute selenium "//img[1]/@src")]
+    ; TODO: Read content directly and compare to on-disk.
+    (is (.endsWith path "/images/clojure-logo.png"))))
+            
+(deftest exception-report
+  (open)
+  (click-link "Forced Exception")
+  (is-title "An unexpected exception has occurred.")
+  (.isTextPresent selenium "Divide by zero")
+  (.isTextPresent selenium "java.lang.ArithmeticException"))
+  
+              
