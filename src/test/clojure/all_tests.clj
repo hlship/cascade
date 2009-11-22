@@ -18,9 +18,13 @@
 
 (set! *warn-on-reflection* true)
 
-(def spaces (map #(symbol (str "cascade.test-" %)) (sort [
-  "asset" "utils" "config" "cascade" "change-tracker" "dom" "collection-utils"
-  "parse-functions" "path-map" "pipeline" "urls" "viewbuilder"])))
+(def spaces (map #(symbol (str "cascade.test-" %))
+  (conj
+    ; These are sorted alphabetically
+     (vec (sort ["asset" "utils" "config" "cascade" "change-tracker" "dom" "collection-utils"
+                 "parse-functions" "path-map" "pipeline" "urls" "viewbuilder"]))
+    ; These go at the end in specified order                 
+    "integration")))
 
 (println "Loading code ...")
 
@@ -28,6 +32,7 @@
 
 (println "Executing tests ...")
 
-(time (apply run-tests (map find-ns spaces)))
+(time
+  (apply run-tests (map find-ns spaces)))
 
 (shutdown-agents)

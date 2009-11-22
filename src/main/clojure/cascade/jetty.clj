@@ -22,13 +22,9 @@
     (org.eclipse.jetty.server Server)
     (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
 
-(defn run-jetty
-  "Starts an instance of the Jetty Server running.
-  webapp defines the folder containing ordinary static resources (the docroot).
-  Returns the new Jetty Server instance. The instance is started with session support, but
-  without security support. No web.xml is necessary, a
-  cascade.filter will automatically be installed. Any provided namespace-symbols will be
-  loaded at filter startup (this is to specify namespaces containing views and actions)."
+(defn start-jetty-server
+  "Like run-jetty, but does not join the started server; this is used as part of
+   integration testing a Cascade application. Returns the started Jetty Server instance."
   [#^String webapp port & namespaces]
   (let [server (Server. port)
         context (ServletContextHandler. server "/" true false)
@@ -40,4 +36,16 @@
       ; filter around!
       (.addServlet DefaultServlet "/*"))
     (.setInitParameter (.addFilter context cascade.filter "/*" FilterMapping/DEFAULT) "cascade.namespaces" namespace-list)
-    (doto server (.setHandler context) .start .join)))
+    (doto server (.setHandler context) .start)))  
+
+(defn run-jetty
+  "Starts an instance of the Jetty Server running.
+  webapp defines the folder containing ordinary static resources (the docroot).
+  Returns the new Jetty Server instance. The instance is started with session support, but
+  without security support. No web.xml is necessary, a
+  cascade.filter will automatically be installed. Any provided namespace-symbols will be
+  loaded at filter startup (this is to specify namespaces containing views and actions)."
+  [#^String webapp port & namespaces]
+  (let [server (apply start-jetty-server webapp port namespaces)]
+    (.join server)
+    server)) 
