@@ -61,7 +61,6 @@
 (defn add-function-to-config
   [selector path function]
   (let [key (split-path path)]
-    ; TODO: check for conflict on key
     (assoc-in-config [selector key] function)))
 
 (defn find-matching-functions

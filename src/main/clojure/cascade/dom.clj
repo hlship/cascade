@@ -262,11 +262,5 @@
          (= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
          true (recur (conj result node) (rest queue)))))
          
-         
-(defn force-dom
-  "Forces lazy evaluation of all DOM nodes."
-  [dom-nodes]
-  (doseq [top dom-nodes
-          node (tree-seq element? :value  top)])
-  nil)  
+        
     

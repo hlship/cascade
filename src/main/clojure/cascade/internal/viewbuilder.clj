@@ -50,6 +50,7 @@ which are converted into :text DOM nodes."
 
   (def parse-text
     (domonad [text match-string]
+      ; The encode-string occurs just once, at macro expansion time
       `(raw-node ~(encode-string text))))
 
   (def parse-name
@@ -84,7 +85,7 @@ which are converted into :text DOM nodes."
       ; ordering. Perhaps there's a solution related to monads, as a way of dealing with
       ; the ordering issues without the expense of lazy evaluation (and forcing the entire
       ; DOM tree to be realized).
-      `(lazy-seq (combine ~@forms))))
+      `(combine ~@forms)))
 ) ; with-monad parser-m
 
 (defn parse-embedded-template
