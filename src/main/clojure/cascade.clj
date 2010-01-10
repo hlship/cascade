@@ -33,7 +33,7 @@
   [& forms]
   (let [[fn-name fn-params fn-bindings template-forms] (parse-function-def forms)
         env-symbol (first fn-params)
-        full-meta (merge ^fn-name {:cascade-type :view})]
+        full-meta (merge (meta fn-name) {:cascade-type :view})]
     `(add-mapped-function
       "view"
       (defn ~fn-name ~full-meta ~fn-params
@@ -45,7 +45,7 @@
   [& forms]
   (let [[fn-name fn-params fn-bindings forms] (parse-function-def forms)
         env-symbol (first fn-params)
-        full-meta (merge ^fn-name {:cascade-type :action})]
+        full-meta (merge (meta fn-name) {:cascade-type :action})]
     `(add-mapped-function 
       "action"    
       (defn ~fn-name ~full-meta ~fn-params

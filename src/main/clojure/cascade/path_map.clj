@@ -77,7 +77,7 @@
   "Maps a path to a view or action function. The path string is relative to the context root and is extracted from the
   :path meta-data key. The namespace containing the mapped function is tracked for changes."
   [type function]
-  (let [path (or (^function :path) (str type "/" (qualified-function-name function)))]
+  (let [path (or ((meta function) :path) (str type "/" (qualified-function-name function)))]
     (add-tracked-namespace (^function :ns))
     (add-function-to-config :mapped-functions path function)))
 

@@ -34,7 +34,7 @@
       b nil
       p '[a b]
       forms '(c))
-    (is (= (^n :doc) "Test"))))
+    (is (= ((meta n) :doc) "Test"))))
 
 (deftest meta-data-applied-to-symbol
   (let [[n p b forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
@@ -45,7 +45,7 @@
       b nil
       forms '(:gnip :gnop))
     (are [k v]
-      (= (^n k) v)
+      (= ((meta n) k) v)
       :doc "Next"
       :key :value)))
 

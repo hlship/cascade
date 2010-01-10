@@ -23,7 +23,7 @@
    acceptible values are returned."
   (cond
     ; A map is assumed to be a DOM node
-    (map? any) (if (:cascade-dom-node ^any) any (fail "Not a DOM node: %s" (ppstring any)))
+    (map? any) (if (:cascade-dom-node (meta any)) any (fail "Not a DOM node: %s" (ppstring any)))
     (string? any) (text-node any)
     (number? any) (raw-node (str any))
     true (throw (RuntimeException.
@@ -79,12 +79,12 @@ which are converted into :text DOM nodes."
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      ; We really want to evaluate the forms top to bottom. Without the lazy sequence,
-      ; evaluation would be bottom to top. It would not matter, except for the 
-      ; issue of JavaScript library and stylesheet injection, which implies as specific
-      ; ordering. Perhaps there's a solution related to monads, as a way of dealing with
-      ; the ordering issues without the expense of lazy evaluation (and forcing the entire
-      ; DOM tree to be realized).
+      ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
+      ; (because combine is not lazy). 
+      ; This may be be relevent in terms of ordering of CSS stylesheets & JavaScript libraries,
+      ; since that information is "collected on the side" (in an atom) and therefore not
+      ; purely functional. Perhaps there's a monadic approach that will allow the construction
+      ; of the DOM tree and the collection of CSS/JS data to occur in a stricly functional way?
       `(combine ~@forms)))
 ) ; with-monad parser-m
 

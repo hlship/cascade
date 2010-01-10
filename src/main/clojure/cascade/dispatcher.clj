@@ -124,7 +124,7 @@
   "Renders a views a view. The function's :view-renderer meta key is used to select
   the style of rendering. This should be either :html or :xml and defaults to :html."
   [env view-fn]
-  (let [render-type (or (^view-fn :view-renderer) :html)
+  (let [render-type (or ((meta view-fn) :view-renderer) :html)
         view-renderer (read-config [:view-renderer render-type])
         new-env (assoc-in env [:cascade :resource-aggregation] (atom {}))]
     (view-renderer new-env view-fn)))
@@ -138,7 +138,7 @@
   "A filter that verifies that the provided function is in fact a view function (by checking
    its meta-data)."
   [delegate env view-fn]
-  (if (and view-fn (= (^view-fn :cascade-type) :view))
+  (if (and view-fn (= ((meta view-fn) :cascade-type) :view))
     (delegate env view-fn)
     false))
        
@@ -165,7 +165,7 @@
 
 (defn verify-is-action-fn
   [delegate env action-fn]
-  (if (and action-fn (= (^action-fn :cascade-type) :action))
+  (if (and action-fn (= ((meta action-fn) :cascade-type) :action))
     (delegate env action-fn)
     false))    
 

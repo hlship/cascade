@@ -26,7 +26,7 @@
      bindings (optional match-vector)
      fn-forms (one-or-more any-form)]
     (let [doc-meta (and doc-string {:doc doc-string})
-          full-meta (merge ^fn-name fn-meta-data doc-meta)
+          full-meta (merge (meta fn-name) fn-meta-data doc-meta)
           symbol-with-meta (with-meta fn-name full-meta)]
       [symbol-with-meta parameters bindings fn-forms])))
 
