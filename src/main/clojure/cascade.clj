@@ -58,9 +58,9 @@
     `(fn ~fn-params (template ~@template-forms)))
 
 (defmacro template-for
-  "Executes a doseq on the bindings, with the body evaluated as an implicit template."
+  "Executes a for list comprehension on the bindings, with the template forms evaluated as an implicit template."
   [bindings & template-forms]
-  `(doseq ~bindings (template ~@template-forms)))
+  `(combine (for ~bindings (template ~@template-forms))))
 
 (def #^{:doc "A DOM text node for a line break."}
   linebreak
