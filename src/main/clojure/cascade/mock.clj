@@ -42,12 +42,12 @@
         mock-inits (mapcat (fn [[mock-name mock-class]] (mock-init control mock-name mock-class)) mock-pairs)
         mapped-forms (list-to-map-of-seqs [:binding :train :test] forms)]
         `(let [~control (EasyMock/createControl)
-              ~@mock-inits]
+               ~@mock-inits]
             (binding [~@(mapped-forms :binding)]
               ~@(mapped-forms :train)
               (.replay ~control)
               ~@(mapped-forms :test))
-            (.verify ~control))))
+              (.verify ~control))))
 
 (defmacro expect
   "Used during Mock object training; evaluates all but the last form (which is expected to be an
