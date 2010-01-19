@@ -78,7 +78,7 @@
   :path meta-data key. The namespace containing the mapped function is tracked for changes."
   [type function]
   (let [path (or ((meta function) :path) (str type "/" (qualified-function-name function)))]
-    (add-tracked-namespace (^function :ns))
+    (add-tracked-namespace ((meta function) :ns))
     (add-function-to-config :mapped-functions path function)))
 
 (defn path-for-function*
