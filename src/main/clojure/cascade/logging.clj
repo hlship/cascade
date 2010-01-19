@@ -20,12 +20,12 @@
   (LoggerFactory/getLogger name))
 
 (defmacro log*
-  [check-fn log-fn fmt & args]
+  [check-member log-member fmt & args]
   (let [logger-name (name (ns-name *ns*))]
     `(let [logger# (get-logger ~logger-name)]
       (and
-        (. logger# ~check-fn)
-        (. logger# ~log-fn (format ~fmt ~@args))))))
+        (. logger# ~check-member)
+        (. logger# ~log-member (format ~fmt ~@args))))))
 
 (defmacro debug
   [fmt & args]
