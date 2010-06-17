@@ -4,8 +4,7 @@
   :dependencies 
     [[org.clojure/clojure "1.1.0"]
      [org.clojure/clojure-contrib "1.1.0"]
-     [org.slf4j/slf4j-api "1.5.2"]
-     
+     [org.slf4j/slf4j-api "1.5.2"]     
      [org.slf4j/slf4j-log4j12 "1.5.2"]
      [log4j/log4j "1.2.14"]]
   :dev-dependencies
@@ -14,9 +13,10 @@
      [org.easymock/easymock "2.5.1"]
      [org.seleniumhq.selenium.server/selenium-server "1.0.3" :classifier "standalone"]]
   :aot :all
+  :main cascade.version
   :warn-on-reflection true
   :source-path "src/main/clojure"
   :test-path "src/test/clojure"
   :resources-path "src/main/resources"
   :test-resources-path "src/test/resources"
-  :jar-dir "target")
+  :compile-path "target/classes")
