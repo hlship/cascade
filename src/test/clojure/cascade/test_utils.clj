@@ -28,10 +28,6 @@
     (is (= (slurp* (find-classpath-resource path))
       (slurp (str "src/test/resources/" path))))))
 
-(deftest namespace-relative
-  (is (= (slurp* (find-classpath-resource 'namespace-relative "ns.txt"))
-    (slurp "src/test/resources/cascade/test_utils/ns.txt"))))
-
 (deftest test-function?
   (is (= (function? map) true) "a real function")
   (is (= (function? nil) false) "nil is not a function")

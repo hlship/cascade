@@ -28,13 +28,9 @@
   (with-out-str (pprint coll)))
 
 (defn find-classpath-resource
-  "Finds a resource on the classpath (as a URL) or returns nil if not found. Optionally takes
-  a symbol and evaluates the path relative to the symbol's namespace."
-  ([path]
-    (.. (Thread/currentThread) getContextClassLoader (getResource path)))
-  ([symbol path]
-    (let [ns (:ns (meta (resolve symbol)))]
-      (find-namespace-resource ns path))))
+  "Finds a resource on the classpath (as a URL) or returns nil if not found."
+  [path]
+  (.. (Thread/currentThread) getContextClassLoader (getResource path)))
 
 (defn find-namespace-resource
   "Given a namespace (or a symbol identifying a namespace),
