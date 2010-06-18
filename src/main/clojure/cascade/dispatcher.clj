@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 (ns 
   #^{:doc "Request dispatch to views and actions"}
   cascade.dispatcher
-  (:import (javax.servlet ServletResponse))
+  (:import [javax.servlet ServletResponse])
   (:use 
     cascade
-    (cascade asset config dom logging path-map pipeline fail func-utils utils)
-    (cascade.internal utils)))
+    [cascade asset config dom logging path-map pipeline fail func-utils utils]
+    [cascade.internal utils]))
 
 (defn prepare-dom-for-render
   "Post-processes the DOM after the view has constructed it, but before it has been rendered out
@@ -174,7 +174,7 @@
 (defn invoke-mapped-function
   "Called from path-dispatcher to try one of a series of functions that may match the request path."
   [env request-path [path function]]
-  (let [function-meta ^function
+  (let [function-meta (meta function)
         type (function-meta :cascade-type)
         handler-fn (find-config [:type-to-handler type])
         new-env (assoc-in env [:cascade :extra-path] (drop (count path) request-path))]

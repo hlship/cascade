@@ -14,7 +14,9 @@
 
 (ns #^{:doc "Main function to display the version number of the framework"}
   cascade.version
+  (:use [cascade config])
   (:gen-class))
 
 (defn -main [& args]
-	(println "Cascade version 1.0.0-SNAPSHOT"))
+  (println (format "Cascade version %s" (read-config :cascade-version))))
+  

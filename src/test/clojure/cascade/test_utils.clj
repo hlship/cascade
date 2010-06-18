@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 
 (ns cascade.test-utils
   (:use
-    (clojure (test :exclude [function?]))
-    (clojure.contrib pprint duck-streams str-utils macro-utils)
+    [clojure pprint [test :exclude [function?]]]
+    [clojure.contrib duck-streams str-utils macro-utils]
     cascade.config
-    (cascade func-utils utils)
-    (cascade.internal utils)))
+    [cascade func-utils utils]
+    [cascade.internal utils]))
 
 (deftest classpath-resource-does-not-exist
   (is (= (find-classpath-resource "does/not/exist.txt") nil)))

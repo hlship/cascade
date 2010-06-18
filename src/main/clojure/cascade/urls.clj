@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
 (ns #^{:doc "Functions used when encoding data into portions of a URL"}
   cascade.urls
   (:import
-    (clojure.lang Keyword Symbol)
-    (javax.servlet.http HttpServletRequest))
+    [clojure.lang Keyword Symbol]
+    [javax.servlet.http HttpServletRequest])
   (:require
-    (clojure.contrib [str-utils2 :as s2]))
+    [clojure.contrib [str-utils2 :as s2]])
   (:use
-    (cascade config fail logging)
-    (cascade.internal utils)
-    (clojure.contrib seq-utils)))
+    [clojure.contrib [seq-utils :only (separate)]]
+    [cascade config fail logging]
+    [cascade.internal utils]))
 
 (defmulti to-url-string
   "Used to encode a value for inclusion as a query parameter value, or as extra path data.

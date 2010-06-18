@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -13,9 +13,11 @@
 
 (ns #^{:doc "Form parser for the template DSL"}
   cascade.internal.viewbuilder
-  (:use (clojure.contrib monads [pprint :only (pprint)])
-        (cascade dom fail)
-        (cascade.internal utils parser)))
+  (:use 
+    [clojure [pprint :only (pprint)]]
+    [clojure.contrib monads]
+    [cascade dom fail]
+    [cascade.internal utils parser]))  
 
 (defn convert-render-result
   [any]

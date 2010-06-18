@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
   #^{:doc "Asset management"}
   cascade.asset
   (:import
-    (java.io InputStream OutputStream)
-    (java.net URL URLConnection)
-    (javax.servlet ServletContext)
-    (javax.servlet.http HttpServletRequest HttpServletResponse))
+    [java.io InputStream OutputStream]
+    [java.net URL URLConnection]
+    [javax.servlet ServletContext]
+    [javax.servlet.http HttpServletRequest HttpServletResponse])
   (:require
-    (clojure.contrib [str-utils2 :as s2]))
+    [clojure.contrib [str-utils2 :as s2]])
   (:use
-    (clojure.contrib duck-streams)
-    (cascade config fail path-map logging)))
+    [clojure.contrib [duck-streams :only (copy)]]
+    [cascade config fail path-map logging]))
 
 (assoc-in-config :application-version
   (Long/toHexString (System/nanoTime)))

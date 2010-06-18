@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -23,4 +23,4 @@
    "Accesses the meta-data for a function to extract its name and namespace, concatinated and
    returned as a string."
   [f]
-  (qualified-function-name-from-meta ^f))
+  (qualified-function-name-from-meta (meta f)))

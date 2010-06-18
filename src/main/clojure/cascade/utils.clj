@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 (ns cascade.utils
   (:use
-    (clojure.contrib pprint macro-utils)))
+    [clojure.contrib pprint macro-utils]))
 
 (defmacro lcond
   "A reimplementation of Clojure's cond, with the addition of a special :let
@@ -40,4 +40,5 @@
   "Is the value a boolean (true or false)? (boolean? nil) returns false."
   [val]
   (= Boolean (class val)))
+ 
   

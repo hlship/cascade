@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 
 (ns cascade.test-cascade
   (:import
-    (javax.servlet.http HttpServletRequest HttpServletResponse)
-    (java.io PrintWriter CharArrayWriter))
+    [javax.servlet.http HttpServletRequest HttpServletResponse]
+    [java.io PrintWriter CharArrayWriter])
   (:use
     cascade
-    (cascade dom mock)
-    (cascade.internal utils)
-    (clojure (test :only [is are deftest]))
-    (clojure.contrib duck-streams pprint)))
+    [cascade dom mock]
+    [cascade.internal utils]
+    [clojure [test :only (is are deftest)] pprint]
+    [clojure.contrib duck-streams]))
 
 (defn render
   [dom]

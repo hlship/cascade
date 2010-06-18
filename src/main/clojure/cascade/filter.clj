@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
   #^{:doc "Servlet API Filter that directs requests into Cascade"}
   cascade.filter
   (:require
-    (cascade exception))
+    [cascade exception])
   (:use
-    (clojure stacktrace)
-    (clojure.contrib str-utils)
-    (cascade config change-tracker dispatcher logging path-map pipeline urls exception)
-    (cascade.internal utils))
+    [clojure stacktrace]
+    [clojure.contrib str-utils]
+    [cascade config change-tracker dispatcher logging path-map pipeline urls exception]
+    [cascade.internal utils])
   (:import
-    (javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse)
-    (javax.servlet.http HttpServletRequest HttpServletResponse))
+    [javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse]
+    [javax.servlet.http HttpServletRequest HttpServletResponse])
   (:gen-class
     :state context
     :init psuedo-constructor

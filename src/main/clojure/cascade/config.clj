@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
 (ns
   #^{:doc "Global configuration"}
   cascade.config
-  (:use cascade.fail))
+  (:import [java.util Properties])
+  (:use 
+    [clojure.java io]
+    [cascade fail]
+    [cascade.internal utils]))
 
 (defn get-boolean-system-property
   [property-name default-value]
@@ -24,7 +28,24 @@
       (Boolean/valueOf value)
       default-value)))
 
+(defn read-version 
+  "Reads the Leiningen/Maven generated version number from a meta-inf/.../pom.properties files.
+  Identify the group and artifact as strings."
+  [group-id artifact-id]  
+  (try
+    (let
+      [props (Properties.)
+       path (format "meta-inf/maven/%s/%s/pom.properties" group-id artifact-id)
+       resource (find-classpath-resource path)]
+      (if resource
+        (do
+          (.load props (input-stream resource))
+          (.getProperty props "version" "UNKNOWN"))
+        "UNKNOWN"))
+    (catch Exception ex "UNKNOWN")))
+                                        
 (def configuration (atom {
+  :cascade-version (read-version "com.howardlewisship.cascade" "cascade-core")
   :jquery-path "cascade/jquery-1.3.2.js"
   :production-mode (get-boolean-system-property "cascade.production-mode" true)
   }))
@@ -63,3 +84,4 @@
     (if (nil? result)
       (fail "Configuration key %s was nil." key))
     result))
+    

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
   #^{:doc "Run Jetty server embedded"}
   cascade.jetty
   (:use
-    (clojure.contrib str-utils))
+    [clojure.contrib str-utils])
   (:require cascade.filter)
   (:import
-    (org.eclipse.jetty.server Server)
-    (org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet)))
+    [org.eclipse.jetty.server Server]
+    [org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet]))
 
 (defn start-jetty-server
   "Like run-jetty, but does not join the started server; this is used as part of

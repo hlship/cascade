@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 (ns #^{:doc "Utilities for collections"}
   cascade.collection-utils
   (:use
-    (clojure.contrib seq-utils)
-    (cascade fail)))
+    [clojure.contrib [seq-utils :only (includes?)]]
+    [cascade fail]))
 
 (defn list-to-map-of-seqs
   "Converts a seq into a map based on a set of predetermined keys. Each form in forms is a seq; the

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 (ns
   #^{:doc "Internal private utilities"}
   cascade.internal.utils
-  (:import (java.util.regex Matcher MatchResult)
-           (clojure.lang IFn))
+  (:import 
+    [java.util.regex Matcher MatchResult]
+    [clojure.lang IFn])
   (:use
-    (cascade config logging)
-    (clojure.contrib str-utils pprint)))
+    [clojure pprint]
+    [clojure.contrib str-utils]))
 
 (declare find-namespace-resource)
 

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 (ns #^{:doc "Core functions and macros used when implementing Cascade views and actions"}
   cascade
   (:import
-    (javax.servlet.http HttpServletRequest HttpServletResponse))
+    [javax.servlet.http HttpServletRequest HttpServletResponse])
   (:use
-    (clojure.contrib.json write)
-    (cascade asset config dom path-map fail urls logging collection-utils)
-    (cascade.internal utils viewbuilder parse-functions)))
+    [clojure.contrib json]
+    [cascade asset config dom path-map fail urls logging collection-utils]
+    [cascade.internal utils viewbuilder parse-functions]))
 
 (defmacro template
   "Defines a block of the template DSL, which is converted into code that renders a seq of DOM nodes."
@@ -84,9 +84,8 @@
 
 (defmacro link
   "Creates a link to a view or action function. Additional path info data may be specified (as a seq of
-  data items),
-  as well as query parameters (as a map whose keys are strings or keywords and whose values are converted to strings.).
-  Uses standard keys from the env map. The resulting link is returned as a string."
+  data items), as well as query parameters (as a map whose keys are strings or keywords and whose values
+  are converted to strings.). Uses standard keys from the env map. The resulting link is returned as a string."
   ([env function]
     (link env function nil))
   ([env function extra-path-info]
@@ -96,7 +95,7 @@
 
 (defmacro render-link
   "Creates a hyperlink with an href as a link to a view or action function.
-  Following the function, is an optional vector of extra path information, then
+  Following the function is an optional vector of extra path information, then
   an optional map of query parameters. Additional forms after that form an implicit template."
   [env function & forms]
   (let [[extra-path query-parameters template-forms] (parse-render-link-forms forms)]
@@ -174,7 +173,7 @@
   [env json-value]
   (let [#^HttpServletResponse response (-> env :servlet-api :response)]
     (.setContentType response "application/json")
-    (with-open [writer (.getWriter response)]      
-      (binding [*out* writer]
-        (print-json json-value))))
+    (with-open [writer (.getWriter response)]
+      ;; TODO: Pretty Print it in dev mode
+      (write-json json-value writer)))
   true)        
