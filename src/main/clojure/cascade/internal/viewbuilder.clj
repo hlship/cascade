@@ -25,7 +25,7 @@
    acceptible values are returned."
   (cond
     ; A map is assumed to be a DOM node
-    (map? any) (if (:cascade-dom-node (meta any)) any (fail "Not a DOM node: %s" (ppstring any)))
+    (map? any) (if (is-dom-node? any) any (fail "Not a DOM node: %s" (ppstring any)))
     (string? any) (text-node any)
     (number? any) (raw-node (str any))
     true (throw (RuntimeException.

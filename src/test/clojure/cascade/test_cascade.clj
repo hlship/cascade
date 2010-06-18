@@ -51,7 +51,7 @@
   (render-test simple-view "simple-defview" {:message "Embedded Template"}))
 
 (deftest meta-data
-  (let [md ^#'simple-view]
+  (let [md (meta #'simple-view)]
     (is (= (md :name) 'simple-view) "standard meta-data")
     (is (= (md :custom) :bit-of-meta-data) "added meta-data")
     (is (= (md :cascade-type) :view) "cascade-added meta-data")))
@@ -166,7 +166,7 @@
 
 (deftest meta-data-for-function
   (are [k v]
-    (= (^#'fn-with-meta k) v)
+    (= (get (meta #'fn-with-meta) k) v)
     :doc "doc meta"
     :other-meta :data
     :cascade-type :view))

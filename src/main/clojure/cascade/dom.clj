@@ -33,7 +33,7 @@
 
 ; TODO: For testing purposes (i.e., to get consistent results across JVMs, etc.)
 ; it may be necessary to sort attributes when rendering (but I'd rather not bother
-; for production).
+; for production).  
 
 (defstruct dom-node
   :type ; :element, :text
@@ -41,7 +41,11 @@
   :attributes ; seq of attribute/value pairs (for :element)
   :value) ; literal text (text must be encoded), nested nodes for :element)
 
-(def dom-node-meta-data {:cascade-dom-node true})
+(def dom-node-meta-data {::type ::cascade-node})
+
+(defn is-dom-node?
+  [node]
+  (= (::type (meta node)) ::cascade-node))
 
 (defn element-node
   [name attributes content]
