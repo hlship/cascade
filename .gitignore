@@ -1,6 +1,7 @@
 *.jar
 .DS_Store
 bin/
+build/
 target/
 classes/
 .settings/
