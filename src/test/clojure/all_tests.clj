@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
 
 (println "Loading code ...")
 
-(time (apply use (sort spaces)))
+(time (apply use spaces))
 
 (println "Executing tests ...")
 
