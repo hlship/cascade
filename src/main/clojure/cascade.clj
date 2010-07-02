@@ -86,7 +86,6 @@
   "Creates a link to a view or action function. Additional path info data may be specified (as a seq of
   data items), as well as query parameters (as a map whose keys are strings or keywords and whose values
   are converted to strings.). Uses standard keys from the env map. The resulting link is returned as a string."
-  ;; Using temporary workaround due to http://www.assembla.com/spaces/clojure/tickets/383-different-arrities-of-macro-don-t-work-in-1-2-(20100607-build)
   ([env function]
     `(link ~env ~function nil))
   ([env function extra-path-info]
