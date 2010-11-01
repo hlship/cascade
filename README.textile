@@ -1,11 +1,8 @@
 h1. Cascade
 
-Welcome to Cascade!  Cascade is a web framework for "Clojure":http://clojure.org/ that emphasizes
-idiomatic use of Clojure while drawing inspiration from the "Apache Tapesty":http://tapestry.apache.org
-web framework.
+Welcome to Cascade!  Cascade is a web framework for "Clojure":http://clojure.org/ that emphasizes idiomatic use of Clojure while drawing inspiration from the "Apache Tapesty":http://tapestry.apache.org web framework.
 
-Cascade templates are an embedded DSL directly in the Clojure code; this takes some getting used to
-but ensures that you can take maximum advantage of Clojure when creating your application. 
+Cascade templates are an embedded DSL directly in the Clojure code; this takes some getting used to but ensures that you can take maximum advantage of Clojure when creating your application. 
 
 Templates and actions (also Clojure functions) are linked together through a simple action framework.
 
@@ -13,15 +10,11 @@ See the "Cascade Wiki":http://wiki.github.com/hlship/cascade/ for more informati
 
 h1. Status
 
-So where's the progress?  Sorry folks, I've been busy with several large Tapestry projects, plus
-Tapestry 5.2, plus Project Jacob (my now 8 month old son) to make an progress on Cascade. I still
-have high hopes for Cascade, but I'm in the chicken-and-the-egg problem of finding a client that
-can directly or indirectly support its development.
+So where's the progress?  Sorry folks, I've been busy with several large Tapestry projects, plus Tapestry 5.2, plus Project Jacob (my now 8 month old son) to make any progress on Cascade. I still have high hopes for Cascade, but I'm in the chicken-and-the-egg problem of finding a client that can directly or indirectly support its development.
 
 h1. Authors
 
-Cascade is a itty-bitty side project of Howard M. Lewis Ship, who should be spending more time
-on Tapestry.
+Cascade is a itty-bitty side project of Howard M. Lewis Ship, who should be spending more time on Tapestry.
 
 Care to contribute?  Drop me a line!
 
