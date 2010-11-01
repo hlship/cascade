@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Global configuration"}
+  ^{:doc "Global configuration"}
   cascade.config
   (:import [java.util Properties])
   (:use 

@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Functions used when encoding data into portions of a URL"}
+(ns ^{:doc "Functions used when encoding data into portions of a URL"}
   cascade.urls
   (:import
     [clojure.lang Keyword Symbol]
@@ -32,7 +32,7 @@
 
 (defmethod to-url-string String [s] s)
 
-(defmethod to-url-string Number [#^Number n] (.toString n))
+(defmethod to-url-string Number [^Number n] (.toString n))
 ;;  Assumes that keyword and symbols names are already URL safe
 
 (defmethod to-url-string Keyword [kw] (name kw))
@@ -68,7 +68,7 @@
 (defn parse-query-parameter-value
   "Parses a value specified as a query parameter. The parameter-name is the string used to identify the parameter, and the extracted parameter value
   is passed through the parser function."
-  [#^HttpServletRequest request parameter-name parser-fn]
+  [^HttpServletRequest request parameter-name parser-fn]
   (parse-url-value (.getParameter request parameter-name) parser-fn))
 
 (defn create-positional-binding
@@ -115,12 +115,12 @@
 (defn split-path
   "Splits path (a string) on slash characters, returning a vector of the results. Leading slashes and doubled slashes are
   ignored (that is, empty names in the result are removed)."
-  [#^String path]
+  [^String path]
   (let [names (.split #"/" path)]
     (vec (remove blank? (seq names)))))
 
 (defn add-query-parameter
-  [#^StringBuilder builder key value]
+  [^StringBuilder builder key value]
   (doto builder
     (.append (to-url-string key))
     (.append "=")
@@ -129,7 +129,7 @@
 (defn construct-absolute-path
   "Converts a link map into a absolute path, including query parameters."
   [context-path link-map]
-  (loop [#^StringBuilder sb (doto (StringBuilder.)
+  (loop [^StringBuilder sb (doto (StringBuilder.)
                               (.append context-path)
                               (.append "/")
                               (.append (link-map :path)))

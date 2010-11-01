@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Run Jetty server embedded"}
+  ^{:doc "Run Jetty server embedded"}
   cascade.jetty
   (:use
     [clojure.contrib str-utils])
@@ -25,7 +25,7 @@
 (defn start-jetty-server
   "Like run-jetty, but does not join the started server; this is used as part of
    integration testing a Cascade application. Returns the started Jetty Server instance."
-  [#^String webapp port & namespaces]
+  [^String webapp port & namespaces]
   (let [server (Server. port)
         context (ServletContextHandler. server "/" true false)
         namespace-list (str-join "," (map name namespaces))]
@@ -45,7 +45,7 @@
   without security support. No web.xml is necessary, a
   cascade.filter will automatically be installed. Any provided namespace-symbols will be
   loaded at filter startup (this is to specify namespaces containing views and actions)."
-  [#^String webapp port & namespaces]
+  [^String webapp port & namespaces]
   (let [server (apply start-jetty-server webapp port namespaces)]
     (.join server)
     server)) 

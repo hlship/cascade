@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Track file changes with notifications"}
+  ^{:doc "Track file changes with notifications"}
   cascade.change-tracker
   (:use
     (cascade logging))
@@ -21,7 +21,7 @@
     (java.net URL URISyntaxException)
     (java.io File)))
 
-(def #^{:doc "Tracked values are nested maps (:file is the underlying file, :last-modified is a long, :watcher is a function of no arguments)." }
+(def ^{:doc "Tracked values are nested maps (:file is the underlying file, :last-modified is a long, :watcher is a function of no arguments)." }
   resource-tracker (agent []))
 
 (def thread-info (atom {}))
@@ -42,9 +42,9 @@
           (recur (conj matches head) non-matches tail)
           (recur matches (conj non-matches head) tail))))))
 
-(defn #^File to-file
+(defn ^File to-file
   "Converts a URL to a file."
-  [#^URL resource]
+  [^URL resource]
   (try
     (File. (.toURI resource))
     (catch URISyntaxException t (File. (.getPath resource)))))
@@ -53,7 +53,7 @@
   "Tracks a change to a resource, represented by a URL. Only resources with the \"file:\" protocol will be tracked, others will be ignored.
    The date time modified for the resource is tracked. When it changes, the resource is un-tracked and a notification is sent to the watcher
    (a function of no parameters)."
-  [#^URL resource watcher]
+  [^URL resource watcher]
   (if (= (.getProtocol resource) "file")
     (let [file (to-file resource)
           last-modified (.lastModified file)]
@@ -62,7 +62,7 @@
 
 (defn is-changed?
   "Determines if a tracked file's lastModified has changed."
-  [{:keys [#^File file last-modified]}]
+  [{:keys [^File file last-modified]}]
   (not= last-modified (.lastModified file)))
 
 (defn scan-for-changed-resources*
@@ -105,7 +105,7 @@
 (defn stop-scan-thread
   []
   (swap! thread-info assoc :shutdown true)
-  (let [#^Thread thread (@thread-info :thread)]
+  (let [^Thread thread (@thread-info :thread)]
     (if thread
       (.interrupt thread)))
   ; Release the (soon to stop) thread to the GC.

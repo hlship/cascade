@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -11,13 +11,13 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 (ns
-  #^{:doc "Assert-like failures"}
+  ^{:doc "Assert-like failures"}
   cascade.fail)
 
 (defn fail
   "A quick way to throw a RuntimeException."
-  [#^String fmt & args]
-  (let [#^String msg (apply format fmt args)]
+  [^String fmt & args]
+  (let [^String msg (apply format fmt args)]
     (throw (RuntimeException. msg))))
 
 (defmacro fail-unless

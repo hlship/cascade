@@ -12,7 +12,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Internal private utilities"}
+  ^{:doc "Internal private utilities"}
   cascade.internal.utils
   (:import 
     [java.util.regex Matcher MatchResult]
@@ -58,7 +58,7 @@
   (first (remove nil? (map #(apply % argseq) functions))))
 
 (defn blank?
-  [#^String s]
+  [^String s]
   (or
     (nil? s)
     (= 0 (.length s))))

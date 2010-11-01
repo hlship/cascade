@@ -12,7 +12,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Parser monad used to parse Clojure forms into higher-level structures"}
+  ^{:doc "Parser monad used to parse Clojure forms into higher-level structures"}
   cascade.internal.parser
   (:use clojure.contrib.monads
         (cascade fail)

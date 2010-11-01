@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 
-(ns #^{:doc "Render objects as markup"}
+(ns ^{:doc "Render objects as markup"}
   cascade.renderer
   (:import
     (javax.servlet ServletContext)
@@ -24,7 +24,7 @@
 
 
 (defn enumeration-to-seq
-  [#^Enumeration enumeration]
+  [^Enumeration enumeration]
   (loop [result []]
     (if (.hasMoreElements enumeration)
       (recur (conj result (.nextElement enumeration)))
@@ -67,7 +67,7 @@
 
 
 (defn render-parameters
-  [#^HttpServletRequest request]
+  [^HttpServletRequest request]
   (let [parameter-names (sort (seq (.. request getParameterMap keySet)))]
     (when-not (empty? parameter-names)
       (template
@@ -79,7 +79,7 @@
         ]))))
 
 (defn render-headers
-   [#^HttpServletRequest request]
+   [^HttpServletRequest request]
    (let [header-names (sort (enumeration-to-seq (.getHeaderNames request)))]
      (template
        (data-section "Headers")
@@ -102,7 +102,7 @@
         ]))))
 
 (defmethod render HttpServletRequest
-  [#^HttpServletRequest request]
+  [^HttpServletRequest request]
   (let [context-path (.getContextPath request)]
     (template
       (definition-list
@@ -118,7 +118,7 @@
       (render-attributes (.getAttributeNames request) #(.getAttribute request %)))))
 
 (defmethod render ServletContext
-  [#^ServletContext context]
+  [^ServletContext context]
   (template
     (definition-list
       "Version"  (str (.getMajorVersion context) "." (.getMinorVersion context))
@@ -132,7 +132,7 @@
   (format "%tc" long-date))
 
 (defmethod render HttpSession
-  [#^HttpSession session]
+  [^HttpSession session]
   (template
     (definition-list
       "Id" (.getId session)

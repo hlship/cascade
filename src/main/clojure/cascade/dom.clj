@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "DOM node structure, rendering and manipulation"}
+  ^{:doc "DOM node structure, rendering and manipulation"}
   cascade.dom
   (:import
     (clojure.lang Keyword)
@@ -106,7 +106,7 @@
   (encode-string str-value))
 
 (defmethod to-attr-string Number
-  [#^Number numeric-value]
+  [^Number numeric-value]
   (.toString numeric-value))
 
 (defmethod to-attr-string Keyword
@@ -115,8 +115,8 @@
 
 (defn- write
   "Write a number of strings to the writer."
-  [#^Writer out & strings]
-  (doseq [#^String s strings]
+  [^Writer out & strings]
+  (doseq [^String s strings]
     (.write out s)))
 
 (defmulti render-node

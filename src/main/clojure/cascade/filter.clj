@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Servlet API Filter that directs requests into Cascade"}
+  ^{:doc "Servlet API Filter that directs requests into Cascade"}
   cascade.filter
   (:require
     [cascade exception])
@@ -32,7 +32,7 @@
     
 (defn get-path
   "Extracts the complete path (including extra path info) from the request."
-  [#^HttpServletRequest request]
+  [^HttpServletRequest request]
   (let [servlet-path (.getServletPath request)
         path-info (.getPathInfo request)]
     (cond
@@ -44,7 +44,7 @@
     
 (defn static-file?
   "Checks to see if the request is for a static file, which is passed through to the servlet container."
-  [#^ServletContext context path]
+  [^ServletContext context path]
   (cond
     ; Incoming requests for the context end up with a path of "/", which WILL be considered
     ; a static file. TODO: need to extend this for subdirs?
@@ -61,7 +61,7 @@
   "Prints the exception (including stack trace) to the console then renders the exception-report view."
   [env exception]
   (debug "Request exception: %s" exception)
-  (let [#^Throwable root (root-cause exception)]
+  (let [^Throwable root (root-cause exception)]
     (.printStackTrace root))
   (try
     (render-view (assoc-in env [:cascade :exception] exception) #'exception-report)
@@ -72,7 +72,7 @@
 (defn pass-to-dispatchers
   "Invoked from the filter to process an incoming request. Returns true if the request was processed and a response sent,
   false otherwise (i.e., forward to the servlet container for normal processing)."
-  [#^HttpServletRequest request #^HttpServletResponse response context path]
+  [^HttpServletRequest request ^HttpServletResponse response context path]
   (let [split (split-path path)
         env { :servlet-api { :request request
                              :response response
@@ -97,14 +97,14 @@
 
 (defn -init
   "Filter lifecycle method used to print startup messages and capture the ServletContext."
-  [this #^FilterConfig filter-config]
+  [this ^FilterConfig filter-config]
   (let [context (.getServletContext filter-config)]
     (assoc-in-config :servlet-context context)
     (reset! (.context this) context))
   (info "Cascade startup")
   (let [namespace-list (.getInitParameter filter-config "cascade.namespaces")
         namespace-names (and namespace-list (re-split #"," namespace-list))]
-    (doseq [#^String ns-name namespace-names]
+    (doseq [^String ns-name namespace-names]
       (info "Loading namespace: %s" ns-name)
       (require (symbol (.trim ns-name)))))
   (start-scan-thread)
@@ -118,7 +118,7 @@
   nil)
 
 (defn -doFilter
-  [this #^ServletRequest request #^ServletResponse response #^FilterChain chain]
+  [this ^ServletRequest request ^ServletResponse response ^FilterChain chain]
   (let [path (get-path request)
         qs (.getQueryString request)
         debug-path (if (nil? qs) path (str path "?" qs))

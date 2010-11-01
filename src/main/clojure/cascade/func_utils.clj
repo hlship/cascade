@@ -12,7 +12,7 @@
 ; and limitations under the License.
 
 (ns
-  #^{:doc "Meta utilities for functions"}
+  ^{:doc "Meta utilities for functions"}
   cascade.func-utils)
 
 (defn qualified-function-name-from-meta

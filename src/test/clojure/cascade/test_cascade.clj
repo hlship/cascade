@@ -43,7 +43,7 @@
         trimmed-render (minimize-ws rendered)]
       (is (= trimmed-render trimmed-expected))))
 
-(defview #^{:custom :bit-of-meta-data} simple-view
+(defview ^{:custom :bit-of-meta-data} simple-view
   [env]
   :p [ (env :message) ])
 

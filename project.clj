@@ -12,8 +12,7 @@
      [org.eclipse.jetty/jetty-servlet "7.0.0.RC4"]     
      [org.easymock/easymock "2.5.1"]
      [org.seleniumhq.selenium.server/selenium-server "1.0.3" :classifier "standalone"]]
-  :aot :all  ;  cascade.filter
-  :main cascade.version
+  :aot [cascade.filter]
   :warn-on-reflection true
   :source-path "src/main/clojure"
   :test-path "src/test/clojure"

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Wrappers around Simple Logging Facade for Java (SLF4J)"}
+(ns ^{:doc "Wrappers around Simple Logging Facade for Java (SLF4J)"}
   cascade.logging
   (:import (org.slf4j LoggerFactory Logger)))
 
-(defn #^Logger get-logger [#^String name]
+(defn ^Logger get-logger [^String name]
   (LoggerFactory/getLogger name))
 
 (defmacro log*

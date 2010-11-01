@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Core functions and macros used when implementing Cascade views and actions"}
+(ns ^{:doc "Core functions and macros used when implementing Cascade views and actions"}
   cascade
   (:import
     [javax.servlet.http HttpServletRequest HttpServletResponse])
@@ -62,7 +62,7 @@
   [bindings & template-forms]
   `(combine (for ~bindings (template ~@template-forms))))
 
-(def #^{:doc "A DOM text node for a line break."}
+(def ^{:doc "A DOM text node for a line break."}
   linebreak
   (text-node "\r"))
 
@@ -76,8 +76,8 @@
   will include any query parameters and extra path info from the link map, and will have
   been encoded by the HttpServletResponse. Uses standard keys from the env map."
   [env link-map]
-  (let [#^HttpServletRequest request (-> env :servlet-api :request)
-        #^HttpServletResponse response (-> env :servlet-api :response)
+  (let [^HttpServletRequest request (-> env :servlet-api :request)
+        ^HttpServletResponse response (-> env :servlet-api :response)
         context-path (.getContextPath request)
         link-path (construct-absolute-path context-path link-map)]
     (.encodeURL response link-path)))
@@ -103,8 +103,8 @@
 
 (defn send-redirect
   "Sends a redirect to the client using a link map created by the link macro. Returns true."
-  [env #^String link-path]
-  (let [#^HttpServletResponse response (-> env :servlet-api :response)]
+  [env ^String link-path]
+  (let [^HttpServletResponse response (-> env :servlet-api :response)]
        (.sendRedirect response link-path)
        true))
 
@@ -171,9 +171,9 @@
   "Renders JSON content (typically, a map or a seq) as the response. The response
   content type is set to \"application/json\". Returns true."
   [env json-value]
-  (let [#^HttpServletResponse response (-> env :servlet-api :response)]
+  (let [^HttpServletResponse response (-> env :servlet-api :response)]
     (.setContentType response "application/json")
     (with-open [writer (.getWriter response)]
       ;; TODO: Pretty Print it in dev mode
       (write-json json-value writer)))
-  true)        
+  true)       

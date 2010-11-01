@@ -13,7 +13,7 @@
 ; and limitations under the License.
 
 (ns 
-  #^{:doc "Request dispatch to views and actions"}
+  ^{:doc "Request dispatch to views and actions"}
   cascade.dispatcher
   (:import [javax.servlet ServletResponse])
   (:use 
@@ -97,7 +97,7 @@
 (defn do-render
   [env view-fn markup-type content-type markup-renderer-fn]
   (debug "Rendering view function %s" (qualified-function-name view-fn))
-  (let [#^ServletResponse response (-> env :servlet-api :response)
+  (let [^ServletResponse response (-> env :servlet-api :response)
         ; Invoke the function, getting back a lazy seq of rendered nodes
         dom (view-fn env)
         prepared (prepare-dom-for-render env dom)]

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Exception reporting view and pipeline"}
+(ns ^{:doc "Exception reporting view and pipeline"}
   cascade.exception
   (:import
     (javax.servlet.http HttpServletRequest HttpSession)
@@ -32,7 +32,7 @@
 (defn class-name-for-element
   "Returns the CSS class name for a stack frame element, or nil.  Useful values are :c-omitted-frame
    or :c-usercode-frame."
-  [#^StackTraceElement element]
+  [^StackTraceElement element]
   (lcond
     :let [class-name (.getClassName element)]
     (or
@@ -54,7 +54,7 @@
           :span { :class :c-omitted } [ " " class-name "." method-name])))))
 
 (defn transform-stack-frame
-  [#^StackTraceElement element]
+  [^StackTraceElement element]
   {
     :element element
     :method-name
@@ -85,7 +85,7 @@
          queue (map transform-stack-frame (seq elements))
          result []]
     (let [first-frame (first queue)
-          #^StackTraceElement element (get first-frame :element)]
+          ^StackTraceElement element (get first-frame :element)]
         (cond
           (nil? first-frame) result
           seen-filter (recur true (rest queue) (conj result (assoc first-frame :class-name :c-omitted-frame)))
@@ -99,8 +99,8 @@
   and :properties is a map of additional JavaBean properties of the map that should be presented to the user. The values
   of the :properties map are Java objects, not necesarilly strings, and will need further transformation to be
   presented."
-  [#^Throwable thrown-exception]
-  (loop [#^Throwable current thrown-exception
+  [^Throwable thrown-exception]
+  (loop [^Throwable current thrown-exception
          stack []]
     (let [bean-properties (bean current)
           next-exception (.getCause current)
@@ -144,7 +144,7 @@
   (let [path-sep (System/getProperty "path.separator")]
     (template
       :dl [
-        (template-for [#^String name (sort (seq (.keySet (System/getProperties))))
+        (template-for [^String name (sort (seq (.keySet (System/getProperties))))
                       :let [value (System/getProperty name)]]
           :dt [ name ]
           :dd [
@@ -160,7 +160,7 @@
 (defn render-environment
   [env]
   (let
-    [#^HttpServletRequest request (-> env :servlet-api :request)
+    [^HttpServletRequest request (-> env :servlet-api :request)
      session (.getSession request false)]
     (template
       :div { :class :c-env-data } [
@@ -211,8 +211,8 @@
   [env]
   (import-stylesheet env :classpath "cascade/cascade.css")
   (let [production-mode (read-config :production-mode)
-        #^Throwable exception (-> env :cascade :exception)
-        #^Throwable root (root-cause exception)]
+        ^Throwable exception (-> env :cascade :exception)
+        ^Throwable root (root-cause exception)]
     (template
       :html [
         :head [ :title [ exception-banner ] ]

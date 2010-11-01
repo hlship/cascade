@@ -10,3 +10,4 @@ classes/
 .project
 *~
 lib/
+pom.xml

@@ -20,7 +20,7 @@
     (clojure test)
     (cascade jetty)))
 
-(def #^Selenium selenium)
+(def ^Selenium selenium)
 
 (defn start-selenium-server
   []

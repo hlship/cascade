@@ -18,11 +18,11 @@
     (cascade config pipeline)))
 
 (defn my-to-upper
-  [#^String s]
+  [^String s]
   (.toUpperCase s))
 
 (defn my-in-filter
-  [d #^String s]
+  [d ^String s]
   (d (format "%s: (length %d)" s (.length s))))
 
 (decorate my-to-upper my-in-filter)
@@ -31,7 +31,7 @@
   (is (= (my-to-upper "fred") "FRED: (LENGTH 4)")))
 
 (defn my-to-lower
-  [#^String s]
+  [^String s]
   (.toLowerCase s))
 
 (deftest test-decorate-with-out-filter

@@ -12,7 +12,7 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns #^{:doc "Main function to display the version number of the framework"}
+(ns ^{:doc "Main function to display the version number of the framework"}
   cascade.version
   (:use [cascade config])
   (:gen-class))
