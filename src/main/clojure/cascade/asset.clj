@@ -143,10 +143,10 @@
         ^URL asset-url (url-provider asset-path)
         _ (fail-if (nil? asset-url) "Could not locate %s asset %s." domain-name asset-path)
         mime-type (get-mime-type asset-path)]
-    (with-open [^OutputStream output-stream (open-output-stream-for-asset response asset-url mime-type)]  
-      (with-open [^InputStream input-stream (.openStream asset-url)]
+    (with-open [^OutputStream output-stream (open-output-stream-for-asset response asset-url mime-type)
+                ^InputStream input-stream (.openStream asset-url)]
         (copy input-stream output-stream)
-        (.flush output-stream))))
+        (.flush output-stream)))
   ; If we got this far, we copied the contents (or failed, throwing an exception)
   true)
 
