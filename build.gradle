@@ -21,13 +21,15 @@ versions = [
 	"slf4j" : "1.5.2"
 ]
 
+
+
 repositories {
     clojureReleasesRepo() 
     clojarsRepo()
     mavenCentral() 
 }
 
-aotCompile = true // Compiles WAY too much
+aotCompile = false
 
 dependencies {
     compile "org.clojure:clojure:${versions.clojure}"
