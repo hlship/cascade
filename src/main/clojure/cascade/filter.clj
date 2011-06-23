@@ -24,11 +24,7 @@
     [cascade.internal utils])
   (:import
     [javax.servlet Filter FilterChain FilterConfig ServletContext ServletRequest ServletResponse]
-    [javax.servlet.http HttpServletRequest HttpServletResponse])
-  (:gen-class
-    :state context
-    :init psuedo-constructor
-    :implements [javax.servlet.Filter]))
+    [javax.servlet.http HttpServletRequest HttpServletResponse]))
     
 (defn get-path
   "Extracts the complete path (including extra path info) from the request."
@@ -85,51 +81,40 @@
         (apply-until-non-nil dispatchers [env]))
       (catch Throwable t (handle-request-exception env t)))))
 
-;; And now the ugly side, interfacing directly with Java and creating a Java class ("filter")
-;; Just couldn't bring myself to call this namespace "CascadeFilter".
+(deftype CascadeFilter
+  [contextRef]
+  Filter
+  (init [this filter-config]
+	  (let [context (.getServletContext filter-config)]
+	    (assoc-in-config :servlet-context context)
+	    (reset! contextRef context))
+	  (info "Cascade startup")
+	  (let [namespace-list (.getInitParameter filter-config "cascade.namespaces")
+	        namespace-names (and namespace-list (re-split #"," namespace-list))]
+	    (doseq [^String ns-name namespace-names]
+	      (info "Loading namespace: %s" ns-name)
+	      (require (symbol (.trim ns-name)))))
+	  (start-scan-thread)
+	  (info "Configuration:\n%s" (ppstring @configuration))
+	  nil)
 
-(defn -psuedo-constructor
-  "Initializes the 'class' of filter by providing a new atom to hold the context.
-  Named this way due to the fact that Filter defines method init()."
-  []
-  ; No super-class constructor, state is an atom whichs stores the servlet context
-  [[] (atom nil)])
-
-(defn -init
-  "Filter lifecycle method used to print startup messages and capture the ServletContext."
-  [this ^FilterConfig filter-config]
-  (let [context (.getServletContext filter-config)]
-    (assoc-in-config :servlet-context context)
-    (reset! (.context this) context))
-  (info "Cascade startup")
-  (let [namespace-list (.getInitParameter filter-config "cascade.namespaces")
-        namespace-names (and namespace-list (re-split #"," namespace-list))]
-    (doseq [^String ns-name namespace-names]
-      (info "Loading namespace: %s" ns-name)
-      (require (symbol (.trim ns-name)))))
-  (start-scan-thread)
-  (info "Configuration:\n%s" (ppstring @configuration))
-  nil)
-
-(defn -destroy
-  [this]
-  (stop-scan-thread)
-  (debug "Cascade shutdown")
-  nil)
-
-(defn -doFilter
-  [this ^ServletRequest request ^ServletResponse response ^FilterChain chain]
-  (let [path (get-path request)
-        qs (.getQueryString request)
-        debug-path (if (nil? qs) path (str path "?" qs))
-        context @(.context this)
-        start-time (System/currentTimeMillis)]
-    (debug "Filtering %s" debug-path)
-    (if (or
-            (static-file? context path)
-            (not (pass-to-dispatchers request response context path)))
-      ; Let the servlet container process this normally.
-      (do
-        (debug "Not handled; forwarding to next in chain")
-        (.doFilter chain request response))
-      (debug "Request procesing time: %,d ms" (- (System/currentTimeMillis) start-time)))))
+  (destroy [this]
+    (stop-scan-thread)
+    (debug "Cascade shutdown")
+    nil)
+  
+  (doFilter [this request response chain]
+	  (let [path (get-path request)
+	        qs (.getQueryString request)
+	        debug-path (if (nil? qs) path (str path "?" qs))
+	        context @contextRef
+	        start-time (System/currentTimeMillis)]
+	    (debug "Filtering %s" debug-path)
+	    (if (or
+	            (static-file? context path)
+	            (not (pass-to-dispatchers request response context path)))
+	      ; Let the servlet container process this normally.
+	      (do
+	        (debug "Not handled; forwarding to next in chain")
+	        (.doFilter chain request response))
+	      (debug "Request procesing time: %,d ms" (- (System/currentTimeMillis) start-time))))))

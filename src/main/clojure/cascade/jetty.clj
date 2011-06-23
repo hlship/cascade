@@ -17,10 +17,11 @@
   cascade.jetty
   (:use
     [clojure.contrib str-utils])
-  (:require cascade.filter)
+  (:require [cascade.filter])
   (:import
+    [cascade.filter CascadeFilter]
     [org.eclipse.jetty.server Server]
-    [org.eclipse.jetty.servlet ServletContextHandler FilterMapping DefaultServlet]))
+    [org.eclipse.jetty.servlet ServletContextHandler FilterMapping FilterHolder DefaultServlet]))
 
 (defn start-jetty-server
   "Like run-jetty, but does not join the started server; this is used as part of
@@ -28,15 +29,19 @@
   [^String webapp port & namespaces]
   (let [server (Server. port)
         context (ServletContextHandler. server "/" true false)
-        namespace-list (str-join "," (map name namespaces))]
+        namespace-list (str-join "," (map name namespaces))
+        holder (FilterHolder. (CascadeFilter. (atom [])))]
+    (.setInitParameter holder "cascade.namespaces" namespace-list)
     (doto context
       (.setResourceBase webapp)
-      (.setClassLoader (.. (Thread/currentThread) getContextClassLoader))
+      #_ (.setClassLoader (.. (Thread/currentThread) getContextClassLoader))
       ; Add a servlet to vend out ordinary static files. Also, filters don't work without a servlet to
       ; filter around!
-      (.addServlet DefaultServlet "/*"))
-    (.setInitParameter (.addFilter context cascade.filter "/*" FilterMapping/DEFAULT) "cascade.namespaces" namespace-list)
-    (doto server (.setHandler context) .start)))  
+      (.addServlet DefaultServlet "/*")
+      (.addFilter holder "/*" FilterMapping/DEFAULT))
+    (doto server 
+      (.setHandler context) 
+      .start)))  
 
 (defn run-jetty
   "Starts an instance of the Jetty Server running.
