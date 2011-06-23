@@ -1,0 +1,39 @@
+buildscript {
+    repositories {
+        mavenRepo name: 'clojars', urls: 'http://clojars.org/repo'
+    }
+    dependencies {
+        classpath 'clojuresque:clojuresque:1.4.0'
+    }
+}
+
+description = "Simple, fast, easy web applications in idiomatic Clojure"
+
+
+apply plugin: 'clojure'
+apply plugin: 'jar'
+
+group = "com.howardlewisship.cascade"
+version = "1.0.0-SNAPSHOT"
+
+aotCompile = true
+
+repositories {
+    clojureReleasesRepo() 
+    clojarsRepo()
+    mavenCentral() 
+}
+
+dependencies {
+    compile 'org.clojure:clojure:1.2.0'
+    compile 'org.clojure:clojure-contrib:1.2.0'
+    compile 'org.slf4j/slf4j-api:1.5.2'
+        
+    providedCompile 'javax.servlet:servlet-api:2.5'
+    
+    testCompile 'org.easymock:easymock:2.5.1'
+
+    providedRuntime 'org.slf4j/slf4j-log4j12:1.5.2'
+    providedRuntime 'org.mortbay.jetty:jetty:6.1.14'
+    providedRuntime 'org.mortbay.jetty:jetty-util:6.1.14'
+}
