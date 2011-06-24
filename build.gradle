@@ -16,7 +16,6 @@ group = "com.howardlewisship.cascade"
 version = "1.0.0-SNAPSHOT"
 
 versions = [
-	"clojure" : "1.2.0",
 	"jetty": "7.0.0.RC4",
 	"slf4j" : "1.5.2"
 ]
@@ -29,11 +28,9 @@ repositories {
     mavenCentral() 
 }
 
-aotCompile = false
-
 dependencies {
-    compile "org.clojure:clojure:${versions.clojure}"
-    compile "org.clojure:clojure-contrib:${versions.clojure}"
+    compile "org.clojure:clojure:1.2.1"
+    compile "org.clojure:clojure-contrib:1.2.0"    
     compile "org.slf4j:slf4j-api:${versions.slf4j}"
         
     compile "javax.servlet:servlet-api:2.5"
