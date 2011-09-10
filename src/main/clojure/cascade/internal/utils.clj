@@ -1,4 +1,4 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
+; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,9 +14,6 @@
 (ns
   ^{:doc "Internal private utilities"}
   cascade.internal.utils
-  (:import 
-    [java.util.regex Matcher MatchResult]
-    [clojure.lang IFn])
   (:use
     [clojure pprint]
     [clojure.contrib str-utils]))
@@ -27,38 +24,3 @@
   "Pretty-print a collection to a string."
   [coll]
   (with-out-str (pprint coll)))
-
-(defn find-classpath-resource
-  "Finds a resource on the classpath (as a URL) or returns nil if not found."
-  [path]
-  (.. (Thread/currentThread) getContextClassLoader (getResource path)))
-
-(defn find-namespace-resource
-  "Given a namespace (or a symbol identifying a namespace),
-  locates a resource relative to the namespace, or nil if not found."
-  [namespace path]
-  (let [ns-str (name (ns-name namespace))
-        ns-path (.. ns-str (replace \. \/) (replace \- \_))]
-    (find-classpath-resource (str ns-path "/" path))))
-
-(defn to-seq
-  "Converts the object to a sequence (a vector) unless it is already sequential."
-  [obj]
-  (if (sequential? obj) obj [obj]))
-
-(defn function?
-  "Returns true if an object is (or acts as) a Clojure function?"
-  [obj]
-  (instance? IFn obj))
-
-(defn apply-until-non-nil
-  "Works through a sequence of functions, apply the argseq to each of them until a function
-  returns a non-nil value"
-  [functions argseq]
-  (first (remove nil? (map #(apply % argseq) functions))))
-
-(defn blank?
-  [^String s]
-  (or
-    (nil? s)
-    (= 0 (.length s))))

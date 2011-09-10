@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -39,50 +39,50 @@
   (reduce z/append-child loc children))
 
 (deftest dom-zipping
-  (let [start-node (first (template :html [ :head [ "head text" ] :body [ "body text" ] ]))
+  (let [start-node (first (template :html [:head ["head text"] :body ["body text"]]))
         new-node (-> (dom-zipper start-node)
-                     z/down
-                     (zip-append-children
-                         (template
-                           :script { :src "a.js" }
-                           :script { :src "b.js" }))
-                     z/root)]
+      z/down
+      (zip-append-children
+        (template
+          :script {:src "a.js"}
+          :script {:src "b.js"}))
+      z/root)]
     (is (= (render-single-node start-node) "<html><head>head text</head><body>body text</body></html>"))
     (is (= (render-single-node new-node) "<html><head>head text<script src=\"a.js\"></script><script src=\"b.js\"></script></head><body>body text</body></html>"))))
 
 (deftest test-navigate-dom-path
   (let [root (first (template
-                      :html [
-                        :head [
-                          :meta
-                          :script { :src "a.js" }
-                          :script { :src "b.js" }
-                          :title [ "For Navigation Test" ]
-                        ]
-                        :body [
-                          "Floating literal text."
-                          :p [ "Cascade!" ]
-                          :p [ "Second paragraph" ]
-                        ]]))
+    :html [
+      :head [
+        :meta
+        :script {:src "a.js"}
+        :script {:src "b.js"}
+        :title ["For Navigation Test"]
+        ]
+      :body [
+        "Floating literal text."
+        :p ["Cascade!"]
+        :p ["Second paragraph"]
+        ]]))
         dz (dom-zipper root)]
     (are [path rendered-value]
       (is (= (render-single-node (z/node (navigate-dom-path dz path))) rendered-value))
       [:html :body :p] "<p>Cascade!</p>"
       [:html :head :title] "<title>For Navigation Test</title>")
-      (is (nil? (navigate-dom-path dz [:not-html])))
-      (is (nil? (navigate-dom-path dz [:html :not-found])))))
+    (is (nil? (navigate-dom-path dz [:not-html])))
+    (is (nil? (navigate-dom-path dz [:html :not-found])))))
 
 (deftest test-extend-dom
-    ; to simplify tests, not using attributes
-    (let [new-nodes (template :script [ "a.js" ] :script [ "b.js" ])
-          dom-nodes (template :html [ :head [ :script [ "x.js" ] :meta  [ "via cascade" ]] :body [:p ["Cascade!" ]]])]
-      (are [path position expected-text]
-        (is (= (render-as-string (extend-dom dom-nodes path position new-nodes)) expected-text))
-        [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-        [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-        [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-        [:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
-        [:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
+  ; to simplify tests, not using attributes
+  (let [new-nodes (template :script ["a.js"] :script ["b.js"])
+        dom-nodes (template :html [:head [:script ["x.js"] :meta ["via cascade"]] :body [:p ["Cascade!"]]])]
+    (are [path position expected-text]
+      (is (= (render-as-string (extend-dom dom-nodes path position new-nodes)) expected-text))
+      [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
+      [:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
 
 (deftest test-encode-string
   (are [input output]

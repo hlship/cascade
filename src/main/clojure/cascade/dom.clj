@@ -1,4 +1,4 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
+; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@
     (clojure [zip :as z])
     (clojure.contrib [str-utils2 :as s2]))
   (:use
-    (cascade fail utils logging)
-     cascade.internal.utils))
+    (cascade fail utils)
+    cascade.internal.utils))
 
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
@@ -49,12 +49,12 @@
 
 (defn element-node
   [name attributes content]
-  (with-meta 
+  (with-meta
     (struct-map dom-node :type :element
-                       :name name
-                       :attributes (seq attributes)
-                       :value content)
-     dom-node-meta-data))
+      :name name
+      :attributes (seq attributes)
+      :value content)
+    dom-node-meta-data))
 
 (declare render-nodes)
 
@@ -68,7 +68,7 @@
       \< "&lt;"
       \> "&gt;"
       \& "&amp;"
-    }))
+      }))
 
 (defn char-to-entity
   "Converts a single character to an entity, returning the entity or the original character."
@@ -80,10 +80,10 @@
 (defn encode-string
   "Encodes a string, replacing all non-ASCII characters with XML escape codes. In addition,
   unsafe characters are replaced with HTML entities."
-   [s]
-   ; Could rewrite to more efficiently determine if out == s
-   (let [out (s2/map-str #(char-to-entity %) s)]
-     (if (= s out) s out)))
+  [s]
+  ; Could rewrite to more efficiently determine if out == s
+  (let [out (s2/map-str #(char-to-entity %) s)]
+    (if (= s out) s out)))
 
 (defn raw-node
   "Wraps a string as a :text DOM node, but does not do any filtering of the value."
@@ -141,10 +141,10 @@
     (write out "<" element-name)
     ; Write out normal attributes
     (doseq [[attr-name attr-value] (element-node :attributes)]
-        (if-not (nil? attr-value)
-          (write out 
-            " " (name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
-          
+      (if-not (nil? attr-value)
+        (write out
+          " " (name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
+
     (if (empty? content)
       ((strategy :close-empty-element-renderer) element-name out)
       (do
@@ -187,8 +187,8 @@
   output semantics: attributes are still quoted, but tags may not be balanced (the end tag
   may be ommitted if the element has no content)."
   [dom-nodes out]
-  (render-nodes dom-nodes html-strategy out))  
-  
+  (render-nodes dom-nodes html-strategy out))
+
 (defn element?
   "Returns true if the dom node is type :element."
   [node]
@@ -210,16 +210,16 @@
    nil if the path could not be resolved."
   [root-loc path]
   (fail-if (empty? path) "Must supply at least one keyword as the path.")
-  (loop  [loc root-loc
+  (loop [loc root-loc
          target-element (first path)
          remaining-path (rest path)]
     (lcond
       (nil? loc) nil
       :let [n (z/node loc)]
       (and (element? n) (= (n :name) target-element))
-        (if (empty? remaining-path)
-          loc
-          (recur (z/down loc) (first remaining-path) (rest remaining-path)))
+      (if (empty? remaining-path)
+        loc
+        (recur (z/down loc) (first remaining-path) (rest remaining-path)))
       true (recur (z/right loc) target-element remaining-path))))
 
 (defn update-dom
@@ -232,7 +232,7 @@
     (= position :top) (reduce z/insert-child loc (reverse new-nodes))
     (= position :after) (reduce z/insert-right loc (reverse new-nodes))
     (= position :bottom) (reduce z/append-child loc new-nodes)
-    true (fail "Unexpected position: %s" position)))
+    :else (fail "Unexpected position: %s" position)))
 
 (defn extend-root-element
   "Extends the DOM from the root DOM element, returning a new DOM.
@@ -246,7 +246,7 @@
     :let [root-loc (dom-zipper dom-node)
           loc (navigate-dom-path root-loc path)]
     (nil? loc) dom-node
-    true (z/root (update-dom loc position new-nodes))))
+    :else (z/root (update-dom loc position new-nodes))))
 
 (defn extend-dom
   "Extends a DOM (a set of root DOM nodes), adding new nodes at a specific position. Uses the path
@@ -259,12 +259,12 @@
   [dom-nodes path position new-nodes]
   (loop [result []
          queue dom-nodes]
-     (lcond
-         ; Never found an element node? Return the original nodes unchanged.
-         (empty? queue) dom-nodes
-         :let [node (first queue)]
-         (= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
-         true (recur (conj result node) (rest queue)))))
+    (lcond
+      ; Never found an element node? Return the original nodes unchanged.
+      (empty? queue) dom-nodes
+      :let [node (first queue)]
+      (= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
+      :else (recur (conj result node) (rest queue)))))
          
         
     

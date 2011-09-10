@@ -15,3 +15,4 @@ pom.xml
 *.iml
 *.ipr
 *.iws
+.lein-failures

@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@
      doc-string (optional match-string)
      fn-meta-data (optional match-map)
      parameters match-vector
-     bindings (optional match-vector)
      fn-forms (one-or-more any-form)]
     (let [doc-meta (and doc-string {:doc doc-string})
           full-meta (merge (meta fn-name) fn-meta-data doc-meta)
           symbol-with-meta (with-meta fn-name full-meta)]
-      [symbol-with-meta parameters bindings fn-forms])))
+      [symbol-with-meta parameters fn-forms])))
 
 (defn parse-function-def
   "Parses a flexible set of forms consisting of an optional documention string, an optional meta-data map, a
@@ -36,16 +35,3 @@
   data from the documentation string provided meta-data map), the parameters vector, and a seq of the additional forms."
   [fn-def-forms]
   (run-parse fn-def-parser fn-def-forms "function definition"))
-
-(def render-link-forms-parser
-  (domonad parser-m
-    [extra-path-info (optional match-vector)
-     query-parameters (optional match-map)
-     template-forms (one-or-more any-form)]
-     [extra-path-info query-parameters template-forms]))
-
-(defn parse-render-link-forms
-  "Parses the extra forms used by the cascade/link-to macro, returning a seq of three values:
-  a vector of extra path info, a map of query parameters, and a seq of template forms."
-  [forms]
-  (run-parse render-link-forms-parser forms "render-link"))

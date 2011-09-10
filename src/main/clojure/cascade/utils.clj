@@ -35,10 +35,5 @@
   "Expands all macros in a form, recursively, and prints the result. Returns nil."
   [form]
   `(pprint (mexpand-all '~form)))
-  
-(defn boolean?
-  "Is the value a boolean (true or false)? (boolean? nil) returns false."
-  [val]
-  (= Boolean (class val)))
- 
+
   

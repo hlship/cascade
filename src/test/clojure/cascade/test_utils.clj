@@ -14,34 +14,9 @@
 
 (ns cascade.test-utils
   (:use
-    [clojure pprint [test :exclude [function?]]]
-    [clojure.contrib duck-streams str-utils macro-utils]
-    cascade.config
-    [cascade func-utils utils]
-    [cascade.internal utils]))
-
-(deftest classpath-resource-does-not-exist
-  (is (= (find-classpath-resource "does/not/exist.txt") nil)))
-
-(deftest classpath-resource-exists
-  (let [path "cascade/internal/resource.txt"]
-    (is (= (slurp* (find-classpath-resource path))
-      (slurp (str "src/test/resources/" path))))))
-
-(deftest test-function?
-  (is (= (function? map) true) "a real function")
-  (is (= (function? nil) false) "nil is not a function")
-  (is (= (function? "string") false) "strings are not functions")
-  (is (= (function? {}) true) "maps act as a function"))
-
-(deftest test-to-seq
-  (let [v [:a :b]]
-    (is (identical? (to-seq v) v)))
-  (is (= (to-seq :a) [:a])))
-
-(deftest test-qualified-function-name
-  (is (= (qualified-function-name #'map) "clojure.core/map"))
-  (is (= (qualified-function-name #'function?) "cascade.internal.utils/function?")))
+    [clojure test]
+    [clojure.contrib macro-utils]
+    [cascade utils]))
 
 (deftest test-lcond
   (let [f #(lcond (nil? %) "nil"
@@ -56,15 +31,3 @@
 (deftest lcond-requires-even-clauses
   (is (thrown-with-msg? RuntimeException #".* lcond requires an even number of forms"
     (mexpand-all `(lcond (= 1 2) :b :c)))))
-    
-(deftest test-boolean?
-  (are [val expected]
-    (is (= (boolean? val) expected))
-    true true
-    Boolean/TRUE true
-    false true
-    Boolean/FALSE true
-    nil false
-    "whatever" false
-    0 false
-    1 false))    

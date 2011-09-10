@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -18,31 +18,28 @@
     (cascade.internal parse-functions)))
 
 (deftest test-simple-fn
-  (let [[n p b forms] (parse-function-def '(my-fn [a b] c d))]
+  (let [[n p forms] (parse-function-def '(my-fn [a b] c d))]
     (are [value expected]
-     (= value expected)
-     n 'my-fn
-     b nil
-     p '[a b]
-     forms '(c d))))
+      (= value expected)
+      n 'my-fn
+      p '[a b]
+      forms '(c d))))
 
 (deftest meta-data-for-doc-string-available
-  (let [[n p b forms] (parse-function-def '(my-fn "Test" [a b] c))]
+  (let [[n p forms] (parse-function-def '(my-fn "Test" [a b] c))]
     (are [value expected]
-     (= value expected)
+      (= value expected)
       n 'my-fn
-      b nil
       p '[a b]
       forms '(c))
     (is (= ((meta n) :doc) "Test"))))
 
 (deftest meta-data-applied-to-symbol
-  (let [[n p b forms] (parse-function-def '(a-fn "Next" { :key :value } [x y z]  :gnip :gnop))]
+  (let [[n p forms] (parse-function-def '(a-fn "Next" {:key :value} [x y z] :gnip :gnop))]
     (are [value expected]
-     (= value expected)
+      (= value expected)
       n 'a-fn
       p '[x y z]
-      b nil
       forms '(:gnip :gnop))
     (are [k v]
       (= ((meta n) k) v)
@@ -50,10 +47,9 @@
       :key :value)))
 
 (deftest binding-vector
-  (let [[n p b forms] (parse-function-def '(a-fn "Next" [a b] [c d] :gnip :gnop))]
+  (let [[n p forms] (parse-function-def '(a-fn "Next" [a b] :gnip :gnop))]
     (are [value expected]
       (= value expected)
       n 'a-fn
       p '[a b]
-      b '[c d]
       forms '(:gnip :gnop))))

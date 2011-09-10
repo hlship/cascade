@@ -1,4 +1,4 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
+; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ which are converted into :text DOM nodes."
 ) ; with-monad parser-m
 
 (defn parse-embedded-template
-  "Used as part of (defview) or (deffragment) to convert the a form, the embedded template, into
+  "Used as part of (defview) or (template) to convert the a form, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
   (run-parse parse-forms forms "embedded template forms"))
