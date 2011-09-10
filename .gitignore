@@ -12,3 +12,6 @@ classes/
 lib/
 pom.xml
 .gradle
+*.iml
+*.ipr
+*.iws
