@@ -28,9 +28,9 @@
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
   preceding the parameters vector. The function's forms are an implicit inline block."
   [& forms]
-  (let [[fn-name fn-params template-forms] (parse-function-def forms)
-        full-meta (merge (meta fn-name) {:cascade-type :view})]
-    `(defn ~fn-name ~(meta fn-name) ~fn-params
+  (let [[fn-name fn-params template-forms] (parse-function-def forms)]
+;   (printf "(defview %s ^%s %s %s)\n" fn-name (meta fn-name) fn-params template-forms)
+    `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
        (template ~@template-forms))))
 
 (defmacro block
