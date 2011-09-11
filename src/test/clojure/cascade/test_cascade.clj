@@ -22,18 +22,18 @@
     [clojure [test :only (is are deftest)] pprint]
     [clojure.contrib [duck-streams :only [slurp*]]]))
 
-#_ (defn render [dom]
+(defn render [dom]
   (let [writer (CharArrayWriter.)]
     (render-html dom writer)
     (.toString writer)))
 
-#_ (defn minimize-ws [string]
+(defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
 
-#_ (defn find-classpath-resource [path]
+(defn find-classpath-resource [path]
   (.. Thread currentThread getContextClassLoader (getResourceAsStream path)))
 
-#_ (defn render-test
+(defn render-test
   [view-fn name & rest]
   (let [input-path (str "expected/" name ".txt")
         expected (slurp* (find-classpath-resource input-path))
@@ -44,20 +44,20 @@
         trimmed-render (minimize-ws rendered)]
     (is (= trimmed-render trimmed-expected))))
 
-#_ (defview ^{:custom :bit-of-meta-data} simple-view
+(defview ^{:custom :bit-of-meta-data} simple-view
   [env]
   :p [(env :message)])
 
-#_ (deftest simple-defview
+(deftest simple-defview
   (render-test simple-view "simple-defview" {:message "Embedded Template"}))
 
-#_ (deftest meta-data
+(deftest meta-data
   (let [md (meta #'simple-view)]
     (is (= (md :name) 'simple-view) "standard meta-data")
     (is (= (md :custom) :bit-of-meta-data) "added meta-data")))
 
-#_ (defview attributes-view
-  [message]
+(defview attributes-view
+  [env]
   :p {:id "outer"} [
   :em {:id (env :inner)} [
     (env :message)
@@ -67,23 +67,23 @@
   (env :copyright)
   ])
 
-#_ (deftest attribute-rendering
+(deftest attribute-rendering
   (render-test attributes-view "attribute-rendering" {:message "Nested Text"
                                                       :copyright "(c) 2009 HLS"
                                                       :inner "frotz"}))
 
-#_ (defview special-attribute-values-view []
+(defview special-attribute-values-view []
   :p {:class :foo :height 0 :skipped nil} ["some text"])
 
-#_ (deftest special-attribute-values
+(deftest special-attribute-values
   (render-test special-attribute-values-view "special-attribute-values"))
 
-#_ (defn fetch-accounts []
+(defn fetch-accounts []
   [{:name "Dewey" :id 595}
    {:name "Cheatum" :id 1234}
    {:name "Howe" :id 4328}])
 
-#_ (defview list-accounts
+(defview list-accounts
   []
   :html [
   :head [:title ["List Accounts"]]
@@ -97,17 +97,17 @@
     ]
   ])
 
-#_ (deftest inline-macro
+(deftest inline-macro
   (render-test list-accounts "inline-macro"))
 
-#_ (defn looper [env]
+(defn looper
   "Loop fragment function. Iterates over its source and updates the env with the value key before
   rendering its body (a block)."
   [env source value-key body]
   (for [value source]
     (body (assoc env value-key value))))
 
-#_ (defview list-accounts-with-loop [env]
+(defview list-accounts-with-loop [env]
   :html [
   :head [:title ["List Accounts"]]
   linebreak
@@ -124,10 +124,10 @@
     ]
   ])
 
-#_ (deftest block-macro
+(deftest block-macro
   (render-test list-accounts-with-loop "block-macro" {}))
 
-#_ (defn symbol-view []
+(defn symbol-view []
   (let [copyright (template
     linebreak :hr :p [
       (raw "&copy; 2009 ")
@@ -143,12 +143,12 @@
         ]
       ])))
 
-#_ (deftest use-of-symbol
+(deftest use-of-symbol
   (render-test symbol-view "use-of-symbol"))
 
-#_ (defview template-for-view []
+(defview template-for-view []
   :ul [(template-for [x [1 2 3]] :li [x])])
 
-#_ (deftest test-template-for
+(deftest test-template-for
   (render-test template-for-view "template-for"))
 
