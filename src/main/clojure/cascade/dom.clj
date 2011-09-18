@@ -191,6 +191,13 @@ may be ommitted if the element has no content)."
   [node]
   (instance? ElementNode node))
 
+(defn dom-node?
+  "Is the object some kind of DOM node?"
+  [node]
+  (or (element? node)
+    (instance? RawNode node)
+    (instance? Comment node)))
+
 (defn dom-zipper
   [root-node]
   (fail-unless (element? root-node) "Root node for dom-zipper must be an element node.")
