@@ -99,7 +99,7 @@
   (doseq [node dom-nodes]
     (stream node strategy out)))
 
-(defrecord ElementNode [name attributes content]
+(defrecord Element [name attributes content]
 
   NodeStreaming
   (stream [node strategy out]
@@ -121,9 +121,9 @@
           (stream-nodes content strategy out)
           (write out "</" element-name ">"))))))
 
-; TODO: possibly don't need RawNode, instead extend NodeStreaming to String
+; TODO: possibly don't need Text, instead extend NodeStreaming to String
 
-(defrecord RawNode [text]
+(defrecord Text [text]
 
   NodeStreaming
   (stream [node strategy out]
@@ -139,12 +139,12 @@
 
 (defn element-node
   [name attributes content]
-  (ElementNode. name attributes content))
+  (Element. name attributes content))
 
 (defn raw-node
   "Wraps a string as a text DOM node, but does not do any filtering of the value."
   [s]
-  (RawNode. s))
+  (Text. s))
 
 (defn text-node
   "Creates a text node from the string. The string is encoded when the node is constructed."
@@ -185,15 +185,15 @@ may be ommitted if the element has no content)."
   (stream-nodes dom-nodes html-strategy out))
 
 (defn element?
-  "Is the node a DOM ElementNode?"
+  "Is the node a DOM Element?"
   [node]
-  (instance? ElementNode node))
+  (instance? Element node))
 
 (defn dom-node?
   "Is the object some kind of DOM node?"
   [node]
   (or (element? node)
-    (instance? RawNode node)
+    (instance? Text node)
     (instance? Comment node)))
 
 (defn dom-zipper
