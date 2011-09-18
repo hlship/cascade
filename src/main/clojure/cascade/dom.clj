@@ -260,7 +260,7 @@ sequence of dom nodes."
       ; Never found an element node? Return the original nodes unchanged.
       (empty? queue) dom-nodes
       :let [node (first queue)]
-      (= (node :type) :element) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
+      (element? node) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
       :else (recur (conj result node) (rest queue)))))
          
         
