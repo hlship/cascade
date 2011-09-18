@@ -105,13 +105,11 @@
   (stream [node strategy out]
     ; I'm hoping the need to qualify clojure.core/name is a bug in the 1.2 defrecord code that can be
     ; removed when we switch up to 1.3.
-    (let [name-keyword (:name node)
-          element-name (clojure.core/name name-keyword)
-          attr-quote (strategy :attribute-quote)
-          content (:content node)]
+    (let [element-name (clojure.core/name name)
+          attr-quote (strategy :attribute-quote)]
       (write out "<" element-name)
       ; Write out normal attributes
-      (doseq [[attr-name attr-value] (:attributes node)]
+      (doseq [[attr-name attr-value] attributes]
         (if-not (nil? attr-value)
           (write out
             " " (clojure.core/name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
@@ -129,13 +127,13 @@
 
   NodeStreaming
   (stream [node strategy out]
-    (write out (:text node))))
+    (write out text)))
 
 (defrecord Comment [text]
 
   NodeStreaming
   (stream [node strategy out]
-    (write out "<!--" (:text node) "-->")))
+    (write out "<!--" text "-->")))
 
 ; Most outside code will use these standard constructor functions, rather than using the records' constructors.
 
