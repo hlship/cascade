@@ -1,4 +1,4 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
+; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@
     [clojure [test :only (is are deftest)] pprint]
     [clojure.contrib [duck-streams :only [slurp*]]]))
 
-(defn render [dom]
+(defn stream-to-string [dom]
   (let [writer (CharArrayWriter.)]
-    (render-html dom writer)
+    (stream-html dom writer)
     (.toString writer)))
 
 (defn minimize-ws [string]
@@ -33,23 +33,23 @@
 (defn find-classpath-resource [path]
   (.. Thread currentThread getContextClassLoader (getResourceAsStream path)))
 
-(defn render-test
+(defn stream-test
   [view-fn name & rest]
   (let [input-path (str "expected/" name ".txt")
         expected (slurp* (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
         dom (apply view-fn rest)
         ; _ (pprint dom)
-        rendered (render dom)
-        trimmed-render (minimize-ws rendered)]
-    (is (= trimmed-render trimmed-expected))))
+        streamed (stream-to-string dom)
+        trimmed-actual (minimize-ws streamed)]
+    (is (= trimmed-actual trimmed-expected))))
 
 (defview ^{:custom :bit-of-meta-data} simple-view
   [env]
   :p [(env :message)])
 
 (deftest simple-defview
-  (render-test simple-view "simple-defview" {:message "Embedded Template"}))
+  (stream-test simple-view "simple-defview" {:message "Embedded Template"}))
 
 (deftest meta-data
   (let [md (meta #'simple-view)]
@@ -68,7 +68,7 @@
   ])
 
 (deftest attribute-rendering
-  (render-test attributes-view "attribute-rendering" {:message "Nested Text"
+  (stream-test attributes-view "attribute-rendering" {:message "Nested Text"
                                                       :copyright "(c) 2009 HLS"
                                                       :inner "frotz"}))
 
@@ -76,7 +76,7 @@
   :p {:class :foo :height 0 :skipped nil} ["some text"])
 
 (deftest special-attribute-values
-  (render-test special-attribute-values-view "special-attribute-values"))
+  (stream-test special-attribute-values-view "special-attribute-values"))
 
 (defn fetch-accounts []
   [{:name "Dewey" :id 595}
@@ -98,7 +98,7 @@
   ])
 
 (deftest inline-macro
-  (render-test list-accounts "inline-macro"))
+  (stream-test list-accounts "inline-macro"))
 
 (defn looper
   "Loop fragment function. Iterates over its source and updates the env with the value key before
@@ -125,7 +125,7 @@
   ])
 
 (deftest block-macro
-  (render-test list-accounts-with-loop "block-macro" {}))
+  (stream-test list-accounts-with-loop "block-macro" {}))
 
 (defn symbol-view []
   (let [copyright (template
@@ -144,11 +144,11 @@
       ])))
 
 (deftest use-of-symbol
-  (render-test symbol-view "use-of-symbol"))
+  (stream-test symbol-view "use-of-symbol"))
 
 (defview template-for-view []
   :ul [(template-for [x [1 2 3]] :li [x])])
 
 (deftest test-template-for
-  (render-test template-for-view "template-for"))
+  (stream-test template-for-view "template-for"))
 

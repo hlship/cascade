@@ -25,38 +25,15 @@
     (cascade fail utils)
     cascade.internal.utils))
 
-; TODO: Replace deep tail recursion with some kind of queue or visitor pattern.
+; TODO: Replace deep tail recursion with some kind of queue or visitor pattern, perhaps lazy function to walk tree
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)
-; Need to be able to control quote character (single vs. double quote)
+; Need to be able to control quote character (single vs. double quote), for responses encoded into JSON
 ; Need to filter entities in :text nodes (can that be done earlier?)
 ; Who should URL encode attributes?
 
 ; TODO: For testing purposes (i.e., to get consistent results across JVMs, etc.)
 ; it may be necessary to sort attributes when rendering (but I'd rather not bother
 ; for production).  
-
-(defstruct dom-node
-  :type ; :element, :text
-  :name ; element tag (for :element)
-  :attributes ; seq of attribute/value pairs (for :element)
-  :value) ; literal text (text must be encoded), nested nodes for :element)
-
-(def dom-node-meta-data {::type ::cascade-node})
-
-(defn is-dom-node?
-  [node]
-  (= (::type (meta node)) ::cascade-node))
-
-(defn element-node
-  [name attributes content]
-  (with-meta
-    (struct-map dom-node :type :element
-      :name name
-      :attributes (seq attributes)
-      :value content)
-    dom-node-meta-data))
-
-(declare render-nodes)
 
 (def char-to-entity-map
   (merge
@@ -85,17 +62,6 @@
   (let [out (s2/map-str #(char-to-entity %) s)]
     (if (= s out) s out)))
 
-(defn raw-node
-  "Wraps a string as a :text DOM node, but does not do any filtering of the value."
-  [s]
-  (with-meta
-    (struct-map dom-node :type :text :value s)
-    dom-node-meta-data))
-
-(defn text-node
-  "Creates a text node from the string. The string is encoded when the node is constructed."
-  [text]
-  (raw-node (encode-string text)))
 
 (defmulti to-attr-string
   "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."
@@ -119,55 +85,86 @@
   (doseq [^String s strings]
     (.write out s)))
 
-(defmulti render-node
-  "Renders a single DOM node as a stream of markup characters, which varies based on the :type of the DOM node. 
-  The strategy map holds a number of functions that are used to differentiate XML vs. HTML rendering."
-  (fn [node strategy out]
-    (node :type)))
+(defprotocol NodeStreaming
+  "Defines how a tree of DOM Nodes can be recursively streamed out as characters."
+  (stream
+    [node strategy ^Writer out]
+    "Streams the node as characters to the writer. The strategy encapsulates the differences between HTML and XML
+    in terms of attribute quoting and handling of empty elements."))
 
-(defmethod render-node :text
-  [node strategy out]
-  (write out (node :value)))
+; This could possibly be replaced by extending NodeStreaming to the seq?
 
-(defmethod render-node :comment
-  [comment-node stategy out]
-  (write out "<!--" (comment-node :value) "-->"))
-
-(defmethod render-node :element
-  [element-node strategy out]
-  (let [element-name (name (element-node :name))
-        attr-quote (strategy :attribute-quote)
-        content (element-node :value)]
-    (write out "<" element-name)
-    ; Write out normal attributes
-    (doseq [[attr-name attr-value] (element-node :attributes)]
-      (if-not (nil? attr-value)
-        (write out
-          " " (name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
-
-    (if (empty? content)
-      ((strategy :close-empty-element-renderer) element-name out)
-      (do
-        (write out ">")
-        (render-nodes content strategy out)
-        (write out "</" element-name ">")))))
-
-(defn render-nodes
-  [dom-nodes strategy out]
+(defn stream-nodes
+  [dom-nodes strategy ^Writer out]
   (doseq [node dom-nodes]
-    (render-node node strategy out)))
+    (stream node strategy out)))
+
+(defrecord ElementNode [name attributes content]
+
+  NodeStreaming
+  (stream [node strategy out]
+    ; I'm hoping the need to qualify clojure.core/name is a bug in the 1.2 defrecord code that can be
+    ; removed when we switch up to 1.3.
+    (let [name-keyword (:name node)
+          element-name (clojure.core/name name-keyword)
+          attr-quote (strategy :attribute-quote)
+          content (:content node)]
+      (write out "<" element-name)
+      ; Write out normal attributes
+      (doseq [[attr-name attr-value] (:attributes node)]
+        (if-not (nil? attr-value)
+          (write out
+            " " (clojure.core/name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
+
+      (if (empty? content)
+        ((strategy :write-empty-element-close) element-name out)
+        (do
+          (write out ">")
+          (stream-nodes content strategy out)
+          (write out "</" element-name ">"))))))
+
+; TODO: possibly don't need RawNode, instead extend NodeStreaming to String
+
+(defrecord RawNode [text]
+
+  NodeStreaming
+  (stream [node strategy out]
+    (write out (:text node))))
+
+(defrecord Comment [text]
+
+  NodeStreaming
+  (stream [node strategy out]
+    (write out "<!--" (:text node) "-->")))
+
+; Most outside code will use these standard constructor functions, rather than using the records' constructors.
+
+(defn element-node
+  [name attributes content]
+  (ElementNode. name attributes content))
+
+(defn raw-node
+  "Wraps a string as a text DOM node, but does not do any filtering of the value."
+  [s]
+  (RawNode. s))
+
+(defn text-node
+  "Creates a text node from the string. The string is encoded when the node is constructed."
+  [text]
+  (raw-node (encode-string text)))
+
 
 (def xml-strategy {
   :attribute-quote "\""
-  :close-empty-element-renderer (fn [element-name out] (write out "/>"))
+  :write-empty-element-close (fn [element-name out] (write out "/>"))
   })
 
-(defn render-xml
-  "Renders a seq of DOM nodes representing a complete document (generally the list will include just
-  a single root element node, but text and comments and the like may come into play as well)."
+(defn stream-xml
+  "Streams a seq of DOM nodes representing a complete document to a writer. Ggenerally the seq will include just
+a single root element node, but text and comments and the like may come into play as well."
   [dom-nodes out]
   (write out "<?xml version=\"1.0\"?>\n")
-  (render-nodes dom-nodes xml-strategy out))
+  (stream-nodes dom-nodes xml-strategy out))
 
 (def html-must-close-elements #{"script"})
 
@@ -179,35 +176,35 @@
 
 (def html-strategy {
   :attribute-quote "\""
-  :close-empty-element-renderer #'html-empty-element-renderer
+  :write-empty-element-close #'html-empty-element-renderer
   })
 
-(defn render-html
-  "Renders a seq of DOM nodes representing a complete document (as with render-xml) but with HTML
-  output semantics: attributes are still quoted, but tags may not be balanced (the end tag
-  may be ommitted if the element has no content)."
+(defn stream-html
+  "Streams a seq of DOM nodes representing a complete document (as with stream-xml) but with HTML
+output semantics: attributes are still quoted, but tags may not be balanced (the end tag
+may be ommitted if the element has no content)."
   [dom-nodes out]
-  (render-nodes dom-nodes html-strategy out))
+  (stream-nodes dom-nodes html-strategy out))
 
 (defn element?
-  "Returns true if the dom node is type :element."
+  "Is the node a DOM ElementNode?"
   [node]
-  (= :element (:type node)))
+  (instance? ElementNode node))
 
 (defn dom-zipper
   [root-node]
   (fail-unless (element? root-node) "Root node for dom-zipper must be an element node.")
   (z/zipper
     element? ; can have children
-    :value ; children are (already) a seq in the :value key
-    (fn [node children] (assoc node :value children))
+    :content ; children are (already) a seq in the :content key
+    (fn [node children] (assoc node :content children))
     root-node))
 
 (defn navigate-dom-path
   "Starting from the root location (from dom-zipper) search for the first element child
-   that matches the first element in the path. The search continues looking for a child that
-   matches each successive keyword in the path. Returns the zipper loc for the final match or
-   nil if the path could not be resolved."
+that matches the first element in the path. The search continues looking for a child that
+matches each successive keyword in the path. Returns the zipper loc for the final match or
+nil if the path could not be resolved."
   [root-loc path]
   (fail-if (empty? path) "Must supply at least one keyword as the path.")
   (loop [loc root-loc
@@ -216,7 +213,7 @@
     (lcond
       (nil? loc) nil
       :let [n (z/node loc)]
-      (and (element? n) (= (n :name) target-element))
+      (and (element? n) (= (:name n) target-element))
       (if (empty? remaining-path)
         loc
         (recur (z/down loc) (first remaining-path) (rest remaining-path)))
@@ -224,8 +221,8 @@
 
 (defn update-dom
   "Updates the DOM using a DOM zipper, a position (:before, :after, :top, :bottom)
-  and a seq of new nodes. Returns a DOM zipper loc from which the entire DOM tree can
-  be retrieved."
+ and a seq of new nodes. Returns a DOM zipper loc from which the entire DOM tree can
+ be retrieved."
   [loc position new-nodes]
   (cond
     (= position :before) (reduce z/insert-left loc new-nodes)
@@ -236,11 +233,11 @@
 
 (defn extend-root-element
   "Extends the DOM from the root DOM element, returning a new DOM.
-  The path is a seq of keywords, used to walk down to a specifc element in
-  the DOM. The new nodes (often via the template macro) will be inserted
-  according to position. :before, :after, :top (left-most, first children)
-  :bottom (right-most, last children). Returns the modified root DOM node, or
-  (if the path was unable to locate a specific element), the original root DOM node."
+The path is a seq of keywords, used to walk down to a specifc element in
+the DOM. The new nodes (often via the template macro) will be inserted
+according to position. :before, :after, :top (left-most, first children)
+:bottom (right-most, last children). Returns the modified root DOM node, or
+(if the path was unable to locate a specific element), the original root DOM node."
   [dom-node path position new-nodes]
   (lcond
     :let [root-loc (dom-zipper dom-node)
@@ -250,12 +247,12 @@
 
 (defn extend-dom
   "Extends a DOM (a set of root DOM nodes), adding new nodes at a specific position. Uses the path
-   (a seq of keywords, representing elements) to locate an element within the DOM
-   then adds the new nodes at the position (position can be :top :bottom :before :after).
-   Assumes that the first element node in dom-nodes
-   is the root of the element tree (other nodes are possibly text or comments).
-   Does nothing if the targetted node can't be found. Returns a new
-   sequence of dom nodes."
+(a seq of keywords, representing elements) to locate an element within the DOM
+then adds the new nodes at the position (position can be :top :bottom :before :after).
+Assumes that the first element node in dom-nodes
+is the root of the element tree (other nodes are possibly text or comments).
+Does nothing if the targetted node can't be found. Returns a new
+sequence of dom nodes."
   [dom-nodes path position new-nodes]
   (loop [result []
          queue dom-nodes]
