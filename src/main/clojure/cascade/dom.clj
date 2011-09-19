@@ -13,8 +13,8 @@
 ; and limitations under the License.
 
 (ns
-  ^{:doc "DOM node structure, rendering and manipulation"}
   cascade.dom
+  "DOM node structure, rendering and manipulation"
   (:import
     (clojure.lang Keyword)
     (java.io Writer))

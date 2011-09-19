@@ -12,8 +12,8 @@
 ; and limitations under the License.
 
 (ns
-  ^{:doc "Internal private utilities"}
   cascade.internal.utils
+  "Internal private utilities"
   (:use
     [clojure pprint]
     [clojure.contrib str-utils]))

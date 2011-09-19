@@ -12,8 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns ^{:doc "Utilities for converting an exception into a structure that can be rendered"}
+(ns
   cascade.exception
+  "Utilities for converting an exception into a structure that can be rendered"
   (:import
     (java.lang Throwable StackTraceElement))
   (:require
@@ -49,29 +50,29 @@
       (if-not (empty? raw-function-ids)
         (template
           namespace-name "/" (s2/join "/" function-names)
-          :span { :class :c-omitted } [ " " class-name "." method-name])))))
+          :span {:class :c-omitted} [" " class-name "." method-name])))))
 
 (defn transform-stack-frame
   [^StackTraceElement element]
   {
     :element element
     :method-name
-      (let [file-name (.getFileName element)
-            line-number (.getLineNumber element)
-            class-name (.getClassName element)
-            method-name (.getMethodName element)]
-        (template
-          (or
-            (convert-clojure-frame class-name method-name)
-            (str class-name "." method-name))
-          " "
-          (cond
-            (.isNativeMethod element) (template :em [ "(Native Method)" ])
-            (and (not (nil? file-name)) (<= 0 line-number)) (str "(" file-name ":" line-number ")")
-            (not (nil? file-name)) (str "(" file-name ")")
-            :else (template :em [ "(Unknown Source)" ]))))
-      :class-name (class-name-for-element element)
-  })
+    (let [file-name (.getFileName element)
+          line-number (.getLineNumber element)
+          class-name (.getClassName element)
+          method-name (.getMethodName element)]
+      (template
+        (or
+          (convert-clojure-frame class-name method-name)
+          (str class-name "." method-name))
+        " "
+        (cond
+          (.isNativeMethod element) (template :em ["(Native Method)"])
+          (and (not (nil? file-name)) (<= 0 line-number)) (str "(" file-name ":" line-number ")")
+          (not (nil? file-name)) (str "(" file-name ")")
+          :else (template :em ["(Unknown Source)"]))))
+    :class-name (class-name-for-element element)
+    })
 
 (defn transform-stack-trace
   "Transforms a primitive array of StackTraceElements into individual maps;
@@ -95,9 +96,9 @@
     (let [bean-properties (bean current)
           next-exception (.getCause current)
           is-deepest (nil? next-exception)
-          exception-map { :class-name (.. current getClass getName)
-                          :message (.getMessage current)
-                          :properties (apply dissoc bean-properties throwable-properties) }]
+          exception-map {:class-name (.. current getClass getName)
+                         :message (.getMessage current)
+                         :properties (apply dissoc bean-properties throwable-properties)}]
       (if is-deepest
         (conj stack (assoc exception-map :stack-trace (transform-stack-trace (.getStackTrace current))))
         (recur next-exception (conj stack exception-map))))))

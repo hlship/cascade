@@ -12,8 +12,9 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns ^{:doc "Core functions and macros used when implementing Cascade views and actions"}
+(ns
   cascade
+  "Core functions and macros used when implementing Cascade views and actions"
   (:use
     [clojure.contrib json]
     [cascade dom]
@@ -29,15 +30,15 @@
   preceding the parameters vector. The function's forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
-;   (printf "(defview %s ^%s %s %s)\n" fn-name (meta fn-name) fn-params template-forms)
+    ;   (printf "(defview %s ^%s %s %s)\n" fn-name (meta fn-name) fn-params template-forms)
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
-       (template ~@template-forms))))
+      (template ~@template-forms))))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
   a callback. The function, when invoked, returns a seq of DOM nodes."
   [fn-params & template-forms]
-    `(fn ~fn-params (template ~@template-forms)))
+  `(fn ~fn-params (template ~@template-forms)))
 
 (defmacro template-for
   "Executes a for list comprehension on the bindings, with the template forms evaluated as an implicit template."

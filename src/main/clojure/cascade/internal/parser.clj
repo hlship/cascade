@@ -1,4 +1,4 @@
-; Copyright 2009 Howard M. Lewis Ship
+; Copyright 2009, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 ; and limitations under the License.
 
 (ns
-  ^{:doc "Parser monad used to parse Clojure forms into higher-level structures"}
   cascade.internal.parser
+  "Parser monad used to parse Clojure forms into higher-level structures"
   (:use clojure.contrib.monads
         (cascade fail)
         (cascade.internal utils)))

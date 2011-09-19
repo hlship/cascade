@@ -11,11 +11,12 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns ^{:doc "A form parser used when building functions, to emulate (defn)'s ability to add documentation
-  and other meta-data"}
+(ns
   cascade.internal.parse-functions
+  "A form parser used when building functions, to emulate (defn)'s ability to add documentation
+  and other meta-data"
   (:use (clojure.contrib monads)
-        (cascade.internal utils parser)))
+    (cascade.internal utils parser)))
 
 (def fn-def-parser
   (domonad parser-m
