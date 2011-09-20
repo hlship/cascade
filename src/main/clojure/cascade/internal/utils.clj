@@ -15,8 +15,7 @@
   cascade.internal.utils
   "Internal private utilities"
   (:use
-    [clojure pprint]
-    [clojure.contrib str-utils]))
+    [clojure pprint]))
 
 (declare find-namespace-resource)
 

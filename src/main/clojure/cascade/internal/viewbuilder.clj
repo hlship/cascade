@@ -16,7 +16,7 @@
   "Form parser for the template DSL"
   (:use 
     [clojure [pprint :only (pprint)]]
-    [clojure.contrib monads]
+    [clojure.algo monads]
     [cascade dom fail]
     [cascade.internal utils parser]))  
 

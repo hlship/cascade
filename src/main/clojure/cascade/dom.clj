@@ -19,8 +19,7 @@
     (clojure.lang Keyword)
     (java.io Writer))
   (:require
-    (clojure [zip :as z])
-    (clojure.contrib [str-utils2 :as s2]))
+    (clojure [zip :as z]))
   (:use
     (cascade fail utils)
     cascade.internal.utils))
@@ -59,7 +58,7 @@
   unsafe characters are replaced with HTML entities."
   [s]
   ; Could rewrite to more efficiently determine if out == s
-  (let [out (s2/map-str #(char-to-entity %) s)]
+  (let [out (apply str (map #(char-to-entity %) (seq s)))]
     (if (= s out) s out)))
 
 

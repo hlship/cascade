@@ -14,7 +14,7 @@
 (ns
   cascade.internal.parser
   "Parser monad used to parse Clojure forms into higher-level structures"
-  (:use clojure.contrib.monads
+  (:use clojure.algo.monads
         (cascade fail)
         (cascade.internal utils)))
 

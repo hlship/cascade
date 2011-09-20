@@ -1,4 +1,4 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
+; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
 ; and limitations under the License.
 
 (ns cascade.utils
-  (:use
-    [clojure.contrib pprint macro-utils]))
+  "Utilities needed by cascade")
 
 (defmacro lcond
   "A reimplementation of Clojure's cond, with the addition of a special :let
@@ -23,17 +22,12 @@
   (when clauses
     (if (= 1 (count clauses))
       (throw (IllegalArgumentException. "lcond requires an even number of forms")))
-      (let
-        [tst (first clauses)
-         expr (second clauses)
-         rst (next (next clauses))]
-         (if (= tst :let)
-           `(let [~@expr] (lcond ~@rst))
-           `(if ~tst ~expr (lcond ~@rst))))))
-
-(defmacro debug-form
-  "Expands all macros in a form, recursively, and prints the result. Returns nil."
-  [form]
-  `(pprint (mexpand-all '~form)))
+    (let
+      [tst (first clauses)
+       expr (second clauses)
+       rst (next (next clauses))]
+      (if (= tst :let)
+        `(let [~@expr] (lcond ~@rst))
+        `(if ~tst ~expr (lcond ~@rst))))))
 
   

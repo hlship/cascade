@@ -15,7 +15,7 @@
   cascade.internal.parse-functions
   "A form parser used when building functions, to emulate (defn)'s ability to add documentation
   and other meta-data"
-  (:use (clojure.contrib monads)
+  (:use (clojure.algo monads)
     (cascade.internal utils parser)))
 
 (def fn-def-parser

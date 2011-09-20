@@ -14,9 +14,8 @@
 
 (ns
   cascade
-  "Core functions and macros used when implementing Cascade views and actions"
+  "Core functions and macros used when implementing Cascade views"
   (:use
-    [clojure.contrib json]
     [cascade dom]
     [cascade.internal utils viewbuilder parse-functions]))
 

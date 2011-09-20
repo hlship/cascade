@@ -19,8 +19,7 @@
     cascade
     [cascade dom]
     [cascade.internal utils]
-    [clojure [test :only (is are deftest)] pprint]
-    [clojure.contrib [duck-streams :only [slurp*]]]))
+    [clojure [test :only (is are deftest)] pprint]))
 
 (defn stream-to-string [dom]
   (let [writer (CharArrayWriter.)]
@@ -36,7 +35,7 @@
 (defn stream-test
   [view-fn name & rest]
   (let [input-path (str "expected/" name ".txt")
-        expected (slurp* (find-classpath-resource input-path))
+        expected (slurp (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
         dom (apply view-fn rest)
         ; _ (pprint dom)
