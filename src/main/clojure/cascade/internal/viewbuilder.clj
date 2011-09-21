@@ -29,7 +29,7 @@
     (string? any) (text-node any)
     (number? any) (raw-node (str any))
     true (throw (RuntimeException.
-      (format "A rendering function returned %s. Rendering functions should return nil, a string, a seq of DOM nodes, or a single DOM node."
+      (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
     (pr-str any))))))
 
 (defn combine
