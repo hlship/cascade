@@ -150,3 +150,10 @@
 (deftest test-template-for
   (stream-test template-for-view "template-for"))
 
+(defview entity-template []
+  :br
+  :&nbsp
+  :p [ "After a space"])
+
+(deftest test-entity-in-template
+  (stream-test entity-template "entity-template"))

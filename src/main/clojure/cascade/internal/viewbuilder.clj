@@ -63,6 +63,10 @@ which are converted into :text DOM nodes."
     (domonad [body match-vector]
       (parse-embedded-template body)))
 
+  (def parse-entity
+    (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
+      `(raw-node ~(str (name entity-name) ";"))))
+
   (def parse-element
     (domonad [name parse-name
               attributes (optional match-map)
@@ -77,7 +81,7 @@ which are converted into :text DOM nodes."
          form))
 
   (def parse-single-form
-    (match-first parse-text parse-element parse-form))
+    (match-first parse-text parse-entity parse-element parse-form))
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
