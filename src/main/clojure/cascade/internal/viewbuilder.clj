@@ -25,7 +25,6 @@
   "Checks the result of invoking a rendering function (or evaluating a symbol), to ensure that only
    acceptible values are returned."
   (cond
-    ; A map is assumed to be a DOM node
     (dom-node? any) any
     (string? any) (text-node any)
     (number? any) (raw-node (str any))
