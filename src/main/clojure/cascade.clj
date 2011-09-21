@@ -17,7 +17,7 @@
   "Core functions and macros used when implementing Cascade views"
   (:use
     [cascade dom]
-    [cascade.internal utils viewbuilder parse-functions]))
+    [cascade.internal viewbuilder parse-functions]))
 
 (defmacro template
   "Defines a block of the template DSL, which is converted into code that renders a seq of DOM nodes."
