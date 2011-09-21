@@ -29,7 +29,6 @@
   preceding the parameters vector. The function's forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
-    ;   (printf "(defview %s ^%s %s %s)\n" fn-name (meta fn-name) fn-params template-forms)
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
       (template ~@template-forms))))
 
