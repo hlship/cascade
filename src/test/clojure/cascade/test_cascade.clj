@@ -18,7 +18,6 @@
   (:use
     cascade
     [cascade dom]
-    [cascade.internal utils]
     [clojure [test :only (is are deftest)] pprint]))
 
 (defn stream-to-string [dom]

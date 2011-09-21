@@ -21,8 +21,7 @@
   (:require
     (clojure [zip :as z]))
   (:use
-    (cascade fail utils)
-    cascade.internal.utils))
+    (cascade fail utils)))
 
 ; TODO: Replace deep tail recursion with some kind of queue or visitor pattern, perhaps lazy function to walk tree
 ; Need to be able to control close tags for empty elements (XML vs. HTML style)

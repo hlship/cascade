@@ -18,7 +18,7 @@
     [clojure [pprint :only (pprint)]]
     [clojure.algo monads]
     [cascade dom fail]
-    [cascade.internal utils parser]))  
+    [cascade.internal parser]))
 
 (defn convert-render-result
   [any]
