@@ -153,7 +153,19 @@
 (defview entity-template []
   :br
   :&nbsp
-  :p [ "After a space"])
+  :p ["After a space"])
 
 (deftest test-entity-in-template
   (stream-test entity-template "entity-template"))
+
+(defview implicit-attributes []
+  :div [
+  linebreak :p.alpha ["alpha"]
+  linebreak :p.alpha.bravo ["alpha bravo"]
+  linebreak :p.alpha.bravo#tango ["tango"]
+  ; By convention, the #id comes at the end, but the code allows it to be repeated and occur in the middle.
+  linebreak :p.moe#larry.curly#shemp ["shemp"]
+  linebreak])
+
+(deftest test-implicit-attributes
+  (stream-test implicit-attributes "implicit-attributes"))

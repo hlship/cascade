@@ -14,7 +14,9 @@
 (ns
   cascade.internal.viewbuilder
   "Form parser for the template DSL"
-  (:use 
+  (:require
+    [clojure.string :as str])
+  (:use
     [clojure [pprint :only (pprint)]]
     [clojure.algo monads]
     [cascade dom fail]
@@ -29,8 +31,48 @@
     (string? any) (text-node any)
     (number? any) (raw-node (str any))
     true (throw (RuntimeException.
-      (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
-    (pr-str any))))))
+    (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
+      (pr-str any))))))
+
+(defn explode-element-name
+  "Explodes an element name keyword into a seq of three-element vectors. Each vector
+  consists of the portion of the name prior to the match, the match character, and
+  the match term. :div.alpha#beta would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
+  [element-name]
+  (let [name-str (name element-name)]
+    ; match sequences of word characters prefixed with '.' or '#' within the overall name
+    (loop [matcher (re-matcher #"([.#])(\w+)" name-str)
+           result []]
+      (if (.find matcher)
+        (recur matcher (conj result [(.substring name-str 0 (.start matcher))
+                                     (.group matcher 1)
+                                     (.group matcher 2)]))
+        result))))
+
+(defn extract-attributes
+  [exploded match key attributes]
+  (let [matches (map #(nth % 2) (filter #(= match (nth % 1)) exploded))
+        c (count matches)]
+    (cond
+      (= c 0) attributes
+      (= c 1) (assoc attributes key (keyword (first matches)))
+      :else (assoc attributes key (str/join " " matches)))))
+
+(defn factor-element-name
+  "Factors a keyword representing an element name into a simple element name keyword and a
+  map of up to two attributes: :id and :class. The complex element name includes the implicit id and class(es)
+  using CSS-inspired naming; :p.important.top-level#status would factor to
+  [:p { :id :status :class \"important top-level\" } ]. The value for :class will be
+  a keyword if there is only a single value. The attributes map may be nil if the
+  element-name is simple."
+  [element-name]
+  (let [exploded (explode-element-name element-name)]
+    (if (empty? exploded)
+      [element-name nil]
+      (let [simple-element-name (keyword (get-in exploded [0 0]))
+            extract (partial extract-attributes exploded)
+            attributes (->> {} (extract "." :class) (extract "#" :id))]
+        [simple-element-name attributes]))))
 
 (defn combine
   "Given the results of rendering (where each step provides a render result), combine the results
@@ -71,14 +113,16 @@ which are converted into :text DOM nodes."
     (domonad [name parse-name
               attributes (optional match-map)
               body (optional parse-body)]
-       `(element-node ~name ~attributes ~body)))
+      (let [[factored-element-name implicit-attributes] (factor-element-name name)
+            assembled-attributes (merge implicit-attributes attributes)]
+        `(element-node ~factored-element-name ~assembled-attributes ~body))))
 
   ; Accept a single form that will act as a renderer, returning a render
   ; result, which will be combined with other render results via the
   ; parse-forms parser. This form may be a symbol or a list (a function call).
   (def parse-form
-       (domonad [form match-form]
-         form))
+    (domonad [form match-form]
+      form))
 
   (def parse-single-form
     (match-first parse-text parse-entity parse-element parse-form))
@@ -92,7 +136,7 @@ which are converted into :text DOM nodes."
       ; purely functional. Perhaps there's a monadic approach that will allow the construction
       ; of the DOM tree and the collection of CSS/JS data to occur in a stricly functional way?
       `(combine ~@forms)))
-) ; with-monad parser-m
+  ) ; with-monad parser-m
 
 (defn parse-embedded-template
   "Used as part of (defview) or (template) to convert the a form, the embedded template, into

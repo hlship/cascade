@@ -1,0 +1,6 @@
+<div>
+<p class="alpha">alpha</p>
+<p class="alpha bravo">alpha bravo</p>
+<p class="alpha bravo" id="tango">tango</p>
+<p class="moe curly" id="larry shemp">shemp</p>
+</div>
