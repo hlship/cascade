@@ -118,8 +118,6 @@
           (stream-nodes content strategy out)
           (write out "</" element-name ">"))))))
 
-; TODO: possibly don't need Text, instead extend NodeStreaming to String
-
 (defrecord Text [text]
 
   NodeStreaming
