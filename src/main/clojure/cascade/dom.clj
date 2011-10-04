@@ -101,8 +101,7 @@
 
   NodeStreaming
   (stream [node strategy out]
-    ; I'm hoping the need to qualify clojure.core/name is a bug in the 1.2 defrecord code that can be
-    ; removed when we switch up to 1.3.
+    ; The field 'name' shadows clojure.core/name, so we have to be explicit
     (let [element-name (clojure.core/name name)
           attr-quote (strategy :attribute-quote)]
       (write out "<" element-name)
