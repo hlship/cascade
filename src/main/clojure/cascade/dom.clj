@@ -61,21 +61,29 @@
     (if (= s out) s out)))
 
 
-(defmulti to-attr-string
+(defprotocol ToAttributeValueString
   "Converts an attribute value to a string. It is not necessary to apply quotes (those come at a later stage)."
-  class)
+  (to-attribute-value-string [value]
+    "Converts the value to a string that can be safely streamed as an attribute value."))
 
-(defmethod to-attr-string String
-  [str-value]
-  (encode-string str-value))
+(extend String
+  ToAttributeValueString
+  {
+    :to-attribute-value-string encode-string
+    })
 
-(defmethod to-attr-string Number
-  [^Number numeric-value]
-  (.toString numeric-value))
+(extend Number
+  ToAttributeValueString
+  {
+    :to-attribute-value-string (fn [num] (.toString num))
+    })
 
-(defmethod to-attr-string Keyword
-  [kw]
-  (encode-string (name kw)))
+(extend Keyword
+  ToAttributeValueString
+  {
+    :to-attribute-value-string (fn [kw] (encode-string (name kw)))
+    })
+
 
 (defn- write
   "Write a number of strings to the writer."
@@ -109,7 +117,7 @@
       (doseq [[attr-name attr-value] attributes]
         (if-not (nil? attr-value)
           (write out
-            " " (clojure.core/name attr-name) "=" attr-quote (to-attr-string attr-value) attr-quote)))
+            " " (clojure.core/name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote)))
 
       (if (empty? content)
         ((strategy :write-empty-element-close) element-name out)
