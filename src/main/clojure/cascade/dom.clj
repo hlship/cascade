@@ -62,23 +62,15 @@
   (to-attribute-value-string [value]
     "Converts the value to a string that can be safely streamed as an attribute value."))
 
-(extend String
-  ToAttributeValueString
-  {
-    :to-attribute-value-string encode-string
-    })
+(extend-protocol ToAttributeValueString
+  String
+  (to-attribute-value-string [string] (encode-string string))
 
-(extend Number
-  ToAttributeValueString
-  {
-    :to-attribute-value-string (fn [num] (.toString num))
-    })
+  Number
+  (to-attribute-value-string [num] (.toString num))
 
-(extend Keyword
-  ToAttributeValueString
-  {
-    :to-attribute-value-string (fn [kw] (encode-string (name kw)))
-    })
+  Keyword
+  (to-attribute-value-string [kw] (encode-string (name kw))))
 
 (defprotocol DOMSerializing
   "Defines how a tree of DOM Nodes can be recursively serialized as seq of streamable strings."
