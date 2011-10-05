@@ -23,14 +23,14 @@
     (cascade dom)
     (cascade.internal viewbuilder)))
 
-(defn render-as-string
+(defn stream-as-string
   [dom-nodes]
-  (apply str (stream-html dom-nodes)))
+  (apply str (serialize-html dom-nodes)))
 
-(defn render-single-node
+(defn stream-single-node
   "Render a single node as a string."
   [root-node]
-  (render-as-string [root-node]))
+  (stream-as-string [root-node]))
 
 (defn zip-append-children
   [loc children]
@@ -45,8 +45,8 @@
           :script {:src "a.js"}
           :script {:src "b.js"}))
       z/root)]
-    (is (= (render-single-node start-node) "<html><head>head text</head><body>body text</body></html>"))
-    (is (= (render-single-node new-node) "<html><head>head text<script src=\"a.js\"></script><script src=\"b.js\"></script></head><body>body text</body></html>"))))
+    (is (= (stream-single-node start-node) "<html><head>head text</head><body>body text</body></html>"))
+    (is (= (stream-single-node new-node) "<html><head>head text<script src=\"a.js\"></script><script src=\"b.js\"></script></head><body>body text</body></html>"))))
 
 (deftest test-navigate-dom-path
   (let [root (first (template
@@ -64,7 +64,7 @@
         ]]))
         dz (dom-zipper root)]
     (are [path rendered-value]
-      (is (= (render-single-node (z/node (navigate-dom-path dz path))) rendered-value))
+      (is (= (stream-single-node (z/node (navigate-dom-path dz path))) rendered-value))
       [:html :body :p] "<p>Cascade!</p>"
       [:html :head :title] "<title>For Navigation Test</title>")
     (is (nil? (navigate-dom-path dz [:not-html])))
@@ -75,7 +75,7 @@
   (let [new-nodes (template :script ["a.js"] :script ["b.js"])
         dom-nodes (template :html [:head [:script ["x.js"] :meta ["via cascade"]] :body [:p ["Cascade!"]]])]
     (are [path position expected-text]
-      (is (= (render-as-string (extend-dom dom-nodes path position new-nodes)) expected-text))
+      (is (= (stream-as-string (extend-dom dom-nodes path position new-nodes)) expected-text))
       [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
       [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
       [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"

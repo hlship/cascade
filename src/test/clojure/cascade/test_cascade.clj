@@ -20,8 +20,10 @@
     [cascade dom]
     [clojure [test :only (is are deftest)] pprint]))
 
-(defn stream-to-string [dom]
-  (apply str (stream-html dom)))
+(defn serialize-to-string [dom]
+  ; This is very inefficient as it realizes the entire seq of strings all at once, but good
+  ; enough for testing.
+  (apply str (serialize-html dom)))
 
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
@@ -29,14 +31,14 @@
 (defn find-classpath-resource [path]
   (.. Thread currentThread getContextClassLoader (getResourceAsStream path)))
 
-(defn stream-test
+(defn serialize-test
   [view-fn name & rest]
   (let [input-path (str "expected/" name ".txt")
         expected (slurp (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
         dom (apply view-fn rest)
         ; _ (pprint dom)
-        streamed (stream-to-string dom)
+        streamed (serialize-to-string dom)
         trimmed-actual (minimize-ws streamed)]
     (is (= trimmed-actual trimmed-expected))))
 
@@ -45,7 +47,7 @@
   :p [(env :message)])
 
 (deftest simple-defview
-  (stream-test simple-view "simple-defview" {:message "Embedded Template"}))
+  (serialize-test simple-view "simple-defview" {:message "Embedded Template"}))
 
 (deftest meta-data
   (let [md (meta #'simple-view)]
@@ -64,7 +66,7 @@
   ])
 
 (deftest attribute-rendering
-  (stream-test attributes-view "attribute-rendering" {:message "Nested Text"
+  (serialize-test attributes-view "attribute-rendering" {:message "Nested Text"
                                                       :copyright "(c) 2009 HLS"
                                                       :inner "frotz"}))
 
@@ -72,7 +74,7 @@
   :p {:class :foo :height 0 :skipped nil} ["some text"])
 
 (deftest special-attribute-values
-  (stream-test special-attribute-values-view "special-attribute-values"))
+  (serialize-test special-attribute-values-view "special-attribute-values"))
 
 (defn fetch-accounts []
   [{:name "Dewey" :id 595}
@@ -94,7 +96,7 @@
   ])
 
 (deftest inline-macro
-  (stream-test list-accounts "inline-macro"))
+  (serialize-test list-accounts "inline-macro"))
 
 (defn looper
   "Loop fragment function. Iterates over its source and updates the env with the value key before
@@ -121,7 +123,7 @@
   ])
 
 (deftest block-macro
-  (stream-test list-accounts-with-loop "block-macro" {}))
+  (serialize-test list-accounts-with-loop "block-macro" {}))
 
 (defn symbol-view []
   (let [copyright (template
@@ -140,13 +142,13 @@
       ])))
 
 (deftest use-of-symbol
-  (stream-test symbol-view "use-of-symbol"))
+  (serialize-test symbol-view "use-of-symbol"))
 
 (defview template-for-view []
   :ul [(template-for [x [1 2 3]] :li [x])])
 
 (deftest test-template-for
-  (stream-test template-for-view "template-for"))
+  (serialize-test template-for-view "template-for"))
 
 (defview entity-template []
   :br
@@ -154,7 +156,7 @@
   :p ["After a space"])
 
 (deftest test-entity-in-template
-  (stream-test entity-template "entity-template"))
+  (serialize-test entity-template "entity-template"))
 
 (defview implicit-attributes []
   :div [
@@ -166,4 +168,4 @@
   linebreak])
 
 (deftest test-implicit-attributes
-  (stream-test implicit-attributes "implicit-attributes"))
+  (serialize-test implicit-attributes "implicit-attributes"))

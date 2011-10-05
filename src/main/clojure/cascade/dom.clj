@@ -23,12 +23,6 @@
   (:use
     (cascade fail utils)))
 
-; TODO: Replace deep tail recursion with some kind of queue or visitor pattern, perhaps lazy function to walk tree
-; Need to be able to control close tags for empty elements (XML vs. HTML style)
-; Need to be able to control quote character (single vs. double quote), for responses encoded into JSON
-; Need to filter entities in :text nodes (can that be done earlier?)
-; Who should URL encode attributes?
-
 ; TODO: For testing purposes (i.e., to get consistent results across JVMs, etc.)
 ; it may be necessary to sort attributes when rendering (but I'd rather not bother
 ; for production).  
@@ -86,19 +80,18 @@
     :to-attribute-value-string (fn [kw] (encode-string (name kw)))
     })
 
-(defprotocol NodeStreaming
-  "Defines how a tree of DOM Nodes can be recursively emitted as seq of streamable strings."
-  (stream
+(defprotocol DOMSerializing
+  "Defines how a tree of DOM Nodes can be recursively serialized as seq of streamable strings."
+  (serialize
     [node strategy]
-    "Converts the node to a stream of strings, safe to write into a response. The strategy encapsulates the differences between HTML and XML
+    "Converts an individual DOM node to a (lazy) seq of strings, safe to write into a response. The strategy encapsulates the differences between HTML and XML
     in terms of attribute quoting and handling of empty elements."))
 
-
-(defn stream-nodes
+(defn serialize-nodes
   [nodes strategy]
-  (mapcat (fn [node] (stream node strategy)) nodes))
+  (mapcat (fn [node] (serialize node strategy)) nodes))
 
-(defn create-stream-attribute-pair
+(defn create-serialize-attribute-pair
   "Returns a function that a key/value attribute pair into a seq of strings for rendering the attribute value. The key is expected a string or keyword. The value is a string,
   number, or keyword. If the value is nil, the returned function returns nil."
   [strategy]
@@ -108,43 +101,43 @@
         nil
         [" " (name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote]))))
 
-(defn stream-attribute-pairs
+(defn serialize-attribute-pairs
   [attributes strategy]
   ; Perhaps premature optimization, but we'll be doing this a LOT. In fact, I'm not happy that
   ; it is necessary to create the function fresh all the time; probably roll this into creation once as
   ; part of the strategy itself.
   (if (empty? attributes)
     nil
-    (mapcat (create-stream-attribute-pair strategy) attributes)))
+    (mapcat (create-serialize-attribute-pair strategy) attributes)))
 
-(defn stream-content-and-close [element-name content strategy]
+(defn serialize-content-and-close [element-name content strategy]
   (if (empty? content)
     ((:write-empty-element-close strategy) element-name)
-    (cons ">" (concat (stream-nodes content strategy) ["</" element-name ">"]))))
+    (cons ">" (concat (serialize-nodes content strategy) ["</" element-name ">"]))))
 
 (defrecord Element [name attributes content]
 
-  NodeStreaming
-  (stream [node strategy]
+  DOMSerializing
+  (serialize [node strategy]
     ; The field 'name' shadows clojure.core/name, so we have to be explicit
     (let [element-name (clojure.core/name name)
           preamble ["<" element-name]
-          attribute-pairs (stream-attribute-pairs attributes strategy)
-          postamble (stream-content-and-close element-name content strategy)]
+          attribute-pairs (serialize-attribute-pairs attributes strategy)
+          postamble (serialize-content-and-close element-name content strategy)]
       (concat preamble attribute-pairs postamble))))
 
 (defrecord Text [text]
 
-  NodeStreaming
-  (stream [node strategy]
-    ; TODO: seems a bit wasteful to create a new vector each time a Text is asked to stream itself.
+  DOMSerializing
+  (serialize [node strategy]
+    ; TODO: seems a bit wasteful to create a new vector each time a Text is asked to serialize itself.
     [text]))
 
 (defrecord Comment [text]
 
-  NodeStreaming
-  ; TODO: seems a bit wasteful to create a new vector each time a Comment is asked to stream itself.
-  (stream [node strategy]
+  DOMSerializing
+  ; TODO: seems a bit wasteful to create a new vector each time a Comment is asked to serialize itself.
+  (serialize [node strategy]
     ["<!--" text "-->"]))
 
 ; Most outside code will use these standard constructor functions, rather than using the records' constructors.
@@ -169,11 +162,11 @@
   :write-empty-element-close (constantly ["/>"])
   })
 
-(defn stream-xml
-  "Streams a seq of DOM nodes representing a complete document into a lazy seq of strings. Ggenerally the dom-nodes seq will include just
+(defn serialize-xml
+  "Serializes a seq of DOM nodes representing a complete document into a lazy seq of strings. Ggenerally the dom-nodes seq will include just
 a single root element node, but text and comments and the like may come into play as well."
   [dom-nodes]
-  (cons "<?xml version=\"1.0\"?>\n" (stream dom-nodes xml-strategy)))
+  (cons "<?xml version=\"1.0\"?>\n" (serialize dom-nodes xml-strategy)))
 
 (def html-must-close-elements #{"script"})
 
@@ -188,13 +181,13 @@ a single root element node, but text and comments and the like may come into pla
   :write-empty-element-close #'html-empty-element-writer
   })
 
-(defn stream-html
-  "Streams a seq of DOM nodes representing a complete document (as with stream-xml) but with HTML
+(defn serialize-html
+  "Serializes a seq of DOM nodes representing a complete document (as with serialize-xml) but with HTML
 output semantics: attributes are still quoted, but tags may not be balanced (the end tag
 may be ommitted if the element has no content). Result is a seq of strings that can be concatinated to provide the
 full response."
   [nodes]
-  (stream-nodes nodes html-strategy))
+  (serialize-nodes nodes html-strategy))
 
 (defn element?
   "Is the node a DOM Element?"
