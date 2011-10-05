@@ -16,8 +16,7 @@
   cascade.dom
   "DOM node structure, rendering and manipulation"
   (:import
-    (clojure.lang Keyword)
-    (java.io Writer))
+    (clojure.lang Keyword))
   (:require
     (clojure [zip :as z]))
   (:use
