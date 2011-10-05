@@ -56,3 +56,13 @@
   "Creates a comment DOM node."
   [comment]
   (comment-node comment))
+
+
+(defn wrap-html
+  "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
+is serialized to HTML (as lazy seq of strings)."
+  [handler]
+  (fn [req]
+    (->
+      (handler req)
+      serialize-html)))
