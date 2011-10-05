@@ -67,8 +67,8 @@
 
 (deftest attribute-rendering
   (serialize-test attributes-view "attribute-rendering" {:message "Nested Text"
-                                                      :copyright "(c) 2009 HLS"
-                                                      :inner "frotz"}))
+                                                         :copyright "(c) 2009 HLS"
+                                                         :inner "frotz"}))
 
 (defview special-attribute-values-view []
   :p {:class :foo :height 0 :skipped nil} ["some text"])
@@ -169,3 +169,11 @@
 
 (deftest test-implicit-attributes
   (serialize-test implicit-attributes "implicit-attributes"))
+
+(defview comments []
+  :div [
+  (template-for [i (range 1 4)]
+    (<!-- (format " %d " i)))
+  ])
+
+(deftest template-comments (serialize-test comments "template-comments"))

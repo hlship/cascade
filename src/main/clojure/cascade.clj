@@ -48,6 +48,11 @@
   (text-node "\r"))
 
 (defn raw
-  "Wraps a string as a :text DOM node, but does not do any filtering of the value."
+  "Wraps a string as a Static DOM node, but does not do any filtering of the value."
   [s]
   (raw-node s))
+
+(defn <!--
+  "Creates a comment DOM node."
+  [comment]
+  (comment-node comment))

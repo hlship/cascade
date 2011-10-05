@@ -126,12 +126,12 @@
           postamble (serialize-content-and-close element-name content strategy)]
       (concat preamble attribute-pairs postamble))))
 
-(defrecord Text [text]
+; Static is used for statically defined portions of the DOM tree, such as literal strings and
+; comments.
+(defrecord Static [strings]
 
   DOMSerializing
-  (serialize [node strategy]
-    ; TODO: seems a bit wasteful to create a new vector each time a Text is asked to serialize itself.
-    [text]))
+  (serialize [node strategy] strings))
 
 (defrecord Comment [text]
 
@@ -147,15 +147,19 @@
   (Element. name attributes content))
 
 (defn raw-node
-  "Wraps a string as a text DOM node, but does not do any encoding of the value."
+  "Wraps a string as a Static DOM node, but does not do any encoding of the value."
   [s]
-  (Text. s))
+  (Static. [s]))
 
 (defn text-node
-  "Creates a text node from the string. The string is encoded when the node is constructed."
+  "Creates a Static DOM node from the string. The string is encoded when the node is constructed."
   [text]
   (raw-node (encode-string text)))
 
+(defn comment-node
+  "Creates a Static DOM node from the string, providing the comment prefix and suffix. "
+  [comment]
+  (Static. ["<!--" comment "-->"]))
 
 (def xml-strategy {
   :attribute-quote "\""
@@ -198,8 +202,7 @@ full response."
   "Is the object some kind of DOM node?"
   [node]
   (or (element? node)
-    (instance? Text node)
-    (instance? Comment node)))
+    (instance? Static node)))
 
 (defn dom-zipper
   [root-node]
