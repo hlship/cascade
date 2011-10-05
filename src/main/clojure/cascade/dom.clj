@@ -57,6 +57,7 @@
   unsafe characters are replaced with HTML entities."
   [s]
   ; Could rewrite to more efficiently determine if out == s
+  ; Perhaps a regexp to see if encoding is necessary?
   (let [out (apply str (map #(char-to-entity %) (seq s)))]
     (if (= s out) s out)))
 
@@ -85,59 +86,66 @@
     :to-attribute-value-string (fn [kw] (encode-string (name kw)))
     })
 
-
-(defn- write
-  "Write a number of strings to the writer."
-  [^Writer out & strings]
-  (doseq [^String s strings]
-    (.write out s)))
-
 (defprotocol NodeStreaming
-  "Defines how a tree of DOM Nodes can be recursively streamed out as characters."
+  "Defines how a tree of DOM Nodes can be recursively emitted as seq of streamable strings."
   (stream
-    [node strategy ^Writer out]
-    "Streams the node as characters to the writer. The strategy encapsulates the differences between HTML and XML
+    [node strategy]
+    "Converts the node to a stream of strings, safe to write into a response. The strategy encapsulates the differences between HTML and XML
     in terms of attribute quoting and handling of empty elements."))
 
-; This could possibly be replaced by extending NodeStreaming to the seq?
 
 (defn stream-nodes
-  [dom-nodes strategy ^Writer out]
-  (doseq [node dom-nodes]
-    (stream node strategy out)))
+  [nodes strategy]
+  (mapcat (fn [node] (stream node strategy)) nodes))
+
+(defn create-stream-attribute-pair
+  "Returns a function that a key/value attribute pair into a seq of strings for rendering the attribute value. The key is expected a string or keyword. The value is a string,
+  number, or keyword. If the value is nil, the returned function returns nil."
+  [strategy]
+  (let [attr-quote (:attribute-quote strategy)]
+    (fn [[attr-name attr-value]]
+      (if (nil? attr-value)
+        nil
+        [" " (name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote]))))
+
+(defn stream-attribute-pairs
+  [attributes strategy]
+  ; Perhaps premature optimization, but we'll be doing this a LOT. In fact, I'm not happy that
+  ; it is necessary to create the function fresh all the time; probably roll this into creation once as
+  ; part of the strategy itself.
+  (if (empty? attributes)
+    nil
+    (mapcat (create-stream-attribute-pair strategy) attributes)))
+
+(defn stream-content-and-close [element-name content strategy]
+  (if (empty? content)
+    ((:write-empty-element-close strategy) element-name)
+    (cons ">" (concat (stream-nodes content strategy) ["</" element-name ">"]))))
 
 (defrecord Element [name attributes content]
 
   NodeStreaming
-  (stream [node strategy out]
+  (stream [node strategy]
     ; The field 'name' shadows clojure.core/name, so we have to be explicit
     (let [element-name (clojure.core/name name)
-          attr-quote (strategy :attribute-quote)]
-      (write out "<" element-name)
-      ; Write out normal attributes
-      (doseq [[attr-name attr-value] attributes]
-        (if-not (nil? attr-value)
-          (write out
-            " " (clojure.core/name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote)))
-
-      (if (empty? content)
-        ((strategy :write-empty-element-close) element-name out)
-        (do
-          (write out ">")
-          (stream-nodes content strategy out)
-          (write out "</" element-name ">"))))))
+          preamble ["<" element-name]
+          attribute-pairs (stream-attribute-pairs attributes strategy)
+          postamble (stream-content-and-close element-name content strategy)]
+      (concat preamble attribute-pairs postamble))))
 
 (defrecord Text [text]
 
   NodeStreaming
-  (stream [node strategy out]
-    (write out text)))
+  (stream [node strategy]
+    ; TODO: seems a bit wasteful to create a new vector each time a Text is asked to stream itself.
+    [text]))
 
 (defrecord Comment [text]
 
   NodeStreaming
-  (stream [node strategy out]
-    (write out "<!--" text "-->")))
+  ; TODO: seems a bit wasteful to create a new vector each time a Comment is asked to stream itself.
+  (stream [node strategy]
+    ["<!--" text "-->"]))
 
 ; Most outside code will use these standard constructor functions, rather than using the records' constructors.
 
@@ -146,7 +154,7 @@
   (Element. name attributes content))
 
 (defn raw-node
-  "Wraps a string as a text DOM node, but does not do any filtering of the value."
+  "Wraps a string as a text DOM node, but does not do any encoding of the value."
   [s]
   (Text. s))
 
@@ -158,35 +166,35 @@
 
 (def xml-strategy {
   :attribute-quote "\""
-  :write-empty-element-close (fn [element-name out] (write out "/>"))
+  :write-empty-element-close (constantly ["/>"])
   })
 
 (defn stream-xml
-  "Streams a seq of DOM nodes representing a complete document to a writer. Ggenerally the seq will include just
+  "Streams a seq of DOM nodes representing a complete document into a lazy seq of strings. Ggenerally the dom-nodes seq will include just
 a single root element node, but text and comments and the like may come into play as well."
-  [dom-nodes out]
-  (write out "<?xml version=\"1.0\"?>\n")
-  (stream-nodes dom-nodes xml-strategy out))
+  [dom-nodes]
+  (cons "<?xml version=\"1.0\"?>\n" (stream dom-nodes xml-strategy)))
 
 (def html-must-close-elements #{"script"})
 
-(defn html-empty-element-renderer
-  [element-name out]
+(defn html-empty-element-writer
+  [element-name]
   (if (contains? html-must-close-elements element-name)
-    (write out "></" element-name))
-  (write out ">"))
+    ["></" element-name ">"]
+    [">"]))
 
 (def html-strategy {
   :attribute-quote "\""
-  :write-empty-element-close #'html-empty-element-renderer
+  :write-empty-element-close #'html-empty-element-writer
   })
 
 (defn stream-html
   "Streams a seq of DOM nodes representing a complete document (as with stream-xml) but with HTML
 output semantics: attributes are still quoted, but tags may not be balanced (the end tag
-may be ommitted if the element has no content)."
-  [dom-nodes out]
-  (stream-nodes dom-nodes html-strategy out))
+may be ommitted if the element has no content). Result is a seq of strings that can be concatinated to provide the
+full response."
+  [nodes]
+  (stream-nodes nodes html-strategy))
 
 (defn element?
   "Is the node a DOM Element?"

@@ -25,9 +25,7 @@
 
 (defn render-as-string
   [dom-nodes]
-  (let [out (StringWriter.)]
-    (stream-html dom-nodes out)
-    (.toString out)))
+  (apply str (stream-html dom-nodes)))
 
 (defn render-single-node
   "Render a single node as a string."

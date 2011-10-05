@@ -21,9 +21,7 @@
     [clojure [test :only (is are deftest)] pprint]))
 
 (defn stream-to-string [dom]
-  (let [writer (CharArrayWriter.)]
-    (stream-html dom writer)
-    (.toString writer)))
+  (apply str (stream-html dom)))
 
 (defn minimize-ws [string]
   (.replaceAll string "\\s+" " "))
