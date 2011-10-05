@@ -94,21 +94,15 @@
 (defn create-serialize-attribute-pair
   "Returns a function that a key/value attribute pair into a seq of strings for rendering the attribute value. The key is expected a string or keyword. The value is a string,
   number, or keyword. If the value is nil, the returned function returns nil."
-  [strategy]
-  (let [attr-quote (:attribute-quote strategy)]
-    (fn [[attr-name attr-value]]
-      (if (nil? attr-value)
-        nil
-        [" " (name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote]))))
+  [attr-quote]
+  (fn [[attr-name attr-value]]
+    (if (nil? attr-value)
+      nil
+      [" " (name attr-name) "=" attr-quote (to-attribute-value-string attr-value) attr-quote])))
 
 (defn serialize-attribute-pairs
   [attributes strategy]
-  ; Perhaps premature optimization, but we'll be doing this a LOT. In fact, I'm not happy that
-  ; it is necessary to create the function fresh all the time; probably roll this into creation once as
-  ; part of the strategy itself.
-  (if (empty? attributes)
-    nil
-    (mapcat (create-serialize-attribute-pair strategy) attributes)))
+  (mapcat (:serialize-attribute-pair strategy) attributes))
 
 (defn serialize-content-and-close [element-name content strategy]
   (if (empty? content)
@@ -162,7 +156,7 @@
   (Static. ["<!--" comment "-->"]))
 
 (def xml-strategy {
-  :attribute-quote "\""
+  :serialize-attribute-pair (create-serialize-attribute-pair "\"")
   :write-empty-element-close (constantly ["/>"])
   })
 
@@ -181,8 +175,8 @@ a single root element node, but text and comments and the like may come into pla
     [">"]))
 
 (def html-strategy {
-  :attribute-quote "\""
-  :write-empty-element-close #'html-empty-element-writer
+  :serialize-attribute-pair (create-serialize-attribute-pair "\"")
+  :write-empty-element-close html-empty-element-writer
   })
 
 (defn serialize-html
