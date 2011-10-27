@@ -129,12 +129,12 @@
 
 (defn element-node
   [name attributes content]
-  (Element. name attributes content))
+  (->Element name attributes content))
 
 (defn raw-node
   "Wraps a string as a Static DOM node, but does not do any encoding of the value."
   [s]
-  (Static. [s]))
+  (->Static [s]))
 
 (defn text-node
   "Creates a Static DOM node from the string. The string is encoded when the node is constructed."
@@ -144,7 +144,7 @@
 (defn comment-node
   "Creates a Static DOM node from the string, providing the comment prefix and suffix. "
   [comment]
-  (Static. ["<!--" comment "-->"]))
+  (->Static ["<!--" comment "-->"]))
 
 (def xml-strategy {
   :serialize-attribute-pair (create-serialize-attribute-pair "\"")
