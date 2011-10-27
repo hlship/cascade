@@ -9,5 +9,5 @@
                  [org.clojure/algo.monads "0.1.0"]
                  [compojure "0.6.5"]]
   :dev-dependencies [[ring/ring-jetty-adapter "0.3.11"]
-                     [swank-coljure "1.3.1"]
+                     [swank-clojure "1.3.1"]
                      [midje "1.1.1"]])
