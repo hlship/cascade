@@ -1,6 +1,7 @@
 (ns main
   (:use compojure.core cascade ring.adapter.jetty)
-  (:require [compojure.route :as route]
+  (:require
+    [compojure.route :as route]
     [compojure.handler :as handler]))
 
 (defview hello-world [request]
@@ -18,9 +19,9 @@
     ]])
 
 (defroutes main-routes
-  (GET "/" [] (wrap-html hello-world))
-  (route/resources "/")
-  (route/not-found "Page not found"))
+  (GET "/hello" [] (wrap-html hello-world))
+  (initialize-assets "1.0")
+  (route/not-found "Cascade Demo: No such resource"))
 
 (def app
   (handler/site main-routes))

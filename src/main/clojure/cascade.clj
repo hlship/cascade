@@ -59,7 +59,9 @@
   (comment-node comment))
 
 (def application-version
-  "The application version, which is incorporated into the URLs for assets." nil)
+  "The atom containing application version, which is incorporated into the URLs for assets. This should only be changed at startup, by
+(initialize-assets)."
+  (atom nil))
 
 ; Should Asset extend Renderable?
 (defprotocol Asset
@@ -69,7 +71,9 @@
   (^InputStream content [asset] "Returns the content of the Asset as a stream of bytes.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
-(defn file-asset-handler [req] nil)
+(defn file-asset-handler
+  [req]
+  (format "file-asset-handler: not yet implemented (%s)" (:uri req)))
 
 (defn wrap-exception-handling
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
@@ -86,13 +90,15 @@ should change with each new deployment. Named arguments:
 :public-folder (default \"public\")
   The file system folder under which file assets are stored."
   [application-version & {:keys [virtual-folder public-folder]
-                          :or {virtual-folder "asset"
+                          :or {virtual-folder "assets"
                                public-folder "public"}}]
-  (set! cascade/application-version application-version)
-  (let [root (str "/" virtual-folder "/" application-version)]
+  (reset! cascade/application-version application-version)
+  (let [root (str "/" virtual-folder "/" application-version)
+        file-path (str root "/file/*")]
+    (printf "Initialized file system resource access to directory '%s' at %s\n" public-folder file-path)
     (wrap-exception-handling
       (routes
-        (GET (str root "/file/*") file-asset-handler)))))
+        (GET file-path [] file-asset-handler)))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
