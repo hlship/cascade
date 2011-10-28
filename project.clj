@@ -5,6 +5,7 @@
   :resources-path "src/main/resources"
   :test-path "src/test/clojure"
   :dev-resources-path "src/test/resources"
+  :warn-on-reflection true
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/algo.monads "0.1.0"]
                  [compojure "0.6.5"]]

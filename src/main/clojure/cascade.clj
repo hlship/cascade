@@ -15,6 +15,10 @@
 (ns
   cascade
   "Core functions and macros used when implementing Cascade views"
+  (:import
+    [java.io File FileInputStream BufferedInputStream InputStream])
+  (:require
+    [ring.util.response :as ring])
   (:use
     [compojure core]
     [cascade dom]
@@ -58,26 +62,72 @@
   [comment]
   (comment-node comment))
 
-(def application-version
-  "The atom containing application version, which is incorporated into the URLs for assets. This should only be changed at startup, by
-(initialize-assets)."
+; This may change into a value passed as a key in a filter, or perhaps a rebindable var.
+(def asset-configuration
+  "The atom containing the asset configuration, needed to create Asset and handle asset requests.
+This should only be changed at startup, by (initialize-assets)."
   (atom nil))
+
+(def default-file-extension-to-mime-type
+  "Default set of mappings from file extensions (as keywords) to corresponding MIME type."
+  {
+    :js "text/javascript"
+    :css "text/css"
+    })
 
 ; Should Asset extend Renderable?
 (defprotocol Asset
   "Represent a server-side resource so that it can be exposed efficiently to the client."
-  (exists [asset] "Returns true if the asset exists and is readable.")
-  (content-type [asset] "Returns the MIME content type for the Asset.")
-  (^InputStream content [asset] "Returns the content of the Asset as a stream of bytes.")
+  (^InputStream content [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
-(defn file-asset-handler
-  [req]
-  (format "file-asset-handler: not yet implemented (%s)" (:uri req)))
+(extend-type cascade.Asset
+  ToAttributeValueString
+  (to-attribute-value-string [asset] (client-url asset)))
+
+(defrecord FileAsset [path]
+  Asset
+  (content [asset]
+    (let [file-path (str (:public-folder @asset-configuration) "/" path)
+          file (File. file-path)]
+      (if (.canRead file)
+        (-> (FileInputStream. file) BufferedInputStream.))))
+  (client-url [asset]
+    (str (:file-path @asset-configuration) path)))
+
+(defn file-asset
+  "Creates an Asset representing a file in the application's public folder, as configured in (initialize-assets)."
+  [path]
+  (->FileAsset path))
+
+(defn get-content-type [asset]
+  (let [path (:path asset)
+        dotx (.lastIndexOf path ".")
+        extension (keyword (.substring path (inc dotx)))
+        content-type (-> @asset-configuration :file-extension extension)]
+    (or content-type "text/plain")))
+
+(defn generic-asset-handler
+  "Processes the Asset, returning a Ring response (including content type) if the Asset exists, or nil. In the future,
+the will also encompass GZIP compression of the asset, and perhaps in-memory caching."
+  [asset]
+  (let [stream (content asset)]
+    (if stream
+      (-> (ring/response stream)
+        (ring/content-type (get-content-type asset))))))
+
+; TODO: perhaps we should create a single handler for the virtual folder, then delegate out to it by domain
+; ("file", "classpath")
+(defn create-file-asset-handler
+  [path-prefix]
+  (fn [req]
+    (let [uri (:uri req)
+          path (.substring uri (.length path-prefix))]
+      (generic-asset-handler (->FileAsset path)))))
 
 (defn wrap-exception-handling
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
-  exception report view."
+exception report view."
   [handler]
   ; Just a placeholder for now
   handler)
@@ -86,19 +136,26 @@
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
 :virtual-folder (default \"assets\")
-  The root folder under which assets will be exposed to the client.
+The root folder under which assets will be exposed to the client.
 :public-folder (default \"public\")
-  The file system folder under which file assets are stored."
-  [application-version & {:keys [virtual-folder public-folder]
+The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
+:file-extensions
+Additional file-extension to MIME type mappings, beyond the default set."
+  [application-version & {:keys [virtual-folder public-folder file-extensions]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
-  (reset! cascade/application-version application-version)
   (let [root (str "/" virtual-folder "/" application-version)
-        file-path (str root "/file/*")]
+        file-path (str root "/file/")]
+    (reset! asset-configuration
+      {:application-version application-version
+       :public-folder public-folder
+       :virtual-folder virtual-folder
+       :file-path file-path
+       :file-extensions (merge default-file-extension-to-mime-type file-extensions)})
     (printf "Initialized file system resource access to directory '%s' at %s\n" public-folder file-path)
     (wrap-exception-handling
       (routes
-        (GET file-path [] file-asset-handler)))))
+        (GET (str file-path "*") [] (create-file-asset-handler file-path))))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
@@ -108,3 +165,8 @@ is serialized to HTML (as lazy seq of strings)."
     (->
       (handler req)
       serialize-html)))
+
+(defview stylesheet
+  "Creates a <link> element for a stylesheet. The resource should be either a String or an Asset."
+  [resource]
+  :link {:rel :stylesheet :type "text/css" :href resource})
