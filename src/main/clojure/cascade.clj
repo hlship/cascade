@@ -135,6 +135,11 @@ exception report view."
       .getTime
       (.format format))))
 
+(defn file-handler
+  "Inteprets the path as the pat to a file asset in the configured public folder."
+  [path]
+  (generic-asset-handler (file-asset path)))
+
 (defn initialize-assets
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
@@ -158,8 +163,7 @@ Additional file-extension to MIME type mappings, beyond the default set."
     (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
       (GET [(str root "/file/:path") :path #".*"]
-        [path]
-        (generic-asset-handler (file-asset path))))))
+        [path] (file-handler path)))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
