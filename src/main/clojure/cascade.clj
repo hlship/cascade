@@ -19,7 +19,7 @@
     [java.io File FileInputStream BufferedInputStream InputStream]
     [java.util Calendar Date])
   (:require
-    [ring.util.response :as ring]
+    [ring.util [response :as ring] [mime-type :as mime-type]]
     [ring.middleware.file-info :as file-info])
   (:use
     [compojure core]
@@ -70,13 +70,6 @@
 This should only be changed at startup, by (initialize-assets)."
   (atom nil))
 
-(def default-file-extension-to-mime-type
-  "Default set of mappings from file extensions (as keywords) to corresponding MIME type."
-  {
-    :js "text/javascript"
-    :css "text/css"
-    })
-
 ; Should Asset extend Renderable?
 (defprotocol Asset
   "Represent a server-side resource so that it can be exposed efficiently to the client."
@@ -110,8 +103,8 @@ This should only be changed at startup, by (initialize-assets)."
 (defn get-content-type [asset]
   (let [name (file-name asset)
         dotx (.lastIndexOf name ".")
-        extension (keyword (.substring name (inc dotx)))
-        content-type (-> @asset-configuration :file-extension extension)]
+        extension (.substring name (inc dotx))
+        content-type (-> @asset-configuration :file-extensions (get extension))]
     (or content-type "text/plain")))
 
 (defn generic-asset-handler
@@ -161,7 +154,7 @@ Additional file-extension to MIME type mappings, beyond the default set."
        :public-folder public-folder
        :virtual-folder virtual-folder
        :file-path (str root "/file/")
-       :file-extensions (merge default-file-extension-to-mime-type file-extensions)})
+       :file-extensions (merge mime-type/default-mime-types file-extensions)})
     (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
       (routes
