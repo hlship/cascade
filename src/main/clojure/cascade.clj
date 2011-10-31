@@ -102,7 +102,7 @@ This should only be changed at startup, by (initialize-assets)."
   [path]
   (let [file-path (str (:public-folder @asset-configuration) "/" path)
         file (File. file-path)
-        client-url (str (:file-path @assset-configuration) path)]
+        client-url (str (:file-path @asset-configuration) path)]
     (->FileAsset file client-url)))
 
 (defn get-content-type [asset]
@@ -120,15 +120,6 @@ the will also encompass GZIP compression of the asset, and perhaps in-memory cac
     (if stream
       (-> (ring/response stream)
         (ring/content-type (get-content-type asset))))))
-
-; TODO: perhaps we should create a single handler for the virtual folder, then delegate out to it by domain
-; ("file", "classpath")
-(defn create-file-asset-handler
-  [path-prefix]
-  (fn [req]
-    (let [uri (:uri req)
-          path (.substring uri (.length path-prefix))]
-      (generic-asset-handler (->FileAsset path)))))
 
 (defn wrap-exception-handling
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
@@ -149,18 +140,19 @@ Additional file-extension to MIME type mappings, beyond the default set."
   [application-version & {:keys [virtual-folder public-folder file-extensions]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
-  (let [root (str "/" virtual-folder "/" application-version)
-        file-path (str root "/file/")]
+  (let [root (str "/" virtual-folder "/" application-version)]
     (reset! asset-configuration
       {:application-version application-version
        :public-folder public-folder
        :virtual-folder virtual-folder
-       :file-path file-path
+       :file-path (str root "/file/")
        :file-extensions (merge default-file-extension-to-mime-type file-extensions)})
-    (printf "Initialized file system resource access to directory '%s' at %s\n" public-folder file-path)
+    (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
       (routes
-        (GET (str file-path "*") [] (create-file-asset-handler file-path))))))
+        (GET [(str root "/file/:path") :path #".*"]
+          [path]
+          (generic-asset-handler (file-asset path)))))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
