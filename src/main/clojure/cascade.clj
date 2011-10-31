@@ -140,6 +140,20 @@ exception report view."
   [path]
   (generic-asset-handler (file-asset path)))
 
+(defn asset-dispatch-handler
+  "Internal dispatcher for asset requests. Returns the response from the handler, or nil if
+no handler matches the name.
+dispatch
+    Maps keywords for the asset domain (eg., :file) to the handler
+name
+    Keyword used to locate handler
+path
+    String path passed to the handler.
+  "
+  [dispatch name path]
+  (let [handler (dispatch name)]
+    (and handler (handler path))))
+
 (defn initialize-assets
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
@@ -152,7 +166,8 @@ Additional file-extension to MIME type mappings, beyond the default set."
   [application-version & {:keys [virtual-folder public-folder file-extensions]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
-  (let [root (str "/" virtual-folder "/" application-version)]
+  (let [root (str "/" virtual-folder "/" application-version)
+        dispatch {:file file-handler}]
     (reset! asset-configuration
       {:application-version application-version
        :expiration (now-plus-ten-years)
@@ -162,8 +177,8 @@ Additional file-extension to MIME type mappings, beyond the default set."
        :file-extensions (merge mime-type/default-mime-types file-extensions)})
     (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
-      (GET [(str root "/file/:path") :path #".*"]
-        [path] (file-handler path)))))
+      (GET [(str root "/:domain/:path") :path #".*"]
+        [domain path] (asset-dispatch-handler dispatch (keyword domain) path)))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
