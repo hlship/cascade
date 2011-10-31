@@ -78,32 +78,37 @@ This should only be changed at startup, by (initialize-assets)."
 ; Should Asset extend Renderable?
 (defprotocol Asset
   "Represent a server-side resource so that it can be exposed efficiently to the client."
+  (^String file-name [asset] "Returns just the name of the Asset.")
   (^InputStream content [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
-(extend-type cascade.Asset
+(deftype FileAsset [file url]
+  Asset
+  (file-name [asset] (.getName file))
+  (content [asset]
+    (if (.canRead file)
+      (-> (FileInputStream. file) BufferedInputStream.)))
+  (client-url [asset] url)
+
+  ; Each "implementation" of Asset should also extend ToAttributeValueString
+  ; There isn't a proper way to express this in Clojure, though I think there
+  ; should be.
+
   ToAttributeValueString
   (to-attribute-value-string [asset] (client-url asset)))
-
-(defrecord FileAsset [path]
-  Asset
-  (content [asset]
-    (let [file-path (str (:public-folder @asset-configuration) "/" path)
-          file (File. file-path)]
-      (if (.canRead file)
-        (-> (FileInputStream. file) BufferedInputStream.))))
-  (client-url [asset]
-    (str (:file-path @asset-configuration) path)))
 
 (defn file-asset
   "Creates an Asset representing a file in the application's public folder, as configured in (initialize-assets)."
   [path]
-  (->FileAsset path))
+  (let [file-path (str (:public-folder @asset-configuration) "/" path)
+        file (File. file-path)
+        client-url (str (:file-path @assset-configuration) path)]
+    (->FileAsset file client-url)))
 
 (defn get-content-type [asset]
-  (let [path (:path asset)
-        dotx (.lastIndexOf path ".")
-        extension (keyword (.substring path (inc dotx)))
+  (let [name (file-name asset)
+        dotx (.lastIndexOf name ".")
+        extension (keyword (.substring name (inc dotx)))
         content-type (-> @asset-configuration :file-extension extension)]
     (or content-type "text/plain")))
 
