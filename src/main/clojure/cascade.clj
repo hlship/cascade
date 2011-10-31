@@ -157,10 +157,9 @@ Additional file-extension to MIME type mappings, beyond the default set."
        :file-extensions (merge mime-type/default-mime-types file-extensions)})
     (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
-      (routes
-        (GET [(str root "/file/:path") :path #".*"]
-          [path]
-          (generic-asset-handler (file-asset path)))))))
+      (GET [(str root "/file/:path") :path #".*"]
+        [path]
+        (generic-asset-handler (file-asset path))))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
