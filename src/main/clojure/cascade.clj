@@ -16,9 +16,11 @@
   cascade
   "Core functions and macros used when implementing Cascade views"
   (:import
-    [java.io File FileInputStream BufferedInputStream InputStream])
+    [java.io File FileInputStream BufferedInputStream InputStream]
+    [java.util Calendar Date])
   (:require
-    [ring.util.response :as ring])
+    [ring.util.response :as ring]
+    [ring.middleware.file-info :as file-info])
   (:use
     [compojure core]
     [cascade dom]
@@ -118,7 +120,9 @@ the will also encompass GZIP compression of the asset, and perhaps in-memory cac
   [asset]
   (let [stream (content asset)]
     (if stream
-      (-> (ring/response stream)
+      (->
+        (ring/response stream)
+        (ring/header "Expires" (@asset-configuration :expiration))
         (ring/content-type (get-content-type asset))))))
 
 (defn wrap-exception-handling
@@ -127,6 +131,16 @@ exception report view."
   [handler]
   ; Just a placeholder for now
   handler)
+
+(defn- now-plus-ten-years
+  "Returns a string representation of the current Date plus ten years, used for setting expiration date of assets."
+  []
+  (let [format (file-info/make-http-format)]
+    (->>
+      (doto (Calendar/getInstance)
+        (.add Calendar/YEAR 10))
+      .getTime
+      (.format format))))
 
 (defn initialize-assets
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
@@ -143,6 +157,7 @@ Additional file-extension to MIME type mappings, beyond the default set."
   (let [root (str "/" virtual-folder "/" application-version)]
     (reset! asset-configuration
       {:application-version application-version
+       :expiration (now-plus-ten-years)
        :public-folder public-folder
        :virtual-folder virtual-folder
        :file-path (str root "/file/")
