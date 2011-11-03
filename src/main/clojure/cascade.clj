@@ -33,7 +33,7 @@
 
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
-  preceding the parameters vector. The function's forms are an implicit inline block."
+preceding the parameters vector. The function's forms are an implicit inline block."
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
@@ -144,12 +144,11 @@ exception report view."
   "Internal dispatcher for asset requests. Returns the response from the handler, or nil if
 no handler matches the name.
 dispatch
-    Maps keywords for the asset domain (eg., :file) to the handler
+  Maps keywords for the asset domain (eg., :file) to the handler
 name
-    Keyword used to locate handler
+  Keyword used to locate handler
 path
-    String path passed to the handler.
-  "
+  String path passed to the handler."
   [dispatch name path]
   (let [handler (dispatch name)]
     (and handler (handler path))))
@@ -158,11 +157,11 @@ path
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
 :virtual-folder (default \"assets\")
-The root folder under which assets will be exposed to the client.
+  The root folder under which assets will be exposed to the client.
 :public-folder (default \"public\")
-The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
+  The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
 :file-extensions
-Additional file-extension to MIME type mappings, beyond the default set."
+  Additional file-extension to MIME type mappings, beyond the default set."
   [application-version & {:keys [virtual-folder public-folder file-extensions]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
