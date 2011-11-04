@@ -1,6 +1,7 @@
 (ns main
-  (:use compojure.core cascade ring.adapter.jetty)
+  (:use compojure.core cascade cascade.asset ring.adapter.jetty)
   (:require
+    [cascade.request :as cr]
     [compojure.route :as route]
     [compojure.handler :as handler]))
 
@@ -24,9 +25,11 @@
     ]])
 
 (defroutes main-routes
-  (GET "/hello" [] (wrap-html hello-world))
+  ; Temporary: eventually we'll pass a couple of routes
+  ;; into cr/initialize
+  (GET "/hello" [] (cr/wrap-html hello-world))
   ; Executes with src/test as the current directory
-  (initialize-assets "1.0" :public-folder "webapp")
+  (cr/initialize "1.0" :public-folder "webapp")
   (route/not-found "Cascade Demo: No such resource"))
 
 (def app

@@ -1,0 +1,5 @@
+This project includes jQuery 1.7, dual licensed under the MIT or GPL Version 2 licenses.
+http://jquery.org/
+
+This project includes RequireJS 1.0.1, dual licensed under new BSD, and MIT licenses.
+http://requirejs.org/
