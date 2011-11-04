@@ -25,7 +25,7 @@
   ; enough for testing.
   (apply str (serialize-html dom)))
 
-(defn minimize-ws [string]
+(defn minimize-ws [^String string]
   (.replaceAll string "\\s+" " "))
 
 (defn find-classpath-resource [path]
