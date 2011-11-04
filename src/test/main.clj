@@ -9,7 +9,8 @@
 (defview hello-world [request]
   :html
   [:head [:title ["Cascade Hello World"]
-          (stylesheet (file-asset "css/bootstrap.css"))]
+          (stylesheet (file-asset "css/bootstrap.css"))
+          (stylesheet (classpath-asset "cascade/cascade.css"))]
    :body [
     :h1 ["Hello World"]
     :p [

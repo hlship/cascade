@@ -16,6 +16,7 @@
   cascade
   "Core functions and macros used when implementing Cascade views"
   (:import
+    [java.net URL]
     [java.io File FileInputStream BufferedInputStream InputStream]
     [java.util Calendar Date])
   (:require
@@ -70,17 +71,16 @@ preceding the parameters vector. The function's forms are an implicit inline blo
 This should only be changed at startup, by (initialize-assets)."
   (atom nil))
 
-; Should Asset extend Renderable?
 (defprotocol Asset
   "Represent a server-side resource so that it can be exposed efficiently to the client."
   (^String file-name [asset] "Returns just the name of the Asset.")
-  (^InputStream content [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
+  (^InputStream content-stream [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
 (deftype FileAsset [file url]
   Asset
   (file-name [asset] (.getName file))
-  (content [asset]
+  (content-stream [asset]
     (if (.canRead file)
       (-> (FileInputStream. file) BufferedInputStream.)))
   (client-url [asset] url)
@@ -90,15 +90,42 @@ This should only be changed at startup, by (initialize-assets)."
   ; should be.
 
   ToAttributeValueString
-  (to-attribute-value-string [asset] (client-url asset)))
+  (to-attribute-value-string [asset] url))
+
+(defn build-client-url
+  "Builds a complete client URL for an asset.
+domain
+  Keyword for the asset domain (either :file or :classpath, for the built-in domains)
+path
+  Path within the domain to the asset, consisting of a series of names seperated by slashes (but not starting with one)."
+  [domain path]
+  (str (:assets-folder @asset-configuration) "/" (name domain) "/" path))
 
 (defn file-asset
   "Creates an Asset representing a file in the application's public folder, as configured in (initialize-assets)."
   [path]
   (let [file-path (str (:public-folder @asset-configuration) "/" path)
         file (File. file-path)
-        client-url (str (:file-path @asset-configuration) path)]
+        client-url (build-client-url :file path)]
     (->FileAsset file client-url)))
+
+(deftype ClasspathAsset [name ^URL resource-url url]
+  Asset
+  (file-name [asset] name)
+  (content-stream [asset]
+    (and resource-url (-> (.openStream resource-url) BufferedInputStream.)))
+  (client-url [asset] url)
+
+  ToAttributeValueString
+  (to-attribute-value-string [asset] url))
+
+(defn classpath-asset
+  "Create an Asset representing a file on the classpath."
+  [path]
+  (let [file-name (last (.split path "/"))
+        resource-url (-> (Thread/currentThread) .getContextClassLoader (.getResource path))
+        client-url (build-client-url :classpath path)]
+    (->ClasspathAsset file-name resource-url client-url)))
 
 (defn get-content-type [asset]
   (let [name (file-name asset)
@@ -106,17 +133,6 @@ This should only be changed at startup, by (initialize-assets)."
         extension (.substring name (inc dotx))
         content-type (-> @asset-configuration :file-extensions (get extension))]
     (or content-type "text/plain")))
-
-(defn generic-asset-handler
-  "Processes the Asset, returning a Ring response (including content type) if the Asset exists, or nil. In the future,
-the will also encompass GZIP compression of the asset, and perhaps in-memory caching."
-  [asset]
-  (let [stream (content asset)]
-    (if stream
-      (->
-        (ring/response stream)
-        (ring/header "Expires" (@asset-configuration :expiration))
-        (ring/content-type (get-content-type asset))))))
 
 (defn wrap-exception-handling
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
@@ -135,23 +151,24 @@ exception report view."
       .getTime
       (.format format))))
 
-(defn file-handler
-  "Inteprets the path as the pat to a file asset in the configured public folder."
-  [path]
-  (generic-asset-handler (file-asset path)))
-
-(defn asset-dispatch-handler
-  "Internal dispatcher for asset requests. Returns the response from the handler, or nil if
+(defn asset-handler
+  "Internal handler for asset requests. Returns the response from the handler, or nil if
 no handler matches the name.
-dispatch
-  Maps keywords for the asset domain (eg., :file) to the handler
-name
-  Keyword used to locate handler
+asset-factories
+  Maps keywords for the asset domain (eg., :file or :classpath) to the factory function (which takes a path)
+domain
+  Keyword used to locate factory function
 path
   String path passed to the handler."
-  [dispatch name path]
-  (let [handler (dispatch name)]
-    (and handler (handler path))))
+  [asset-factories domain path]
+  (let [factory (domain asset-factories)
+        asset (and factory (factory path))
+        stream (and asset (content-stream asset))]
+    (if stream
+      (->
+        (ring/response stream)
+        (ring/header "Expires" (@asset-configuration :expiration))
+        (ring/content-type (get-content-type asset))))))
 
 (defn initialize-assets
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
@@ -161,23 +178,26 @@ should change with each new deployment. Named arguments:
 :public-folder (default \"public\")
   The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
 :file-extensions
-  Additional file-extension to MIME type mappings, beyond the default set."
-  [application-version & {:keys [virtual-folder public-folder file-extensions]
+  Additional file-extension to MIME type mappings, beyond the default set (defined by ring.util.mime-type/default-mime-types).
+:asset-factories
+  Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
+The functions should construct and return a cascade/Asset."
+  [application-version & {:keys [virtual-folder public-folder file-extensions asset-factories]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
   (let [root (str "/" virtual-folder "/" application-version)
-        dispatch {:file file-handler}]
+        asset-factories (merge {:file file-asset
+                                :classpath classpath-asset} asset-factories)]
     (reset! asset-configuration
       {:application-version application-version
        :expiration (now-plus-ten-years)
        :public-folder public-folder
-       :virtual-folder virtual-folder
-       :file-path (str root "/file/")
+       :assets-folder root
        :file-extensions (merge mime-type/default-mime-types file-extensions)})
     (printf "Initialized asset access at virtual folder %s\n" root)
     (wrap-exception-handling
       (GET [(str root "/:domain/:path") :path #".*"]
-        [domain path] (asset-dispatch-handler dispatch (keyword domain) path)))))
+        [domain path] (asset-handler asset-factories (keyword domain) path)))))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
