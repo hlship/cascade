@@ -77,7 +77,8 @@ The functions should construct and return a cascade/Asset."
                                public-folder "public"}}]
   (let [root (str "/" virtual-folder "/" application-version)
         asset-factories (merge {:file file-asset
-                                :classpath classpath-asset} asset-factories)]
+                                :classpath classpath-asset
+                                :module module-asset} asset-factories)]
     (reset! asset-configuration
       {:application-version application-version
        :expiration (now-plus-ten-years)

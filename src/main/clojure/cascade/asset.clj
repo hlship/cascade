@@ -11,7 +11,6 @@
 ; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
-;
 
 (ns cascade.asset
   "Defines basic types of assets (resources exposed to the client browser)."
@@ -75,11 +74,21 @@ path
   ToAttributeValueString
   (to-attribute-value-string [asset] url))
 
-(defn classpath-asset
-  "Create an Asset representing a file on the classpath."
+(defn classpath-to-url
+  "Given a path of the classpath, obtains the URL for the resource."
   [path]
-  (let [file-name (last (.split path "/"))
-        resource-url (-> (Thread/currentThread) .getContextClassLoader (.getResource path))
+  (-> (Thread/currentThread) .getContextClassLoader (.getResource path)))
+
+(defn path-to-file
+  "Given a path name, finds the last slash character, and returns the file name that follows it."
+  [path]
+  (last (.split path "/")))
+
+(defn classpath-asset
+  "Creates an Asset representing a file on the classpath."
+  [path]
+  (let [file-name (path-to-file path)
+        resource-url (classpath-to-url path)
         client-url (build-client-url :classpath path)]
     (->ClasspathAsset file-name resource-url client-url)))
 
@@ -89,3 +98,44 @@ path
         extension (.substring name (inc dotx))
         content-type (-> @asset-configuration :file-extensions (get extension))]
     (or content-type "text/plain")))
+
+; I'm experimenting with two different approaches to configuration; one is a huge blob of data
+; passed into cascade.request/initialize). Another is more atoms like module-mappings that can
+; be initialized separately.
+
+(def module-mappings
+  "Stores root module mappings: each maps a string name (representing a module) to a classpath folder.
+Modules are used to organize JavaScript. This is an added level of indirection on the naming that will be used to support
+Cascade libraries that include client-side JavaScript libraries."
+  (atom {"cascade" "cascade"}))
+
+(defn add-module-mapping
+  "Adds a new mapping (module name to classpath folder) to the module map.
+module-name
+  Name of the module, must not contain a '/', and should be limited to URL-safe characters (generally, alphanumerics
+  and simple punctuation).
+classpath-folder
+  Classpath folder containing the files for the module. Should not start or end with a slash."
+  [module-name classpath-folder]
+  (swap! module-mappings assoc module-name classpath-folder))
+
+(defn split-module-path [path]
+  "Splits a module path into a module name and the path within that module."
+  (let [slashx (.indexOf path "/")
+        module-name (.substring path 0 slashx)
+        path (.substring path (inc slashx))]
+    [module-name path]))
+
+(defn module-asset
+  "Creates an Asset representing a JavaScript file within a known module."
+  [path]
+  (let [
+    [module-name module-path] (split-module-path path)
+    mapped-path (@module-mappings module-name)
+    full-path (str mapped-path "/" module-path)
+    file-name (path-to-file path)
+    resource-url (classpath-to-url full-path)
+    client-url (build-client-url :module path)]
+    (->ClasspathAsset file-name resource-url client-url)))
+
+
