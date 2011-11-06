@@ -28,8 +28,7 @@
   ; Temporary: eventually we'll pass a couple of routes
   ;; into cr/initialize
   (GET "/hello" [] (cr/wrap-html hello-world))
-  ; Executes with src/test as the current directory
-  (cr/initialize "1.0" :public-folder "webapp")
+  (cr/initialize "1.0" :public-folder "src/test/webapp")
   (route/not-found "Cascade Demo: No such resource"))
 
 (def app
