@@ -32,7 +32,7 @@ This should only be changed at startup, by (cascade.request/initialize)."
   (^InputStream content-stream [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
-(deftype FileAsset [file url]
+(defrecord FileAsset [^URL file url]
   Asset
   (file-name [asset] (.getName file))
   (content-stream [asset]
@@ -64,7 +64,7 @@ path
         client-url (build-client-url :file path)]
     (->FileAsset file client-url)))
 
-(deftype ClasspathAsset [name ^URL resource-url url]
+(defrecord ClasspathAsset [name ^URL resource-url url]
   Asset
   (file-name [asset] name)
   (content-stream [asset]
