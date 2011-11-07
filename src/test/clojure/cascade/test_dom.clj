@@ -74,15 +74,15 @@
   ; to simplify tests, not using attributes
   (let [new-nodes (template :script ["a.js"] :script ["b.js"])
         dom-nodes (template :html [:head [:script ["x.js"] :meta ["via cascade"]] :body [:p ["Cascade!"]]])]
-    (are [path position expected-text]
+    (are [rules expected-text]
       ; Originally extend-dom rook a single path and position as parameters; passing rules
       ; came later an needs it own test.
-      (is (= (stream-as-string (extend-dom dom-nodes [[path position]] new-nodes)) expected-text))
-      [:html :head] :top "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-      [:html :head :meta] :before "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-      [:html :head :script] :after "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
-      [:html :head] :bottom "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
-      [:html :not-found] :top "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
+      (is (= (stream-as-string (extend-dom dom-nodes rules  new-nodes)) expected-text))
+      [[[:html :head] :top]] "<html><head><script>a.js</script><script>b.js</script><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [[[:html :head :meta] :before]] "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [[[:html :head :script] :after]] "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      [[[:html :head] :bottom]] "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
+      [[[:html :not-found] :top]] "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
 
 (deftest test-encode-string
   (are [input output]
