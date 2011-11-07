@@ -82,7 +82,10 @@
       [[[:html :head :meta] :before]] "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
       [[[:html :head :script] :after]] "<html><head><script>x.js</script><script>a.js</script><script>b.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
       [[[:html :head] :bottom]] "<html><head><script>x.js</script><meta>via cascade</meta><script>a.js</script><script>b.js</script></head><body><p>Cascade!</p></body></html>"
-      [[[:html :not-found] :top]] "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>")))
+      [[[:html :not-found] :top]] "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p></body></html>"
+      ; A case where the first rule is not found, so the second rule is executed:
+      [[[:html :head :link] :before]
+       [[:html :body] :bottom]] "<html><head><script>x.js</script><meta>via cascade</meta></head><body><p>Cascade!</p><script>a.js</script><script>b.js</script></body></html>")))
 
 (deftest test-encode-string
   (are [input output]
