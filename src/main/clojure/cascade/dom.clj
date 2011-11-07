@@ -211,7 +211,9 @@ nil if the path could not be resolved."
     (lcond
       (nil? loc) nil
       :let [n (z/node loc)]
+      ; if matching element?
       (and (element? n) (= (:name n) target-element))
+      ; then either we've found it, or we need to go into the element and continue searching down.
       (if (empty? remaining-path)
         loc
         (recur (z/down loc) (first remaining-path) (rest remaining-path)))
@@ -235,13 +237,29 @@ The path is a seq of keywords, used to walk down to a specifc element in
 the DOM. The new nodes (often via the template macro) will be inserted
 according to position. :before, :after, :top (left-most, first children)
 :bottom (right-most, last children). Returns the modified root DOM node, or
-(if the path was unable to locate a specific element), the original root DOM node."
+(if the path was unable to locate a specific element), nil."
   [dom-node path position new-nodes]
-  (lcond
-    :let [root-loc (dom-zipper dom-node)
-          loc (navigate-dom-path root-loc path)]
-    (nil? loc) dom-node
-    :else (z/root (update-dom loc position new-nodes))))
+  (let [root-loc (dom-zipper dom-node)
+        loc (navigate-dom-path root-loc path)]
+    (and loc (z/root (update-dom loc position new-nodes)))))
+
+(defn apply-extend-dom-rules
+  "Invoked from extend-dom, once the root element is known. Returns the modified node, if any rule
+is viable, or the root-node, if no rule is viable.
+root-node
+  Root element DOM node.
+rules
+  seq of rules definining where the nodes are to be inserted.
+new-nodes
+  New DOM nodes to insert."
+  [root-node rules new-nodes]
+  (or
+    (->>
+      (map (fn [[path position]]
+        (extend-root-element root-node path position new-nodes)) rules)
+      (remove nil?)
+      first)
+    root-node))
 
 (defn extend-dom
   "Extends a DOM (a set of root DOM nodes), adding new nodes at a specific position. Uses the path
@@ -250,15 +268,24 @@ then adds the new nodes at the position (position can be :top :bottom :before :a
 Assumes that the first element node in dom-nodes
 is the root of the element tree (other nodes are possibly text or comments).
 Does nothing if the targetted node can't be found. Returns a new
-sequence of dom nodes."
-  [dom-nodes path position new-nodes]
+sequence of dom nodes.
+dom-nodes
+  A seq of nodes representing the document. The first element node is considered the root.
+rules
+  A seq of rules identifying where to place the new nodes. Each rule is a pair of values.
+  The first value is a seq of element types (as keywords) to navigate down. The second
+  value is a position (:before, :after:, :top, or :bottom). The first matching rule
+  is used.
+new-nodes
+  The new nodes to insert in a position within the document."
+  [dom-nodes rules new-nodes]
   (loop [result []
          queue dom-nodes]
     (lcond
       ; Never found an element node? Return the original nodes unchanged.
       (empty? queue) dom-nodes
       :let [node (first queue)]
-      (element? node) (concat result [(extend-root-element node path position new-nodes)] (rest queue))
+      (element? node) (concat result [(apply-extend-dom-rules node rules new-nodes)] (rest queue))
       :else (recur (conj result node) (rest queue)))))
          
         
