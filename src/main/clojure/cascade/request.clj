@@ -83,7 +83,7 @@ the returned dom-nodes are converted into a seq of strings (the markup to be str
     wrap-serialize-html) req))
 
 
-(defn wrap-exception-handling
+(defn wrap-exception-reporting
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
 exception report view."
   [handler]
@@ -126,4 +126,4 @@ The functions should construct and return a cascade/Asset."
         (GET [(str root "/:domain/:path") :path #".*"]
           [domain path] (asset-handler asset-factories (keyword domain) path))
         (wrap-html-markup (or html-routes placeholder-routes)))
-      wrap-exception-handling)))
+      wrap-exception-reporting)))
