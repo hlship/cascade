@@ -21,24 +21,17 @@
     [ring.middleware.file-info :as file-info])
   (:use
     [compojure core]
-    [cascade dom asset import]))
-
-(defn wrap-exception-handling
-  "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
-exception report view.  *NOT YET IMPLEMENTED*"
-  [handler]
-  ; Just a placeholder for now
-  handler)
+    [cascade dom asset import exception]))
 
 (defn asset-handler
   "Internal handler for asset requests. Returns the response from the handler, or nil if
 no handler matches the name.
 asset-factories
-  Maps keywords for the asset domain (eg., :file or :classpath) to the factory function (which takes a path)
+Maps keywords for the asset domain (eg., :file or :classpath) to the factory function (which takes a path)
 domain
-  Keyword used to locate factory function
+Keyword used to locate factory function
 path
-  String path passed to the handler."
+String path passed to the handler."
   [asset-factories domain path]
   (let [factory (domain asset-factories)
         asset (and factory (factory path))
@@ -71,7 +64,7 @@ the returned dom-nodes are converted into a seq of strings (the markup to be str
   (fn [req]
     (let [response (handler req)]
       (and response
-          (update-in response [:body] serialize-html)))))
+        (update-in response [:body] serialize-html)))))
 
 (defn wrap-html-markup
   "Wraps the handler (which renders a request to DOM nodes) with full rendering support, including imports."
@@ -81,20 +74,38 @@ the returned dom-nodes are converted into a seq of strings (the markup to be str
     wrap-imports
     wrap-serialize-html))
 
+(defn render-report-exception
+  [req exception]
+  ((->
+    (fn [req]
+      (exception-report req exception))
+    wrap-imports
+    wrap-serialize-html) req))
+
+
+(defn wrap-exception-handling
+  "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
+exception report view."
+  [handler]
+  (fn [req]
+    (try
+      (handler req)
+      (catch Exception e (render-report-exception req e)))))
+
 (defn initialize
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
 :html-routes
-  Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
-  of DOM nodes.
+Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
+of DOM nodes.
 :virtual-folder (default \"assets\")
-  The root folder under which assets will be exposed to the client.
+The root folder under which assets will be exposed to the client.
 :public-folder (default \"public\")
-  The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
+The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
 :file-extensions
-  Additional file-extension to MIME type mappings, beyond the default set (defined by ring.util.mime-type/default-mime-types).
+Additional file-extension to MIME type mappings, beyond the default set (defined by ring.util.mime-type/default-mime-types).
 :asset-factories
-  Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
+Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
 The functions should construct and return a cascade/Asset."
   [application-version & {:keys [virtual-folder public-folder file-extensions asset-factories html-routes]
                           :or {virtual-folder "assets"
@@ -116,13 +127,3 @@ The functions should construct and return a cascade/Asset."
           [domain path] (asset-handler asset-factories (keyword domain) path))
         (wrap-html-markup (or html-routes placeholder-routes)))
       wrap-exception-handling)))
-
-(defn wrap-html
-  "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
-is serialized to HTML (as lazy seq of strings)."
-  [handler]
-  (->
-    handler
-    wrap-import-stylesheets
-    serialize-html
-    wrap-install-cascade-atom-into-request))

@@ -8,8 +8,7 @@
 (set! *warn-on-reflection* true)
 
 (defn layout [req title body]
-  (import-stylesheet req (file-asset "css/bootstrap.css"))
-  (import-stylesheet req (classpath-asset "cascade/cascade.css"))
+  (import-stylesheet req (classpath-asset "cascade/bootstrap_1.3.0.css"))
   (template
     :html [
     :head [:title [title]]
@@ -30,12 +29,15 @@
           "."
           ]
       ]
-      :p [
-      :a.btn.primary.large {:href "/hello"} ["Refresh"]
+      :div.well [
+      :a.btn.primary {:href "/hello"} ["Refresh"]
+      :a.btn {:href "/hello/fail"} ["Force Failure"]
       ])))
 
 (defroutes html-routes
-  (GET "/hello" [] hello-world))
+  (GET "/hello" [] hello-world)
+  ; /hello/fail provokes an exception:
+  (GET "/hello/fail" [] (try (/ 0 0) (catch Exception e (throw (RuntimeException. "Failure dividing by zero." e))))))
 
 (defroutes master-routes
   ; Temporary: eventually we'll pass a couple of routes

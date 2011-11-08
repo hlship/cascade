@@ -1,4 +1,4 @@
-; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
+; Copyright 2009, 2010 Howard M. Lewis Ship
 ;
 ; Licensed under the Apache License, Version 2.0 (the "License");
 ; you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 (ns
   cascade.exception
-  "Utilities for converting an exception into a structure that can be rendered"
+  "Support for analyzing and exceptions and rendering an exception report page"
   (:import
     (java.lang Throwable StackTraceElement))
   (:require
@@ -22,7 +22,7 @@
   (:use
     clojure.stacktrace
     cascade
-    (cascade.internal utils)))
+    (cascade utils import asset)))
 
 ;; Identifies the properties of Throwable that are excluded from each exception-map's set of properties
 
@@ -37,7 +37,7 @@
     (or
       (.startsWith class-name "clojure.lang.")
       (.startsWith class-name "sun.")
-      (.startsWith class-name "java.lang.reflect.")) :c-omitted-frame))
+      (.startsWith class-name "java.lang.reflect.")) :c-omitted))
 
 (defn convert-clojure-frame
   "Converts a stack frame into DOM nodes representing the Clojure namespace and function name(s),
@@ -45,7 +45,7 @@
   [class-name method-name]
   (when (contains? #{"invoke" "doInvoke"} method-name)
     (let [[namespace-name & raw-function-ids] (s2/split class-name #"\$")
-          function-ids (map #(nth (first (re-seq #"(\w+)__\d+" %)) 1 nil) raw-function-ids)
+          function-ids (map #(nth (first (re-seq #"(\w+)(__\d+)?" %)) 1 nil) raw-function-ids)
           function-names (map #(s2/replace % \_ \-) function-ids)]
       (if-not (empty? raw-function-ids)
         (template
@@ -68,9 +68,9 @@
         " "
         (cond
           (.isNativeMethod element) (template :em ["(Native Method)"])
-          (and (not (nil? file-name)) (<= 0 line-number)) (str "(" file-name ":" line-number ")")
+          (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
           (not (nil? file-name)) (str "(" file-name ")")
-          :else (template :em ["(Unknown Source)"]))))
+          true (template :em ["(Unknown Source)"]))))
     :class-name (class-name-for-element element)
     })
 
@@ -80,7 +80,15 @@
   :element is the original StackTraceElement
   :class-name is a keyword (may be nil) used when rendering the frame as an :li element"
   [elements]
-  (map transform-stack-frame (seq elements)))
+  (loop [seen-filter false
+         queue (map transform-stack-frame (seq elements))
+         result []]
+    (let [first-frame (first queue)
+          ^StackTraceElement element (get first-frame :element)]
+      (cond
+        (nil? first-frame) result
+        seen-filter (recur true (rest queue) (conj result (assoc first-frame :class-name :c-omitted-frame)))
+        true (recur (= (.getClassName element) "cascade.filter") (rest queue) (conj result first-frame))))))
 
 (defn expand-exception-stack
   "Expands a simple exception into a seq of exception maps, representing the stack of exceptions (the first or outer
@@ -102,3 +110,99 @@
       (if is-deepest
         (conj stack (assoc exception-map :stack-trace (transform-stack-trace (.getStackTrace current))))
         (recur next-exception (conj stack exception-map))))))
+
+(def exception-banner "An unexpected exception has occurred.")
+
+(defn render-exception-map
+  "Renders an individual exception map. "
+  [{:keys [class-name message properties stack-trace]}]
+  (let [deepest (not (nil? stack-trace))
+        has-properties (not (empty? properties))
+        render-dl (or has-properties deepest)]
+    (template
+      :div.c-exception [
+      :div.alert-message.error [class-name]
+      (if-not (nil? message)
+        (template :div.c-exception-message [message]))
+      (when render-dl
+        (template
+          :dl [
+          (template-for [k (sort (keys properties))]
+            :dt [(name k)]
+            :dd [(str (get properties k))])
+          (when deepest
+            (template
+              :dt ["Stack Trace"]
+              :ul [
+              (template-for [frame stack-trace]
+                :li {:class (frame :class-name)} [(frame :method-name)])
+              ]))
+          ]))])))
+
+(defn render-system-properties
+  []
+  (let [path-sep (System/getProperty "path.separator")
+        property-names (sort (seq (.keySet (System/getProperties))))]
+    (template
+      :dl [
+      (for [^String name property-names]
+        (let [value (System/getProperty name)]
+          (template
+            :dt [name]
+            :dd [
+            (if (or (.endsWith name "path") (.endsWith name "dirs"))
+              (template :ul [
+                (template-for [v (.split value path-sep)]
+                  :li [v])
+                ])
+              value)
+            ])))])))
+
+(defn render-environment
+  [req]
+  (template
+    :h2 ["Environment"]
+    :dl [
+    :dt ["Clojure Version"]
+    :dd [(str *clojure-version*)]
+    :dt ["Cascade Version"]
+    :dd ["TBD"]
+    :dt ["Application Version"]
+    :dd [(-> req :cascade :application-version)]
+    ]
+    :h2 ["System Properties"]
+    (render-system-properties)))
+
+(defn render-exception-report-detail
+  [req exception]
+  (import-stylesheet req (classpath-asset "cascade/exception.css"))
+  ;(import-jquery env)
+  ;(import-javascript-library env :classpath "cascade/exception-report.js")
+  (template
+    :div [
+    :label.span5 [
+      :input#omitted-toggle {:type :checkbox}
+      " Display hidden detail"
+      ]]
+    :br
+    (template-for [m (expand-exception-stack exception)]
+      ; TODO: Smarter logic about which frames to be hidden
+      ; Currently, assumes only the deepest is interesting.
+      ; When we add some additional levels of try/catch & report
+      ; it may be useful to display some of the outer exceptions as well
+      (render-exception-map m))
+    (render-environment req)))
+
+(defview exception-report
+  "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
+Formats a detailed HTML report of the exception and the overall environment."
+  [req ^Throwable exception]
+  (import-stylesheet req (classpath-asset "cascade/bootstrap_1.3.0.css"))
+  (template
+    :html [
+    :head [:title [exception-banner]]
+    :body [
+      :div.container [
+        :h1 [exception-banner]
+        (render-exception-report-detail req exception)
+        ]]]))

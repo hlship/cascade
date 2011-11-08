@@ -1,0 +1,20 @@
+/* Default stylesheet for Cascade. */
+
+/* Something initially invisible that may be revealed (but is still displayed as grey text). */
+.c-omitted {
+    display: none;
+    color: gray;
+}
+
+.c-exception-message {
+    font-weight: bold;
+}
+
+div.c-exception {
+    margin-top: 20px;
+}
+
+
+div.c-exception dl {
+    margin-top: 10px;
+}

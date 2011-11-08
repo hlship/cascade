@@ -35,10 +35,11 @@ The value is an atom containing a map of the data needed to track imports."
     (swap! (req :cascade) update-in [key] add-if-not-present value)))
 
 (defn import-stylesheet
-  "Imports a stylesheet for a CSS asset.  Returns the request object."
+  "Imports a stylesheet for a CSS asset.  Returns nil."
   ; TODO: Naming and explicit ordering!
   [req stylesheet-asset]
-  (import-in-cascade-key req :stylesheets stylesheet-asset))
+  (import-in-cascade-key req :stylesheets stylesheet-asset)
+  nil)
 
 (defn to-element-node
   "Converts an asset into a <link> element node."
