@@ -17,18 +17,18 @@
   (:use
     [cascade dom]))
 
-(def wrap-install-cascade-atom-into-request [handler]
+(defn wrap-install-cascade-atom-into-request [handler]
   "Wraps the handler with a new handler that installs the :cascade key into the request.
 The value is an atom containing a map of the data needed to track imports."
   (fn [req]
-    (handler (assoc req :cascade (atom {:stylesheets [] :js-inits []})))))
+    (handler (assoc req :cascade (atom {:stylesheets []})))))
 
 (defn add-if-not-present
   [list value]
   (if (contains? list value)
     list
     ; Dependent on the list being a vector that conj-es at the end
-    conj list value))
+    (conj list value)))
 
 (defn import-in-cascade-key
   ([req key value]
@@ -40,14 +40,31 @@ The value is an atom containing a map of the data needed to track imports."
   [req stylesheet-asset]
   (import-in-cascade-key req :stylesheets stylesheet-asset))
 
+(defn to-element-node
+  "Converts an asset into a <link> element node."
+  [asset]
+  (element-node :link {:rel :stylesheet :type "text/css" :href asset} nil))
+
 (defn add-stylesheet-nodes
   [dom-nodes stylesheet-assets]
+  ; TODO: optimize when no assets
+  (extend-dom dom-nodes [[[:html :head :script] :before]
+                         [[:html :head :link] :before]
+                         [[:html :head] :bottom]] (map to-element-node stylesheet-assets)))
 
-(def wrap-import-stylesheets
+(defn wrap-import-stylesheets
   "Middleware around a handler that consumes a request and returns a seq of DOM nodes (or nil). The DOM nodes are
-post-processed to add new <link> tags for any imported stylesheets."
+post-processed to add new <link> elements for any imported stylesheets."
   [handler]
   (fn [req]
-    (let [dom-nodes (handler req)]
-      (if dom-nodes
-        (add-stylesheet-nodes dom-nodes (-> req :cascade deref :stylesheets))))))
+    (let [response (handler req)]
+      (and response
+        (update-in response [:body] add-stylesheet-nodes (-> req :cascade deref :stylesheets))))))
+
+(defn wrap-imports
+  "Wraps a request-to-DOM-nodes handler with support for imports."
+  [handler]
+  (->
+    handler
+    wrap-import-stylesheets
+    wrap-install-cascade-atom-into-request))

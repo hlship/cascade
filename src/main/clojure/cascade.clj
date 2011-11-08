@@ -26,11 +26,12 @@
 
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
-preceding the parameters vector. The function's forms are an implicit inline block."
+preceding the parameters vector. The function's forms are an implicit inline block. The function returns a Ring response
+map, consisting of a single key, :body, consisting of the DOM nodes rendering by the implicit template."
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
-      (template ~@template-forms))))
+      {:body (template ~@template-forms)})))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
@@ -56,8 +57,3 @@ preceding the parameters vector. The function's forms are an implicit inline blo
   "Creates a comment DOM node."
   [comment]
   (comment-node comment))
-
-(defview stylesheet
-  "Creates a <link> element for a stylesheet. The resource should be either a String or a cascade.asset/Asset."
-  [resource]
-  :link {:rel :stylesheet :type "text/css" :href resource})

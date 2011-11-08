@@ -24,8 +24,18 @@
       dom-node dom-node
       "any string" (text-node "any string")
       123.4 (text-node "123.4"))))
-      
+
 (deftest combine-a-non-dom-node-is-failure
   (is
     (thrown? RuntimeException ; Should check the message, but RE hell
       (combine {:not-an :element-node}))))
+
+(deftest element-name-factoring
+  (are
+    [element-keyword element-name attributes]
+    (= [element-name attributes] (factor-element-name element-keyword))
+
+    :fred :fred nil
+    :fred.bar :fred {:class :bar}
+    :div.alert-message.error :div {:class "alert-message error"}
+    :div#mark.alert-message :div {:class :alert-message :id :mark}))

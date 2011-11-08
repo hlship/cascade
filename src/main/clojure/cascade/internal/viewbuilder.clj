@@ -41,7 +41,7 @@
   [element-name]
   (let [name-str (name element-name)]
     ; match sequences of word characters prefixed with '.' or '#' within the overall name
-    (loop [matcher (re-matcher #"([.#])(\w+)" name-str)
+    (loop [matcher (re-matcher #"([.#])([\w-]+)" name-str)
            result []]
       (if (.find matcher)
         (recur matcher (conj result [(.substring name-str 0 (.start matcher))

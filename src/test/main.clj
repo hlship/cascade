@@ -1,5 +1,5 @@
 (ns main
-  (:use compojure.core cascade cascade.asset ring.adapter.jetty)
+  (:use compojure.core cascade cascade.asset cascade.import ring.adapter.jetty)
   (:require
     [cascade.request :as cr]
     [compojure.route :as route]
@@ -7,31 +7,45 @@
 
 (set! *warn-on-reflection* true)
 
-(defview hello-world [request]
-  :html
-  [:head [:title ["Cascade Hello World"]
-          (stylesheet (file-asset "css/bootstrap.css"))
-          (stylesheet (classpath-asset "cascade/cascade.css"))]
-   :body [
-    :h1 ["Hello World"]
-    :p [
-      "The page rendered at "
-      :em [(str (java.util.Date.))]
-      "."
-      ]
-    :p [
-      :a {:href "/hello"} ["click to refresh"]
-      ]
-    ]])
+(defn layout [req title body]
+  (import-stylesheet req (file-asset "css/bootstrap.css"))
+  (import-stylesheet req (classpath-asset "cascade/cascade.css"))
+  (template
+    :html [
+    :head [:title [title]]
+    :body [
+      :div.container [
+        :h1 [title]
+        body
+        :hr
+        :&copy " 2011 Howard M. Lewis Ship"
+        ]]]))
 
-(defroutes main-routes
+(defview hello-world [req]
+  (layout req "Cascade Hello World"
+    (template
+      :div.alert-message.success [
+      :p ["This page rendered at "
+          :strong [(str (java.util.Date.))]
+          "."
+          ]
+      ]
+      :p [
+      :a.btn.primary.large {:href "/hello"} ["Refresh"]
+      ])))
+
+(defroutes html-routes
+  (GET "/hello" [] hello-world))
+
+(defroutes master-routes
   ; Temporary: eventually we'll pass a couple of routes
   ;; into cr/initialize
-  (GET "/hello" [] (cr/wrap-html hello-world))
-  (cr/initialize "1.0" :public-folder "src/test/webapp")
+  (cr/initialize "1.0"
+    :public-folder "src/test/webapp"
+    :html-routes html-routes)
   (route/not-found "Cascade Demo: No such resource"))
 
 (def app
-  (handler/site main-routes))
+  (handler/site master-routes))
 
 (run-jetty app {:port 8080})

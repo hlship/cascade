@@ -21,7 +21,7 @@
     [ring.middleware.file-info :as file-info])
   (:use
     [compojure core]
-    [cascade dom asset]))
+    [cascade dom asset import]))
 
 (defn wrap-exception-handling
   "Middleware for standard Cascade exception reporting; exceptions are caught and reported using the Cascade
@@ -60,9 +60,33 @@ path
       .getTime
       (.format format))))
 
+(def placeholder-routes
+  "Returns a placeholder request handling function that always returns nil."
+  (routes))
+
+(defn wrap-serialize-html
+  "Wraps a handler that produces a seq of DOM nodes (e.g., one created via defview or template) so that
+the returned dom-nodes are converted into a seq of strings (the markup to be streamed to the client)."
+  [handler]
+  (fn [req]
+    (let [response (handler req)]
+      (and response
+          (update-in response [:body] serialize-html)))))
+
+(defn wrap-html-markup
+  "Wraps the handler (which renders a request to DOM nodes) with full rendering support, including imports."
+  [handler]
+  (->
+    handler
+    wrap-imports
+    wrap-serialize-html))
+
 (defn initialize
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
+:html-routes
+  Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
+  of DOM nodes.
 :virtual-folder (default \"assets\")
   The root folder under which assets will be exposed to the client.
 :public-folder (default \"public\")
@@ -72,7 +96,7 @@ should change with each new deployment. Named arguments:
 :asset-factories
   Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
 The functions should construct and return a cascade/Asset."
-  [application-version & {:keys [virtual-folder public-folder file-extensions asset-factories]
+  [application-version & {:keys [virtual-folder public-folder file-extensions asset-factories html-routes]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
   (let [root (str "/" virtual-folder "/" application-version)
@@ -86,15 +110,19 @@ The functions should construct and return a cascade/Asset."
        :assets-folder root
        :file-extensions (merge mime-type/default-mime-types file-extensions)})
     (printf "Initialized asset access at virtual folder %s\n" root)
-    (wrap-exception-handling
-      (GET [(str root "/:domain/:path") :path #".*"]
-        [domain path] (asset-handler asset-factories (keyword domain) path)))))
+    (->
+      (routes
+        (GET [(str root "/:domain/:path") :path #".*"]
+          [domain path] (asset-handler asset-factories (keyword domain) path))
+        (wrap-html-markup (or html-routes placeholder-routes)))
+      wrap-exception-handling)))
 
 (defn wrap-html
   "Ring middleware that wraps a handler so that the return value from the handler (a seq of DOM nodes)
 is serialized to HTML (as lazy seq of strings)."
   [handler]
-  (fn [req]
-    (->
-      (handler req)
-      serialize-html)))
+  (->
+    handler
+    wrap-import-stylesheets
+    serialize-html
+    wrap-install-cascade-atom-into-request))

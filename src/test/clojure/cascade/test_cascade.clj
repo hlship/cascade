@@ -36,9 +36,8 @@
   (let [input-path (str "expected/" name ".txt")
         expected (slurp (find-classpath-resource input-path))
         trimmed-expected (minimize-ws expected)
-        dom (apply view-fn rest)
-        ; _ (pprint dom)
-        streamed (serialize-to-string dom)
+        response (apply view-fn rest)
+        streamed (serialize-to-string (:body response))
         trimmed-actual (minimize-ws streamed)]
     (is (= trimmed-actual trimmed-expected))))
 
@@ -125,7 +124,7 @@
 (deftest block-macro
   (serialize-test list-accounts-with-loop "block-macro" {}))
 
-(defn symbol-view []
+(defview symbol-view []
   (let [copyright (template
     linebreak :hr :p [
       (raw "&copy; 2009 ")
