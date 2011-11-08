@@ -45,12 +45,12 @@
   [class-name method-name]
   (when (contains? #{"invoke" "doInvoke"} method-name)
     (let [[namespace-name & raw-function-ids] (s2/split class-name #"\$")
-          function-ids (map #(nth (first (re-seq #"(\w+)(__\d+)?" %)) 1 nil) raw-function-ids)
+          function-ids (map #(or (nth (first (re-seq #"([\w|.|-]+)__\d+?" %)) 1 nil) %) raw-function-ids)
           function-names (map #(s2/replace % \_ \-) function-ids)]
       (if-not (empty? raw-function-ids)
         (template
           namespace-name "/" (s2/join "/" function-names)
-          :span {:class :c-omitted} [" " class-name "." method-name])))))
+          :span {:class :c-omitted} [:&nbsp class-name "." method-name])))))
 
 (defn transform-stack-frame
   [^StackTraceElement element]
