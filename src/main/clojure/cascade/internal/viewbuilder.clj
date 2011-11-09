@@ -35,19 +35,18 @@
       (pr-str any))))))
 
 (defn explode-element-name
-  "Explodes an element name keyword into a seq of three-element vectors. Each vector
+  "Explodes an element name string into a seq of three-element vectors. Each vector
   consists of the portion of the name prior to the match, the match character, and
-  the match term. :div.alpha#beta would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
-  [element-name]
-  (let [name-str (name element-name)]
-    ; match sequences of word characters prefixed with '.' or '#' within the overall name
-    (loop [matcher (re-matcher #"([.#])([\w-]+)" name-str)
-           result []]
-      (if (.find matcher)
-        (recur matcher (conj result [(.substring name-str 0 (.start matcher))
-                                     (.group matcher 1)
-                                     (.group matcher 2)]))
-        result))))
+  the match term. div.alpha#beta would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
+  [^String element-name]
+  ; match sequences of word characters prefixed with '.' or '#' within the overall name
+  (loop [matcher (re-matcher #"([.#])([\w-]+)" element-name)
+         result []]
+    (if (.find matcher)
+      (recur matcher (conj result [(.substring element-name 0 (.start matcher))
+                                   (.group matcher 1)
+                                   (.group matcher 2)]))
+      result)))
 
 (defn extract-attributes
   [exploded match key attributes]
@@ -66,7 +65,7 @@
   a keyword if there is only a single value. The attributes map may be nil if the
   element-name is simple."
   [element-name]
-  (let [exploded (explode-element-name element-name)]
+  (let [exploded (explode-element-name (name element-name))]
     (if (empty? exploded)
       [element-name nil]
       (let [simple-element-name (keyword (get-in exploded [0 0]))
@@ -74,72 +73,72 @@
             attributes (->> {} (extract "." :class) (extract "#" :id))]
         [simple-element-name attributes]))))
 
-(defn combine
-  "Given the results of rendering (where each step provides a render result), combine the results
-into a single sequence of DOM nodes. Each of the render results should be a DOM node,
-or a collection of DOM nodes (or a nested collection of DOM nodes, etc.). Strings are also allowed,
-which are converted into :text DOM nodes."
-  [& render-results]
-  (loop [output (transient [])
-         queue render-results]
-    (let [current (first queue)
-          remainder (next queue)]
-      (cond
-        (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
-        (sequential? current) (recur output (concat current remainder))
-        :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
+        (defn combine
+          "Given the results of rendering (where each step provides a render result), combine the results
+    into a single sequence of DOM nodes. Each of the render results should be a DOM node,
+    or a collection of DOM nodes (or a nested collection of DOM nodes, etc.). Strings are also allowed,
+    which are converted into :text DOM nodes."
+          [& render-results]
+          (loop [output (transient [])
+                 queue render-results]
+            (let [current (first queue)
+                  remainder (next queue)]
+              (cond
+                (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
+                (sequential? current) (recur output (concat current remainder))
+                :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
 
-(with-monad parser-m
-  (declare parse-embedded-template)
+        (with-monad parser-m
+          (declare parse-embedded-template)
 
-  (def parse-text
-    (domonad [text match-string]
-      ; The encode-string occurs just once, at macro expansion time
-      `(raw-node ~(encode-string text))))
+          (def parse-text
+            (domonad [text match-string]
+              ; The encode-string occurs just once, at macro expansion time
+              `(raw-node ~(encode-string text))))
 
-  (def parse-name
-    ; An attribute or element name is either a keyword or a form that yields a keyword.
-    (match-first match-keyword))
+          (def parse-name
+            ; An attribute or element name is either a keyword or a form that yields a keyword.
+            (match-first match-keyword))
 
-  (def parse-body
-    (domonad [body match-vector]
-      (parse-embedded-template body)))
+          (def parse-body
+            (domonad [body match-vector]
+              (parse-embedded-template body)))
 
-  (def parse-entity
-    (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
-      `(raw-node ~(str (name entity-name) ";"))))
+          (def parse-entity
+            (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
+              `(raw-node ~(str (name entity-name) ";"))))
 
-  (def parse-element
-    (domonad [name parse-name
-              attributes (optional match-map)
-              body (optional parse-body)]
-      (let [[factored-element-name implicit-attributes] (factor-element-name name)
-            assembled-attributes (merge implicit-attributes attributes)]
-        `(element-node ~factored-element-name ~assembled-attributes ~body))))
+          (def parse-element
+            (domonad [name parse-name
+                      attributes (optional match-map)
+                      body (optional parse-body)]
+              (let [[factored-element-name implicit-attributes] (factor-element-name name)
+                    assembled-attributes (merge implicit-attributes attributes)]
+                `(element-node ~factored-element-name ~assembled-attributes ~body))))
 
-  ; Accept a single form that will act as a renderer, returning a render
-  ; result, which will be combined with other render results via the
-  ; parse-forms parser. This form may be a symbol or a list (a function call).
-  (def parse-form
-    (domonad [form match-form]
-      form))
+          ; Accept a single form that will act as a renderer, returning a render
+          ; result, which will be combined with other render results via the
+          ; parse-forms parser. This form may be a symbol or a list (a function call).
+          (def parse-form
+            (domonad [form match-form]
+              form))
 
-  (def parse-single-form
-    (match-first parse-text parse-entity parse-element parse-form))
+          (def parse-single-form
+            (match-first parse-text parse-entity parse-element parse-form))
 
-  (def parse-forms
-    (domonad [forms (none-or-more parse-single-form)]
-      ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
-      ; (because combine is not lazy). 
-      ; This may be be relevent in terms of ordering of CSS stylesheets & JavaScript libraries,
-      ; since that information is "collected on the side" (in an atom) and therefore not
-      ; purely functional. Perhaps there's a monadic approach that will allow the construction
-      ; of the DOM tree and the collection of CSS/JS data to occur in a stricly functional way?
-      `(combine ~@forms)))
-  ) ; with-monad parser-m
+          (def parse-forms
+            (domonad [forms (none-or-more parse-single-form)]
+              ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
+              ; (because combine is not lazy).
+              ; This may be be relevent in terms of ordering of CSS stylesheets & JavaScript libraries,
+              ; since that information is "collected on the side" (in an atom) and therefore not
+              ; purely functional. Perhaps there's a monadic approach that will allow the construction
+              ; of the DOM tree and the collection of CSS/JS data to occur in a stricly functional way?
+              `(combine ~@forms)))
+          ) ; with-monad parser-m
 
-(defn parse-embedded-template
-  "Used as part of (defview) or (template) to convert the a form, the embedded template, into
+        (defn parse-embedded-template
+          "Used as part of (defview) or (template) to convert the a form, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
-  [forms]
-  (run-parse parse-forms forms "embedded template forms"))
+          [forms]
+          (run-parse parse-forms forms "embedded template forms"))
