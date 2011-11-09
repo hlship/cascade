@@ -1,4 +1,4 @@
-// Copyright 2009 Howard M. Lewis Ship
+// Copyright 2009, 2011 Howard M. Lewis Ship
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 // details. Note good form: using jQuery for the call, but mapping it to $ for the duration
 // of the function. This helps when jQuery is mixed with libraries like Prototype.
 
-jQuery(function($) {
-	var visible = this.checked;
-	$('#omitted-toggle').click(function() {
-		$('LI.c-omitted-frame, .c-omitted').toggle(visible);
-	});
+require(["jquery"], function($) {
+
+    $(function() {
+        $("#omitted-toggle").on("click", function() {
+            $(".c-omitted").toggle();
+        });
+    });
 });

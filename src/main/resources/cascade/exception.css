@@ -3,7 +3,16 @@
 /* Something initially invisible that may be revealed (but is still displayed as grey text). */
 .c-omitted {
     display: none;
-    color: gray;
+    color: gray !IMPORTANT;
+}
+
+.c-exception-controls {
+    float: right;
+}
+
+.c-exception-controls label {
+    width: auto;
+    line-height: 20px;
 }
 
 .c-exception-message {
@@ -14,7 +23,10 @@ div.c-exception {
     margin-top: 20px;
 }
 
-
 div.c-exception dl {
     margin-top: 10px;
+}
+
+ul.c-stack-trace li {
+    color: black;
 }

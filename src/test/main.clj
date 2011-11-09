@@ -8,7 +8,7 @@
 (set! *warn-on-reflection* true)
 
 (defn layout [req title body]
-  (import-stylesheet req (classpath-asset "cascade/bootstrap_1.3.0.css"))
+  (import-stylesheet req (classpath-asset "cascade/bootstrap.css"))
   (template
     :html [
     :head [:title [title]]

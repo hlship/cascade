@@ -30,7 +30,7 @@
   (merge
     ; Start with whitespace plus all ASCII printable
     (reduce #(assoc %1 (char %2) (char %2)) {}
-      (concat [9 10 13 32 33] (range 35 38) (range 40 126)))
+      (concat [9 10 13 32 33 \' \"] (range 35 38) (range 40 126)))
     ; Then merge in the characters that must be XML entities
     {
       \< "&lt;"

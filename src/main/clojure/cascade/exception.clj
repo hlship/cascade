@@ -133,7 +133,7 @@
           (when deepest
             (template
               :dt ["Stack Trace"]
-              :ul [
+              :ul.c-stack-trace [
               (template-for [frame stack-trace]
                 :li {:class (frame :class-name)} [(frame :method-name)])
               ]))
@@ -176,11 +176,12 @@
 (defn render-exception-report-detail
   [req exception]
   (import-stylesheet req (classpath-asset "cascade/exception.css"))
+  (import-module req "cascade/exception-report")
   ;(import-jquery env)
   ;(import-javascript-library env :classpath "cascade/exception-report.js")
   (template
-    :div [
-    :label.span5 [
+    :div.c-exception-controls [
+    :label [
       :input#omitted-toggle {:type :checkbox}
       " Display hidden detail"
       ]]
@@ -197,7 +198,7 @@
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
 Formats a detailed HTML report of the exception and the overall environment."
   [req ^Throwable exception]
-  (import-stylesheet req (classpath-asset "cascade/bootstrap_1.3.0.css"))
+  (import-stylesheet req (classpath-asset "cascade/bootstrap.css"))
   (template
     :html [
     :head [:title [exception-banner]]

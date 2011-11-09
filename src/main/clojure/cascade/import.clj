@@ -15,13 +15,16 @@
 (ns cascade.import
   "Support for importing assets and JavaScript initialization code into the document, during the DOM rendering phase."
   (:use
-    [cascade dom]))
+    cascade
+    [cascade dom asset])
+  (:require
+    [clojure.string :as s2]))
 
 (defn wrap-install-cascade-atom-into-request [handler]
   "Wraps the handler with a new handler that installs the :cascade key into the request.
 The value is an atom containing a map of the data needed to track imports."
   (fn [req]
-    (handler (assoc req :cascade (atom {:stylesheets []})))))
+    (handler (assoc req :cascade (atom {:stylesheets [] :modules []})))))
 
 (defn add-if-not-present
   [list value]
@@ -41,31 +44,67 @@ The value is an atom containing a map of the data needed to track imports."
   (import-in-cascade-key req :stylesheets stylesheet-asset)
   nil)
 
+(defn import-module
+  "Imports a module by module name. Returns nil"
+  [req module-name]
+  (import-in-cascade-key req :modules module-name)
+  nil)
+
 (defn to-element-node
   "Converts an asset into a <link> element node."
   [asset]
   (element-node :link {:rel :stylesheet :type "text/css" :href asset} nil))
 
 (defn add-stylesheet-nodes
-  [dom-nodes stylesheet-assets]
+  [req dom-nodes stylesheet-assets]
   ; TODO: optimize when no assets
   (extend-dom dom-nodes [[[:html :head :script] :before]
                          [[:html :head :link] :before]
                          [[:html :head] :bottom]] (map to-element-node stylesheet-assets)))
 
-(defn wrap-import-stylesheets
-  "Middleware around a handler that consumes a request and returns a seq of DOM nodes (or nil). The DOM nodes are
-post-processed to add new <link> elements for any imported stylesheets."
-  [handler]
+(defn apply-response-transformation
+  [handler key transform-fn]
   (fn [req]
     (let [response (handler req)]
       (and response
-        (update-in response [:body] add-stylesheet-nodes (-> req :cascade deref :stylesheets))))))
+        (update-in response [:body] #(transform-fn req % (-> req :cascade deref key)))))))
+
+(defn wrap-import-stylesheets
+  "Middleware that expects the rendered body to be a seq of DOM nodes. The DOM nodes are
+post-processed to add new <link> elements for any imported stylesheets."
+  [handler]
+  (apply-response-transformation handler :stylesheets add-stylesheet-nodes))
+
+(defn add-module-requires-javascript
+  [req dom-nodes module-names]
+  (if (empty? module-names)
+    dom-nodes
+    (->
+      dom-nodes
+      (extend-dom [[[:html :head] :bottom]]
+        (template
+          :script {:src (classpath-asset "cascade/require-jquery.js")}
+          :script [
+          "require.config({ baseUrl: '"
+          (build-client-url :module "")
+          "' });\n"
+          "require(["
+          (->>
+            (map #(str \' % \') module-names)
+            (s2/join ", "))
+          "]);\n"
+          ])))))
+
+(defn wrap-import-modules
+  "Middleware that handles imported modules."
+  [handler]
+  (apply-response-transformation handler :modules add-module-requires-javascript))
 
 (defn wrap-imports
   "Wraps a request-to-DOM-nodes handler with support for imports."
   [handler]
   (->
     handler
+    wrap-import-modules
     wrap-import-stylesheets
     wrap-install-cascade-atom-into-request))
