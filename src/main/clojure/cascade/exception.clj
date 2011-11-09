@@ -195,8 +195,8 @@
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
 Formats a detailed HTML report of the exception and the overall environment."
-  [req ^Throwable exception]
-  (import-stylesheet (classpath-asset "cascade/bootstrap.css"))
+  [req exception]
+  (import-stylesheet classpath-asset "cascade/bootstrap.css")
   (template
     :html [
     :head [:title [exception-banner]]

@@ -7,7 +7,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn layout [req title body]
+(defn layout [title body]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
   (template
     :html [
@@ -21,7 +21,7 @@
         ]]]))
 
 (defview hello-world [req]
-  (layout req "Cascade Hello World"
+  (layout "Cascade Hello World"
     (template
       :div.alert-message.success [
       :p ["This page rendered at "
