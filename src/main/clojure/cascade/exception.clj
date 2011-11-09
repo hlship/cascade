@@ -159,7 +159,7 @@
             ])))])))
 
 (defn render-environment
-  [req]
+  []
   (template
     :h2 ["Environment"]
     :dl [
@@ -168,17 +168,15 @@
     :dt ["Cascade Version"]
     :dd ["TBD"]
     :dt ["Application Version"]
-    :dd [(-> req :cascade :application-version)]
+    :dd ["TBD"]
     ]
     :h2 ["System Properties"]
     (render-system-properties)))
 
 (defn render-exception-report-detail
-  [req exception]
-  (import-stylesheet req (classpath-asset "cascade/exception.css"))
-  (import-module req "cascade/exception-report")
-  ;(import-jquery env)
-  ;(import-javascript-library env :classpath "cascade/exception-report.js")
+  [exception]
+  (import-stylesheet classpath-asset "cascade/exception.css")
+  (import-module "cascade/exception-report")
   (template
     :div.c-exception-controls [
     :label [
@@ -192,18 +190,20 @@
       ; When we add some additional levels of try/catch & report
       ; it may be useful to display some of the outer exceptions as well
       (render-exception-map m))
-    (render-environment req)))
+    (render-environment)))
 
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
 Formats a detailed HTML report of the exception and the overall environment."
   [req ^Throwable exception]
-  (import-stylesheet req (classpath-asset "cascade/bootstrap.css"))
+  (import-stylesheet (classpath-asset "cascade/bootstrap.css"))
   (template
     :html [
     :head [:title [exception-banner]]
     :body [
       :div.container [
         :h1 [exception-banner]
-        (render-exception-report-detail req exception)
-        ]]]))
+        (render-exception-report-detail exception)
+        ]
+      ]
+    ]))

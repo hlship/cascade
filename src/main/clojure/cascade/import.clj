@@ -20,11 +20,16 @@
   (:require
     [clojure.string :as s2]))
 
-(defn wrap-install-cascade-atom-into-request [handler]
-  "Wraps the handler with a new handler that installs the :cascade key into the request.
-The value is an atom containing a map of the data needed to track imports."
+(def ^{:dynamic true}
+  *active-imports*
+  "Stores a per-thread map used to track what's been imported."
+  nil)
+
+(defn wrap-setup-active-imports [handler]
+  "Binds the *active-imports* var so that it may be updated by the downstream handlers."
   (fn [req]
-    (handler (assoc req :cascade (atom {:stylesheets [] :modules []})))))
+    (binding [*active-imports* {:stylesheets [] :modules []}]
+      (handler req))))
 
 (defn add-if-not-present
   [list value]
@@ -33,21 +38,28 @@ The value is an atom containing a map of the data needed to track imports."
     ; Dependent on the list being a vector that conj-es at the end
     (conj list value)))
 
-(defn import-in-cascade-key
-  ([req key value]
-    (swap! (req :cascade) update-in [key] add-if-not-present value)))
+(defn import-into-keyed-list
+  "Updates that map in *active-imports*, adding the value to the list storted under the
+given key, if not already present."
+  [key value]
+  (set! *active-imports* (update-in *active-imports* [key] add-if-not-present value)))
 
 (defn import-stylesheet
-  "Imports a stylesheet for a CSS asset.  Returns nil."
+  "Imports a stylesheet for a CSS asset. The stylesheet may be specified as an asset. Alternately, a stylesheet factory
+function and a path passed to that factory may be provided (which reads nicely).
+
+Returns nil."
   ; TODO: Naming and explicit ordering!
-  [req stylesheet-asset]
-  (import-in-cascade-key req :stylesheets stylesheet-asset)
-  nil)
+  ([stylesheet-asset]
+    (import-into-keyed-list :stylesheets stylesheet-asset)
+    nil)
+  ([factory-fn asset-path]
+    (import-stylesheet (factory-fn asset-path))))
 
 (defn import-module
   "Imports a module by module name. Returns nil"
-  [req module-name]
-  (import-in-cascade-key req :modules module-name)
+  [module-name]
+  (import-into-keyed-list :modules module-name)
   nil)
 
 (defn to-element-node
@@ -56,7 +68,7 @@ The value is an atom containing a map of the data needed to track imports."
   (element-node :link {:rel :stylesheet :type "text/css" :href asset} nil))
 
 (defn add-stylesheet-nodes
-  [req dom-nodes stylesheet-assets]
+  [dom-nodes stylesheet-assets]
   ; TODO: optimize when no assets
   (extend-dom dom-nodes [[[:html :head :script] :before]
                          [[:html :head :link] :before]
@@ -67,7 +79,7 @@ The value is an atom containing a map of the data needed to track imports."
   (fn [req]
     (let [response (handler req)]
       (and response
-        (update-in response [:body] #(transform-fn req % (-> req :cascade deref key)))))))
+        (update-in response [:body] transform-fn (*active-imports* key))))))
 
 (defn wrap-import-stylesheets
   "Middleware that expects the rendered body to be a seq of DOM nodes. The DOM nodes are
@@ -76,7 +88,7 @@ post-processed to add new <link> elements for any imported stylesheets."
   (apply-response-transformation handler :stylesheets add-stylesheet-nodes))
 
 (defn add-module-requires-javascript
-  [req dom-nodes module-names]
+  [dom-nodes module-names]
   (if (empty? module-names)
     dom-nodes
     (->
@@ -107,4 +119,4 @@ post-processed to add new <link> elements for any imported stylesheets."
     handler
     wrap-import-modules
     wrap-import-stylesheets
-    wrap-install-cascade-atom-into-request))
+    wrap-setup-active-imports))
