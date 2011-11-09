@@ -3,7 +3,7 @@
 /* Something initially invisible that may be revealed (but is still displayed as grey text). */
 .c-omitted {
     display: none;
-    color: gray !IMPORTANT;
+    color: gray !important;
 }
 
 .c-exception-controls {
