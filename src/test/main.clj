@@ -7,29 +7,28 @@
 
 (set! *warn-on-reflection* true)
 
-(defn layout [title body]
+(defragment layout [title body]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
-  (markup
-    :html [
-    :head>title [title]
-    :body>div.container [
-      :h1 [title]
-      body
-      :hr
-      :&copy " 2011 Howard M. Lewis Ship"
-      ]]))
+  :html [
+  :head>title [title]
+  :body>div.container [
+    :h1 [title]
+    body
+    :hr
+    :&copy " 2011 Howard M. Lewis Ship"
+    ]])
 
 (defview hello-world [req]
   (layout "Cascade Hello World"
     (markup
       :div.alert-message.success>p [
-        "This page rendered at "
-        :strong [(str (java.util.Date.))]
-        "."
+      "This page rendered at "
+      :strong [(str (java.util.Date.))]
+      "."
       ]
       :div.well [
-        :a.btn.primary {:href "/hello"} ["Refresh"]
-        :a.btn {:href "/hello/fail"} ["Force Failure"]
+      :a.btn.primary {:href "/hello"} ["Refresh"]
+      :a.btn {:href "/hello/fail"} ["Force Failure"]
       ])))
 
 (defroutes html-routes

@@ -32,7 +32,15 @@ map, consisting of a single key, :body, consisting of the DOM nodes rendering by
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
-       (~response (markup ~@template-forms)))))
+      (~response (markup ~@template-forms)))))
+
+(defmacro defragment
+  "Defines a Cascade view fragment function, which uses an embedded template. A fragment function may have a doc string and meta data
+preceding the parameters vector. The function's forms are an implicit inline block. The function returns a seq of DOM nodes."
+  [& forms]
+  (let [[fn-name fn-params template-forms] (parse-function-def forms)]
+    `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
+      (markup ~@template-forms))))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
@@ -40,10 +48,10 @@ map, consisting of a single key, :body, consisting of the DOM nodes rendering by
   [fn-params & template-forms]
   `(fn ~fn-params (markup ~@template-forms)))
 
-(defmacro template-for
-  "Executes a for list comprehension on the bindings, with the template forms evaluated as an implicit template."
-  [bindings & template-forms]
-  `(combine (for ~bindings (markup ~@template-forms))))
+(defmacro markup-for
+  "Executes a for list comprehension on the bindings, with the  forms evaluated as an implicit markup block."
+  [bindings & markup-forms]
+  `(combine (for ~bindings (markup ~@markup-forms))))
 
 (def ^{:doc "A DOM text node for a line break."}
   linebreak

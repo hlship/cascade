@@ -127,14 +127,14 @@
       (when render-dl
         (markup
           :dl [
-          (template-for [k (sort (keys properties))]
+          (markup-for [k (sort (keys properties))]
             :dt [(name k)]
             :dd [(str (get properties k))])
           (when deepest
             (markup
               :dt ["Stack Trace"]
               :ul.c-stack-trace [
-              (template-for [frame stack-trace]
+              (markup-for [frame stack-trace]
                 :li {:class (frame :class-name)} [(frame :method-name)])
               ]))
           ]))])))
@@ -152,55 +152,52 @@
             :dd [
             (if (or (.endsWith name "path") (.endsWith name "dirs"))
               (markup :ul [
-                (template-for [v (.split value path-sep)]
+                (markup-for [v (.split value path-sep)]
                   :li [v])
                 ])
               value)
             ])))])))
 
-(defn render-environment
+(defragment render-environment
   []
-  (markup
-    :h2 ["Environment"]
-    :dl [
-    :dt ["Clojure Version"]
-    :dd [(str *clojure-version*)]
-    :dt ["Cascade Version"]
-    :dd ["TBD"]
-    :dt ["Application Version"]
-    :dd ["TBD"]
-    ]
-    :h2 ["System Properties"]
-    (render-system-properties)))
+  :h2 ["Environment"]
+  :dl [
+  :dt ["Clojure Version"]
+  :dd [(str *clojure-version*)]
+  :dt ["Cascade Version"]
+  :dd ["TBD"]
+  :dt ["Application Version"]
+  :dd ["TBD"]
+  ]
+  :h2 ["System Properties"]
+  (render-system-properties))
 
-(defn render-exception-report-detail
+(defragment render-exception-report-detail
   [exception]
   (import-stylesheet classpath-asset "cascade/exception.css")
   (import-module "cascade/exception-report")
-  (markup
-    :div.c-exception-controls>label [
-    :input#omitted-toggle {:type :checkbox}
-    " Display hidden detail"
-    ]
-    :br
-    (template-for [m (expand-exception-stack exception)]
-      ; TODO: Smarter logic about which frames to be hidden
-      ; Currently, assumes only the deepest is interesting.
-      ; When we add some additional levels of try/catch & report
-      ; it may be useful to display some of the outer exceptions as well
-      (render-exception-map m))
-    (render-environment)))
+  :div.c-exception-controls>label [
+  :input#omitted-toggle {:type :checkbox}
+  " Display hidden detail"
+  ]
+  :br
+  (markup-for [m (expand-exception-stack exception)]
+    ; TODO: Smarter logic about which frames to be hidden
+    ; Currently, assumes only the deepest is interesting.
+    ; When we add some additional levels of try/catch & report
+    ; it may be useful to display some of the outer exceptions as well
+    (render-exception-map m))
+  (render-environment))
 
 (defview exception-report
   "The default exception report view. The top-most thrown exception is expected in the [:cascade :exception] key of the environment.
 Formats a detailed HTML report of the exception and the overall environment."
   [req exception]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
-  (markup
-    :html [
-      :head>title [exception-banner]
-      :body>div.container [
-        :h1 [exception-banner]
-        (render-exception-report-detail exception)
-      ]
-    ]))
+  :html [
+  :head>title [exception-banner]
+  :body>div.container [
+    :h1 [exception-banner]
+    (render-exception-report-detail exception)
+    ]
+  ])

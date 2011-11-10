@@ -150,7 +150,7 @@
   (serialize-test symbol-view "use-of-symbol"))
 
 (defview template-for-view []
-  :ul [(template-for [x [1 2 3]] :li [x])])
+  :ul [(markup-for [x [1 2 3]] :li [x])])
 
 (deftest test-template-for
   (serialize-test template-for-view "template-for"))
@@ -177,7 +177,7 @@
 
 (defview comments []
   :div [
-  (template-for [i (range 1 4)]
+  (markup-for [i (range 1 4)]
     (<!-- (format " %d " i)))
   ])
 
