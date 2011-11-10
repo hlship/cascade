@@ -20,6 +20,12 @@
     [cascade dom]
     [clojure [test :only (is are deftest)] pprint]))
 
+(defn response [body]
+  ; Make sure the (response) invoked by the defview macro can't conflict with a method of the same
+  ; name in the calling namespace.
+  (throw (IllegalStateException. "This should never be called.")))
+
+
 (defn serialize-to-string [dom]
   ; This is very inefficient as it realizes the entire seq of strings all at once, but good
   ; enough for testing.

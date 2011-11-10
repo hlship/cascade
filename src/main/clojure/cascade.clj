@@ -17,7 +17,8 @@
   "Core functions and macros used when implementing Cascade views"
   (:use
     [cascade dom]
-    [cascade.internal viewbuilder parse-functions]))
+    [cascade.internal viewbuilder parse-functions]
+    ring.util.response))
 
 (defmacro markup
   "Defines a block of the template DSL, which is converted into code that renders a seq of DOM nodes."
@@ -31,7 +32,7 @@ map, consisting of a single key, :body, consisting of the DOM nodes rendering by
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
-      {:body (markup ~@template-forms)})))
+       (~response (markup ~@template-forms)))))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
