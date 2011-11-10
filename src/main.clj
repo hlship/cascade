@@ -76,8 +76,8 @@
 
 (defroutes html-routes
   (GET "/hello" [] hello-world)
-  (GET "/cascade/grid" [] (fn [_] (grid 3 5)))
-  (GET "/cascade/grid/:width/:height" [width height] (fn [_] (grid (parse-int width) (parse-int height))))
+  (GET "/cascade/grid" [] (grid 3 5))
+  (GET "/cascade/grid/:width/:height" [width height] (grid (parse-int width) (parse-int height)))
   ; /hello/fail provokes an exception:
   (GET "/hello/fail" [] (try (/ 0 0) (catch Exception e (throw (RuntimeException. "Failure dividing by zero." e))))))
 
