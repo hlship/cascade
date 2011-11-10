@@ -63,8 +63,7 @@ map of up to two attributes: :id and :class. The complex element name includes t
 using CSS-inspired naming; \"p.important.top-level#status\" would factor to
 [:p { :id :status :class \"important top-level\" } ]. The value for :class or :id will be
 a keyword if there is only a single value, or joined as a string if there are multiple values.
-The attributes map may be nil if the
-element-name is simple."
+The attributes map may be nil if the element-name is simple."
   [element-name]
   (let [exploded (explode-element-name element-name)]
     (if (empty? exploded)
@@ -88,6 +87,10 @@ which are converted into :text DOM nodes."
         (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
         (sequential? current) (recur output (concat current remainder))
         :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
+
+(defn split-string
+  [^String string split]
+  (seq (.split string split)))
 
 (with-monad parser-m
   (declare parse-embedded-template)
@@ -113,9 +116,21 @@ which are converted into :text DOM nodes."
     (domonad [element-selector parse-name
               attributes (optional match-map)
               body (optional parse-body)]
-      (let [[factored-element-name implicit-attributes] (factor-element-name (name element-selector))
-            assembled-attributes (merge implicit-attributes attributes)]
-        `(element-node ~factored-element-name ~assembled-attributes ~body))))
+      (loop [element-names (reverse (split-string (name element-selector) ">"))
+             active-attributes attributes
+             active-body body
+             wrap-body false]
+        (if (nil? element-names)
+          active-body
+          (let [element-name (first element-names)
+                [factored-element-name implicit-attributes] (factor-element-name (name element-name))
+                assembled-attributes (merge implicit-attributes active-attributes)]
+            (recur
+              (next element-names)
+              nil
+              `(element-node ~factored-element-name ~assembled-attributes
+                ~(if wrap-body [active-body] active-body))
+              true))))))
 
   ; Accept a single form that will act as a renderer, returning a render
   ; result, which will be combined with other render results via the

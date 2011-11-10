@@ -42,8 +42,8 @@
     (is (= trimmed-actual trimmed-expected))))
 
 (defview ^{:custom :bit-of-meta-data} simple-view
-  [env]
-  :p [(env :message)])
+  [req]
+  :p [(req :message)])
 
 (deftest simple-defview
   (serialize-test simple-view "simple-defview" {:message "Embedded Template"}))
@@ -54,14 +54,14 @@
     (is (= (md :custom) :bit-of-meta-data) "added meta-data")))
 
 (defview attributes-view
-  [env]
+  [req]
   :p {:id "outer"} [
-  :em {:id (env :inner)} [
-    (env :message)
+  :em {:id (req :inner)} [
+    (req :message)
     ]
   linebreak
   :hr
-  (env :copyright)
+  (req :copyright)
   ])
 
 (deftest attribute-rendering
@@ -98,13 +98,13 @@
   (serialize-test list-accounts "inline-macro"))
 
 (defn looper
-  "Loop fragment function. Iterates over its source and updates the env with the value key before
+  "Loop fragment function. Iterates over its source and updates the req with the value key before
   rendering its body (a block)."
-  [env source value-key body]
+  [req source value-key body]
   (for [value source]
-    (body (assoc env value-key value))))
+    (body (assoc req value-key value))))
 
-(defview list-accounts-with-loop [env]
+(defview list-accounts-with-loop [req]
   :html [
   :head [:title ["List Accounts"]]
   linebreak
@@ -115,8 +115,8 @@
       ; certainly the smple (for) version is easier. I think, ultimately,
       ; block will be more about layout components than typical
       ; dynamic rendering.
-      (looper env (fetch-accounts) :acct (block [env]
-        :li [(-> env :acct :name)] linebreak))
+      (looper req (fetch-accounts) :acct (block [req]
+        :li [(-> req :acct :name)] linebreak))
       ]
     ]
   ])
@@ -176,3 +176,8 @@
   ])
 
 (deftest template-comments (serialize-test comments "template-comments"))
+
+(defview zen-elements-view []
+  :div.alert>p.strong {:foo :bar} [ "Help!" ])
+
+(deftest zen-elements (serialize-test zen-elements-view "zen-elements-view"))

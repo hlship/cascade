@@ -11,23 +11,21 @@
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
   (template
     :html [
-    :head [:title [title]]
-    :body [
-      :div.container [
-        :h1 [title]
-        body
-        :hr
-        :&copy " 2011 Howard M. Lewis Ship"
-        ]]]))
+    :head>title [title]
+    :body>div.container [
+      :h1 [title]
+      body
+      :hr
+      :&copy " 2011 Howard M. Lewis Ship"
+      ]]))
 
 (defview hello-world [req]
   (layout "Cascade Hello World"
     (template
-      :div.alert-message.success [
-      :p ["This page rendered at "
-          :strong [(str (java.util.Date.))]
-          "."
-          ]
+      :div.alert-message.success>p [
+      "This page rendered at "
+      :strong [(str (java.util.Date.))]
+      "."
       ]
       :div.well [
       :a.btn.primary {:href "/hello"} ["Refresh"]

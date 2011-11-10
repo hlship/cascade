@@ -178,11 +178,10 @@
   (import-stylesheet classpath-asset "cascade/exception.css")
   (import-module "cascade/exception-report")
   (template
-    :div.c-exception-controls [
-    :label [
-      :input#omitted-toggle {:type :checkbox}
-      " Display hidden detail"
-      ]]
+    :div.c-exception-controls>label [
+    :input#omitted-toggle {:type :checkbox}
+    " Display hidden detail"
+    ]
     :br
     (template-for [m (expand-exception-stack exception)]
       ; TODO: Smarter logic about which frames to be hidden
