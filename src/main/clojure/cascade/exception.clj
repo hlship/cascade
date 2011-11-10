@@ -198,11 +198,9 @@ Formats a detailed HTML report of the exception and the overall environment."
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
   (markup
     :html [
-    :head [:title [exception-banner]]
-    :body [
-      :div.container [
+      :head>title [exception-banner]
+      :body>div.container [
         :h1 [exception-banner]
         (render-exception-report-detail exception)
-        ]
       ]
     ]))

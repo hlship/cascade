@@ -23,13 +23,13 @@
   (layout "Cascade Hello World"
     (markup
       :div.alert-message.success>p [
-      "This page rendered at "
-      :strong [(str (java.util.Date.))]
-      "."
+        "This page rendered at "
+        :strong [(str (java.util.Date.))]
+        "."
       ]
       :div.well [
-      :a.btn.primary {:href "/hello"} ["Refresh"]
-      :a.btn {:href "/hello/fail"} ["Force Failure"]
+        :a.btn.primary {:href "/hello"} ["Refresh"]
+        :a.btn {:href "/hello/fail"} ["Force Failure"]
       ])))
 
 (defroutes html-routes
