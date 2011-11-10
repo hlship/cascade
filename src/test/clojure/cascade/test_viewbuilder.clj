@@ -33,7 +33,7 @@
 (deftest element-name-factoring
   (are
     [element-keyword element-name attributes]
-    (= [element-name attributes] (factor-element-name element-keyword))
+    (= [element-name attributes] (factor-element-name (name element-keyword)))
 
     :fred :fred nil
     :fred.bar :fred {:class :bar}

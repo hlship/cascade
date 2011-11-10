@@ -67,7 +67,7 @@
   [element-name]
   (let [exploded (explode-element-name (name element-name))]
     (if (empty? exploded)
-      [element-name nil]
+      [(keyword element-name) nil]
       (let [simple-element-name (keyword (get-in exploded [0 0]))
             extract (partial extract-attributes exploded)
             attributes (->> {} (extract "." :class) (extract "#" :id))]
