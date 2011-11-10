@@ -2,6 +2,7 @@
   (:use compojure.core cascade cascade.asset cascade.import ring.adapter.jetty)
   (:require
     [cascade.request :as cr]
+    [ring.util.response :as response]
     [compojure.route :as route]
     [compojure.handler :as handler]))
 
@@ -40,6 +41,7 @@
   (cr/initialize "1.0"
     :public-folder "webapp"
     :html-routes html-routes)
+  (ANY "/" [] (response/redirect "/hello"))
   (route/not-found "Cascade Demo: No such resource"))
 
 (def app
