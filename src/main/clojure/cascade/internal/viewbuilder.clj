@@ -58,14 +58,15 @@
       :else (assoc attributes key (str/join " " matches)))))
 
 (defn factor-element-name
-  "Factors a keyword representing an element name into a simple element name keyword and a
-  map of up to two attributes: :id and :class. The complex element name includes the implicit id and class(es)
-  using CSS-inspired naming; :p.important.top-level#status would factor to
-  [:p { :id :status :class \"important top-level\" } ]. The value for :class will be
-  a keyword if there is only a single value. The attributes map may be nil if the
-  element-name is simple."
+  "Factors a string representing an element name into a simple element name keyword and a
+map of up to two attributes: :id and :class. The complex element name includes the implicit id and class(es)
+using CSS-inspired naming; \"p.important.top-level#status\" would factor to
+[:p { :id :status :class \"important top-level\" } ]. The value for :class or :id will be
+a keyword if there is only a single value, or joined as a string if there are multiple values.
+The attributes map may be nil if the
+element-name is simple."
   [element-name]
-  (let [exploded (explode-element-name (name element-name))]
+  (let [exploded (explode-element-name element-name)]
     (if (empty? exploded)
       [(keyword element-name) nil]
       (let [simple-element-name (keyword (get-in exploded [0 0]))
@@ -109,10 +110,10 @@ which are converted into :text DOM nodes."
       `(raw-node ~(str (name entity-name) ";"))))
 
   (def parse-element
-    (domonad [name parse-name
+    (domonad [element-selector parse-name
               attributes (optional match-map)
               body (optional parse-body)]
-      (let [[factored-element-name implicit-attributes] (factor-element-name name)
+      (let [[factored-element-name implicit-attributes] (factor-element-name (name element-selector))
             assembled-attributes (merge implicit-attributes attributes)]
         `(element-node ~factored-element-name ~assembled-attributes ~body))))
 
