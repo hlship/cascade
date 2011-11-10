@@ -13,7 +13,7 @@
 
 (ns
   cascade.internal.viewbuilder
-  "Form parser for the template DSL"
+  "Form parser for the markup DSL"
   (:require
     [clojure.string :as str])
   (:use
@@ -25,7 +25,7 @@
 (defn convert-render-result
   [any]
   "Checks the result of invoking a rendering function (or evaluating a symbol), to ensure that only
-   acceptible values are returned."
+acceptible values are returned."
   (cond
     (dom-node? any) any
     (string? any) (text-node any)
@@ -36,8 +36,8 @@
 
 (defn explode-element-name
   "Explodes an element name string into a seq of three-element vectors. Each vector
-  consists of the portion of the name prior to the match, the match character, and
-  the match term. div.alpha#beta would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
+consists of the portion of the name prior to the match, the match character, and
+the match term. \"div.alpha#beta\" would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
   [^String element-name]
   ; match sequences of word characters prefixed with '.' or '#' within the overall name
   (loop [matcher (re-matcher #"([.#])([\w-]+)" element-name)
@@ -93,7 +93,7 @@ which are converted into :text DOM nodes."
   (seq (.split string split)))
 
 (with-monad parser-m
-  (declare parse-embedded-template)
+  (declare parse-markup)
 
   (def parse-text
     (domonad [text match-string]
@@ -106,7 +106,7 @@ which are converted into :text DOM nodes."
 
   (def parse-body
     (domonad [body match-vector]
-      (parse-embedded-template body)))
+      (parse-markup body)))
 
   (def parse-entity
     (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
@@ -153,8 +153,8 @@ which are converted into :text DOM nodes."
       `(combine ~@forms)))
   ) ; with-monad parser-m
 
-(defn parse-embedded-template
-  "Used as part of (defview) or (template) to convert the a form, the embedded template, into
+(defn parse-markup
+  "Used as part of (defview) or (markup) to convert the a form, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
-  (run-parse parse-forms forms "embedded template forms"))
+  (run-parse parse-forms forms "markup forms"))

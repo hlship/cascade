@@ -19,10 +19,10 @@
     [cascade dom]
     [cascade.internal viewbuilder parse-functions]))
 
-(defmacro template
+(defmacro markup
   "Defines a block of the template DSL, which is converted into code that renders a seq of DOM nodes."
   [& forms]
-  (parse-embedded-template forms))
+  (parse-markup forms))
 
 (defmacro defview
   "Defines a Cascade view function, which uses an embedded template. A view function may have a doc string and meta data
@@ -31,18 +31,18 @@ map, consisting of a single key, :body, consisting of the DOM nodes rendering by
   [& forms]
   (let [[fn-name fn-params template-forms] (parse-function-def forms)]
     `(defn ~fn-name ~(or (meta fn-name) {}) ~fn-params
-      {:body (template ~@template-forms)})))
+      {:body (markup ~@template-forms)})))
 
 (defmacro block
   "Encapsulates a block of template forms as a function with parameters, typically used as
   a callback. The function, when invoked, returns a seq of DOM nodes."
   [fn-params & template-forms]
-  `(fn ~fn-params (template ~@template-forms)))
+  `(fn ~fn-params (markup ~@template-forms)))
 
 (defmacro template-for
   "Executes a for list comprehension on the bindings, with the template forms evaluated as an implicit template."
   [bindings & template-forms]
-  `(combine (for ~bindings (template ~@template-forms))))
+  `(combine (for ~bindings (markup ~@template-forms))))
 
 (def ^{:doc "A DOM text node for a line break."}
   linebreak

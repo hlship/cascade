@@ -37,11 +37,11 @@
   (reduce z/append-child loc children))
 
 (deftest dom-zipping
-  (let [start-node (first (template :html [:head ["head text"] :body ["body text"]]))
+  (let [start-node (first (markup :html [:head ["head text"] :body ["body text"]]))
         new-node (-> (dom-zipper start-node)
       z/down
       (zip-append-children
-        (template
+        (markup
           :script {:src "a.js"}
           :script {:src "b.js"}))
       z/root)]
@@ -49,7 +49,7 @@
     (is (= (stream-single-node new-node) "<html><head>head text<script src=\"a.js\"></script><script src=\"b.js\"></script></head><body>body text</body></html>"))))
 
 (deftest test-navigate-dom-path
-  (let [root (first (template
+  (let [root (first (markup
     :html [
       :head [
         :meta
@@ -72,8 +72,8 @@
 
 (deftest test-extend-dom
   ; to simplify tests, not using attributes
-  (let [new-nodes (template :script ["a.js"] :script ["b.js"])
-        dom-nodes (template :html [:head [:script ["x.js"] :meta ["via cascade"]] :body [:p ["Cascade!"]]])]
+  (let [new-nodes (markup :script ["a.js"] :script ["b.js"])
+        dom-nodes (markup :html [:head [:script ["x.js"] :meta ["via cascade"]] :body [:p ["Cascade!"]]])]
     (are [rules expected-text]
       ; Originally extend-dom rook a single path and position as parameters; passing rules
       ; came later an needs it own test.

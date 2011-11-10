@@ -48,7 +48,7 @@
           function-ids (map #(or (nth (first (re-seq #"([\w|.|-]+)__\d+?" %)) 1 nil) %) raw-function-ids)
           function-names (map #(s2/replace % \_ \-) function-ids)]
       (if-not (empty? raw-function-ids)
-        (template
+        (markup
           namespace-name "/" (s2/join "/" function-names)
           :span {:class :c-omitted} [:&nbsp class-name "." method-name])))))
 
@@ -61,16 +61,16 @@
           line-number (.getLineNumber element)
           class-name (.getClassName element)
           method-name (.getMethodName element)]
-      (template
+      (markup
         (or
           (convert-clojure-frame class-name method-name)
           (str class-name "." method-name))
         " "
         (cond
-          (.isNativeMethod element) (template :em ["(Native Method)"])
+          (.isNativeMethod element) (markup :em ["(Native Method)"])
           (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
           (not (nil? file-name)) (str "(" file-name ")")
-          true (template :em ["(Unknown Source)"]))))
+          true (markup :em ["(Unknown Source)"]))))
     :class-name (class-name-for-element element)
     })
 
@@ -119,19 +119,19 @@
   (let [deepest (not (nil? stack-trace))
         has-properties (not (empty? properties))
         render-dl (or has-properties deepest)]
-    (template
+    (markup
       :div.c-exception [
       :div.alert-message.error [class-name]
       (if-not (nil? message)
-        (template :div.c-exception-message [message]))
+        (markup :div.c-exception-message [message]))
       (when render-dl
-        (template
+        (markup
           :dl [
           (template-for [k (sort (keys properties))]
             :dt [(name k)]
             :dd [(str (get properties k))])
           (when deepest
-            (template
+            (markup
               :dt ["Stack Trace"]
               :ul.c-stack-trace [
               (template-for [frame stack-trace]
@@ -143,15 +143,15 @@
   []
   (let [path-sep (System/getProperty "path.separator")
         property-names (sort (seq (.keySet (System/getProperties))))]
-    (template
+    (markup
       :dl [
       (for [^String name property-names]
         (let [value (System/getProperty name)]
-          (template
+          (markup
             :dt [name]
             :dd [
             (if (or (.endsWith name "path") (.endsWith name "dirs"))
-              (template :ul [
+              (markup :ul [
                 (template-for [v (.split value path-sep)]
                   :li [v])
                 ])
@@ -160,7 +160,7 @@
 
 (defn render-environment
   []
-  (template
+  (markup
     :h2 ["Environment"]
     :dl [
     :dt ["Clojure Version"]
@@ -177,7 +177,7 @@
   [exception]
   (import-stylesheet classpath-asset "cascade/exception.css")
   (import-module "cascade/exception-report")
-  (template
+  (markup
     :div.c-exception-controls>label [
     :input#omitted-toggle {:type :checkbox}
     " Display hidden detail"
@@ -196,7 +196,7 @@
 Formats a detailed HTML report of the exception and the overall environment."
   [req exception]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
-  (template
+  (markup
     :html [
     :head [:title [exception-banner]]
     :body [

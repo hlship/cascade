@@ -9,7 +9,7 @@
 
 (defn layout [title body]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
-  (template
+  (markup
     :html [
     :head>title [title]
     :body>div.container [
@@ -21,7 +21,7 @@
 
 (defview hello-world [req]
   (layout "Cascade Hello World"
-    (template
+    (markup
       :div.alert-message.success>p [
       "This page rendered at "
       :strong [(str (java.util.Date.))]

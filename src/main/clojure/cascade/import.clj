@@ -94,7 +94,7 @@ post-processed to add new <link> elements for any imported stylesheets."
     (->
       dom-nodes
       (extend-dom [[[:html :head] :bottom]]
-        (template
+        (markup
           :script {:src (classpath-asset "cascade/require-jquery.js")}
           :script [
           "require.config({ baseUrl: '"

@@ -89,7 +89,7 @@
     :h1 ["List of Accounts"]
     :ul [
       (for [acct (fetch-accounts)]
-        (template :li [(acct :name)] linebreak))
+        (markup :li [(acct :name)] linebreak))
       ]
     ]
   ])
@@ -125,12 +125,12 @@
   (serialize-test list-accounts-with-loop "block-macro" {}))
 
 (defview symbol-view []
-  (let [copyright (template
+  (let [copyright (markup
     linebreak :hr :p [
       (raw "&copy; 2009 ")
       :a {:href "mailto:hlship@gmail.com"} ["Howard M. Lewis Ship"]
       ] linebreak)]
-    (template
+    (markup
       :html [
       :head [:title ["Symbol Demo"]]
       :body [
