@@ -37,10 +37,8 @@
   (GET "/hello/fail" [] (try (/ 0 0) (catch Exception e (throw (RuntimeException. "Failure dividing by zero." e))))))
 
 (defroutes master-routes
-  ; Temporary: eventually we'll pass a couple of routes
-  ;; into cr/initialize
   (cr/initialize "1.0"
-    :public-folder "src/test/webapp"
+    :public-folder "webapp"
     :html-routes html-routes)
   (route/not-found "Cascade Demo: No such resource"))
 
