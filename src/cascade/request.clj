@@ -27,11 +27,11 @@
   "Internal handler for asset requests. Returns the response from the handler, or nil if
 no handler matches the name.
 asset-factories
-Maps keywords for the asset domain (eg., :file or :classpath) to the factory function (which takes a path)
+  Maps keywords for the asset domain (eg., :file or :classpath) to the factory function (which takes a path)
 domain
-Keyword used to locate factory function
+  Keyword used to locate factory function
 path
-String path passed to the handler."
+  String path passed to the handler."
   [asset-factories domain path]
   (let [factory (domain asset-factories)
         asset (and factory (factory path))
@@ -94,7 +94,7 @@ exception report view."
 
 (defn initialize
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
-should change with each new deployment. Named arguments:
+  should change with each new deployment. Named arguments:
 :html-routes
   Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
   of DOM nodes.
