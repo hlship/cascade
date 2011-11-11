@@ -25,6 +25,7 @@
     ]])
 
 (defview hello-world [req]
+  (javascript "cascade/bootstrap-init" "popover" "#force-failure" {})
   (layout "Cascade Hello World"
     (markup
       :div.alert-message.success>p [
@@ -35,13 +36,17 @@
       :div.well [
       :a.btn.primary.large {:href "/hello"} ["Refresh"] " "
       :a.btn {:href "/cascade/grid"} ["Grid Demo"] " "
-      :a.btn.danger {:href "/hello/fail"} ["Force Failure"]
+      :a.btn.danger#force-failure {:href "/hello/fail"
+                                   :title "Caution!"
+                                   :data-content "We force a divide by zero error to see Cascade's exception report."} ["Force Failure"]
       ])))
 
-(defn grid-url [width height]
+(defn grid-url
+  [width height]
   (format "/cascade/grid/%d/%d" width height))
 
-(defragment add-button [width height]
+(defragment add-button [
+  width height]
   :a.btn {:href (grid-url width height)} ["+"])
 
 (defview grid [width height]
