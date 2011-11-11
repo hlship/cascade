@@ -25,7 +25,7 @@
     ]])
 
 (defview hello-world [req]
-  (javascript "cascade/bootstrap-init" "popover" "#force-failure" {})
+  (javascript-invoke ["cascade/bootstrap-twipsy" "cascade/bootstrap-popover"] "#force-failure" "popover" {})
   (layout "Cascade Hello World"
     (markup
       :div.alert-message.success>p [

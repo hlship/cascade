@@ -1,8 +1,8 @@
 define(['jquery'], function($) {
 
-    function doInit(moduleName, functionName, args) {
+    function doInit(moduleName, functionName, initArgs) {
         require([moduleName], function(module) {
-            module[functionName].apply(null, args);
+            module[functionName].apply(null, [initArgs]);
         });
     }
 
@@ -22,8 +22,27 @@ define(['jquery'], function($) {
         });
     }
 
-    // In the future, there'll be additional function(s) used when handling a partial render Ajax response.
+    function doInvoke(dependencies, selector, functionName, args) {
+
+        var targetArguments = $.makeArray(arguments).slice(3);
+
+        require(dependencies, function() {
+            var selection = $(selector);
+            selection[functionName].apply(selection, targetArguments);
+        });
+    }
+
+    /**
+     * Invoke an arbitrary  jQuery method on a selector.
+     * @param args dependencies, selector, functionName, args to pass to the function
+     */
+    function invoke(invokeArgs) {
+        doInvoke.apply(null, invokeArgs);
+    }
+
+
     return {
-        pageInit : init
+        pageInit : init,
+        invoke : invoke
     };
 });

@@ -73,6 +73,20 @@ arguments
   ; TODO: this may change a bit when we implement Ajax partial rendering.
   (import-into-keyed-list :javascript [module-name initializer-fn-name arguments]))
 
+(defn javascript-invoke
+  "Builds a very particular kinds of call to the javascript function:
+dependencies
+  List of RequireJS module dependencies necessary to invoke the function. These are typically dependencies that extend
+  jQuery.
+selector
+  A CSS selector string passed to the jQuery main function.
+function-name
+  Name of a jQuery function to invoke on the selection.
+arguments
+  Arguments to pass to the jQuery function."
+  [dependencies selector function-name & arguments]
+  (apply javascript "cascade/init" "invoke" dependencies selector function-name arguments))
+
 (defn to-element-node
   "Converts an asset into a <link> element node."
   [asset]
