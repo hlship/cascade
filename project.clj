@@ -5,6 +5,7 @@
   :warn-on-reflection true
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojure/algo.monads "0.1.0"]
+                 [clj-json "0.4.3"]
                  [compojure "0.6.5"]]
   :dev-dependencies [[ring/ring-jetty-adapter "0.3.11"]
                      [swank-clojure "1.3.1"]
