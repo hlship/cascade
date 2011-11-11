@@ -96,24 +96,23 @@ exception report view."
   "Initializes asset handling for Cascade. This sets an application version (a value incorporated into URLs, which
 should change with each new deployment. Named arguments:
 :html-routes
-Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
-of DOM nodes.
+  Routes that produce full-page rendered HTML markup. The provided handlers should render the request to a seq
+  of DOM nodes.
 :virtual-folder (default \"assets\")
-The root folder under which assets will be exposed to the client.
+  The root folder under which assets will be exposed to the client.
 :public-folder (default \"public\")
-The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
+  The file system folder under which file assets are stored. May be an absolute path, should not end with a slash.
 :file-extensions
-Additional file-extension to MIME type mappings, beyond the default set (defined by ring.util.mime-type/default-mime-types).
+  Additional file-extension to MIME type mappings, beyond the default set (defined by ring.util.mime-type/default-mime-types).
 :asset-factories
-Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
-The functions should construct and return a cascade/Asset."
+  Additional asset dispatcher mappings. Keys are domain keywords, values are functions that accept a path within that domain.
+  The functions should construct and return a cascade.asset/Asset. Default support for the :file and :classpath domains."
   [application-version & {:keys [virtual-folder public-folder file-extensions asset-factories html-routes]
                           :or {virtual-folder "assets"
                                public-folder "public"}}]
   (let [root (str "/" virtual-folder "/" application-version)
         asset-factories (merge {:file file-asset
-                                :classpath classpath-asset
-                                :module module-asset} asset-factories)]
+                                :classpath classpath-asset} asset-factories)]
     (reset! asset-configuration
       {:application-version application-version
        :expiration (now-plus-ten-years)

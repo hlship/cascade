@@ -88,6 +88,8 @@ post-processed to add new <link> elements for any imported stylesheets."
   (apply-response-transformation handler :stylesheets add-stylesheet-nodes))
 
 (defn add-module-requires-javascript
+  "Middleware that expects the rendered body to be a seq of DOM nodes. The DOM nodes are post-processed
+to add new <script> elements for any required modules."
   [dom-nodes module-names]
   (if (empty? module-names)
     dom-nodes
@@ -98,7 +100,7 @@ post-processed to add new <link> elements for any imported stylesheets."
           :script {:src (classpath-asset "cascade/require-jquery.js")}
           :script [
           "require.config({ baseUrl: '"
-          (build-client-url :module "")
+          (build-client-url :classpath "")
           "' });\n"
           "require(["
           (->>
