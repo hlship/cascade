@@ -11,4 +11,4 @@
                      [swank-clojure "1.3.1"]
                      [midje "1.1.1"]
                      [lein-ring "0.4.6"]]
-  :ring {:handler main/app})
+  :ring {:handler test-app/app})
