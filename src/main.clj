@@ -24,15 +24,26 @@
     :&copy " 2011 Howard M. Lewis Ship"
     ]])
 
+(defn alert-message [level body]
+  (javascript-invoke ["cascade/bootstrap-alerts"] ".alert-message" "alert")
+  (markup
+    :div {:class [:alert-message level] :data-alert :alert} [
+    :a.close {:href "#"} ["x"]
+    :p [body]
+    ])
+  )
+
 (defview hello-world [req]
   (javascript-invoke ["cascade/bootstrap-twipsy" "cascade/bootstrap-popover"] "#force-failure" "popover")
   (layout "Cascade Hello World"
     (markup
-      :div.alert-message.success>p [
-      "This page rendered at "
-      :strong [(str (java.util.Date.))]
-      "."
-      ]
+      (alert-message :warning
+        (markup
+          :p [
+          "This page rendered at "
+          :strong [(str (java.util.Date.))]
+          "."
+          ]))
       :div.well [
       :a.btn.primary.large {:href "/hello"} ["Refresh"] " "
       :a.btn {:href "/cascade/grid"} ["Grid Demo"] " "

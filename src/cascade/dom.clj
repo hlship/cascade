@@ -16,9 +16,9 @@
   cascade.dom
   "DOM node structure, rendering and manipulation"
   (:import
-    (clojure.lang Keyword))
+    (clojure.lang Keyword Sequential))
   (:require
-    (clojure [zip :as z]))
+    (clojure [zip :as z] [string :as str]))
   (:use
     (cascade fail utils)))
 
@@ -69,7 +69,11 @@
   (to-attribute-value-string [num] (.toString num))
 
   Keyword
-  (to-attribute-value-string [kw] (encode-string (name kw))))
+  (to-attribute-value-string [kw] (encode-string (name kw)))
+
+  Sequential
+  (to-attribute-value-string [coll]
+    (str/join " " (map to-attribute-value-string coll))))
 
 (defprotocol DOMSerializing
   "Defines how a tree of DOM Nodes can be recursively serialized as seq of streamable strings."
