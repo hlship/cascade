@@ -21,7 +21,8 @@
     :h1 [title]
     body
     :hr
-    :&copy " 2011 Howard M. Lewis Ship"
+    :&copy " 2011 Howard M. Lewis Ship "
+    :a.btn {:href "https://github.com/hlship/cascade"} ["Cascade at GitHub"]
     ]])
 
 (defn alert-message [level body]
