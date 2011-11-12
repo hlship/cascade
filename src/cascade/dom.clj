@@ -84,7 +84,7 @@
 
 (defn serialize-nodes
   [nodes strategy]
-  (mapcat (fn [node] (serialize node strategy)) nodes))
+  (str/join (mapcat (fn [node] (serialize node strategy)) nodes)))
 
 (defn create-serialize-attribute-pair
   "Returns a function that a key/value attribute pair into a seq of strings for rendering the attribute value. The key is expected a string or keyword. The value is a string,
@@ -156,10 +156,10 @@
   })
 
 (defn serialize-xml
-  "Serializes a seq of DOM nodes representing a complete document into a lazy seq of strings. Ggenerally the dom-nodes seq will include just
+  "Serializes a seq of DOM nodes representing a complete document into a lazy seq of strings. Generally the dom-nodes seq will include just
 a single root element node, but text and comments and the like may come into play as well."
   [dom-nodes]
-  (cons "<?xml version=\"1.0\"?>\n" (serialize dom-nodes xml-strategy)))
+  (serialize dom-nodes xml-strategy))
 
 (def html-must-close-elements #{"script"})
 
