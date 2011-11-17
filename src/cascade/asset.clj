@@ -1,16 +1,16 @@
-; Copyright 2011 Howard M. Lewis Ship
-;
-; Licensed under the Apache License, Version 2.0 (the "License");
-; you may not use this file except in compliance with the License.
-; You may obtain a copy of the License at
-;
-;   http://www.apache.org/licenses/LICENSE-2.0
-;
-; Unless required by applicable law or agreed to in writing, software
-; distributed under the License is distributed on an "AS IS" BASIS,
-; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-; implied. See the License for the specific language governing permissions
-; and limitations under the License.
+;;; Copyright 2011 Howard M. Lewis Ship
+;;;
+;;; Licensed under the Apache License, Version 2.0 (the "License");;;
+;;; you may not use this file except in compliance with the License.
+;;; You may obtain a copy of the License at
+;;;
+;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;
+;;; Unless required by applicable law or agreed to in writing, software
+;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+;;; implied. See the License for the specific language governing permissions
+;;; and limitations under the License.
 
 (ns cascade.asset
   "Defines basic types of assets (resources exposed to the client browser)."
@@ -32,7 +32,7 @@ This should only be changed at startup, by (cascade.request/initialize)."
   (^InputStream content-stream [asset] "Returns the content of the Asset as a stream of bytes, or null if the Asset does not exist.")
   (^String client-url [asset] "Returns an absolute URL to the Asset."))
 
-(defrecord FileAsset [^URL file url]
+(defrecord FileAsset [^File file ^URL url]
   Asset
   (file-name [asset] (.getName file))
   (content-stream [asset]
@@ -81,7 +81,7 @@ path
 
 (defn path-to-file
   "Given a path name, finds the last slash character, and returns the file name that follows it."
-  [path]
+  [^String path]
   (last (.split path "/")))
 
 (defn is-safe

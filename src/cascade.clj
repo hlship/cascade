@@ -53,8 +53,8 @@ preceding the parameters vector. The function's forms are an implicit inline blo
   [bindings & markup-forms]
   `(combine (for ~bindings (markup ~@markup-forms))))
 
-(def ^{:doc "A DOM text node for a line break."}
-  linebreak
+(def linebreak
+  "A DOM text node for a line break."
   (text-node "\r"))
 
 (defn raw

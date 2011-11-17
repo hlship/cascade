@@ -1,16 +1,16 @@
-; Copyright 2009, 2010 Howard M. Lewis Ship
-;
-; Licensed under the Apache License, Version 2.0 (the "License");
-; you may not use this file except in compliance with the License.
-; You may obtain a copy of the License at
-;
-;   http://www.apache.org/licenses/LICENSE-2.0
-;
-; Unless required by applicable law or agreed to in writing, software
-; distributed under the License is distributed on an "AS IS" BASIS,
-; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-; implied. See the License for the specific language governing permissions
-; and limitations under the License.
+;;; Copyright 2009, 2010 Howard M. Lewis Ship
+;;;
+;;; Licensed under the Apache License, Version 2.0 (the "License");;;
+;;; you may not use this file except in compliance with the License.
+;;; You may obtain a copy of the License at
+;;;
+;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;
+;;; Unless required by applicable law or agreed to in writing, software
+;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+;;; implied. See the License for the specific language governing permissions
+;;; and limitations under the License.
 
 (ns
   cascade.exception
@@ -49,8 +49,8 @@
           function-names (map #(s2/replace % \_ \-) function-ids)]
       (if-not (empty? raw-function-ids)
         (markup
-          namespace-name "/" (s2/join "/" function-names)
-          :span {:class :c-omitted} [:&nbsp class-name "." method-name])))))
+         namespace-name "/" (s2/join "/" function-names)
+         [:span {:class :c-omitted} :&nbsp class-name "." method-name])))))
 
 (defn transform-stack-frame
   [^StackTraceElement element]
@@ -67,10 +67,10 @@
           (str class-name "." method-name))
         " "
         (cond
-          (.isNativeMethod element) (markup :em ["(Native Method)"])
+          (.isNativeMethod element) (markup  [:em "(Native Method)"])
           (and (not (nil? file-name)) (< 0 line-number)) (str "(" file-name ":" line-number ")")
           (not (nil? file-name)) (str "(" file-name ")")
-          true (markup :em ["(Unknown Source)"]))))
+          true (markup [:em "(Unknown Source)"]))))
     :class-name (class-name-for-element element)
     })
 
@@ -114,79 +114,82 @@
 (def exception-banner "An unexpected exception has occurred.")
 
 (defn render-exception-map
-  "Renders an individual exception map. "
+  "Renders an individual exception map."
   [{:keys [class-name message properties stack-trace]}]
   (let [deepest (not (nil? stack-trace))
         has-properties (not (empty? properties))
         render-dl (or has-properties deepest)]
     (markup
-      :div.c-exception [
-      :div.alert-message.error [class-name]
+     [:div.c-exception
+      [:div.alert-message.error class-name]
       (if-not (nil? message)
-        (markup :div.c-exception-message [message]))
+        (markup  [:div.c-exception-message message]))
       (when render-dl
         (markup
-          :dl [
+         [ :dl
           (markup-for [k (sort (keys properties))]
-            :dt [(name k)]
-            :dd [(str (get properties k))])
+                      [:dt (name k)]
+                      [:dd (str (get properties k))])
           (when deepest
             (markup
-              :dt ["Stack Trace"]
-              :ul.c-stack-trace [
+             [:dt "Stack Trace"]
+             [:ul.c-stack-trace
               (markup-for [frame stack-trace]
-                :li {:class (frame :class-name)} [(frame :method-name)])
+                          [:li {:class (frame :class-name)} (frame :method-name)])
               ]))
-          ]))])))
+          ]))
+      ])))
 
 (defn render-system-properties
   []
   (let [path-sep (System/getProperty "path.separator")
         property-names (sort (seq (.keySet (System/getProperties))))]
     (markup
-      :dl [
+     [:dl
       (for [^String name property-names]
         (let [value (System/getProperty name)]
           (markup
-            :dt [name]
-            :dd [
+           [:dt name]
+           [:dd
             (if (or (.endsWith name "path") (.endsWith name "dirs"))
-              (markup :ul [
-                (markup-for [v (.split value path-sep)]
-                  :li [v])
-                ])
+              (markup  [:ul
+                        (markup-for [v (.split value path-sep)]
+                                    [:li v])
+                        ])
               value)
-            ])))])))
+            ])))
+      ])))
 
 (defragment render-environment
   []
-  :h2 ["Environment"]
-  :dl [
-  :dt ["Clojure Version"]
-  :dd [(str *clojure-version*)]
-  :dt ["Cascade Version"]
-  :dd ["TBD"]
-  :dt ["Application Version"]
-  :dd ["TBD"]
-  ]
-  :h2 ["System Properties"]
+  [:h2 "Environment"]
+  [:dl
+   [:dt "Clojure Version"]
+   [:dd (str *clojure-version*)]
+   [:dt "Cascade Version"]
+   [:dd "TBD"]
+   [:dt "Application Version"]
+   [:dd "TBD"]
+   ]
+  [:h2 "System Properties"]
   (render-system-properties))
 
 (defragment render-exception-report-detail
   [exception]
   (import-stylesheet classpath-asset "cascade/exception.css")
   (import-module "cascade/exception-report")
-  :div.c-exception-controls>label [
-  :input#omitted-toggle {:type :checkbox}
-  " Display hidden detail"
-  ]
-  :br
+  [:div.c-exception-controls>label 
+   [  :input#omitted-toggle {:type :checkbox}
+    " Display hidden detail"
+    ]
+   ]
+  [:br]
   (markup-for [m (expand-exception-stack exception)]
-    ; TODO: Smarter logic about which frames to be hidden
-    ; Currently, assumes only the deepest is interesting.
-    ; When we add some additional levels of try/catch & report
-    ; it may be useful to display some of the outer exceptions as well
-    (render-exception-map m))
+                                        ; TODO: Smarter logic about which frames to be hidden
+                                        ; Currently, assumes only the deepest is interesting.
+                                        ; When we add some additional levels of try/catch & report
+                                        ; it may be useful to display some of the outer exceptions as well
+              (render-exception-map m))
   (render-environment))
 
 (defview exception-report
@@ -194,10 +197,10 @@
 Formats a detailed HTML report of the exception and the overall environment."
   [req exception]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
-  :html [
-  :head>title [exception-banner]
-  :body>div.container [
-    :h1 [exception-banner]
+  [:html 
+   [:head>title exception-banner]
+   [:body>div.container 
+    [:h1 exception-banner]
     (render-exception-report-detail exception)
     ]
-  ])
+   ])

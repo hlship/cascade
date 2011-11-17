@@ -1,45 +1,44 @@
-; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
-;
-; Licensed under the Apache License, Version 2.0 (the "License");
-; you may not use this file except in compliance with the License.
-; You may obtain a copy of the License at
-;   http://www.apache.org/licenses/LICENSE-2.0
-;
-; Unless required by applicable law or agreed to in writing, software
-; distributed under the License is distributed on an "AS IS" BASIS,
-; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-; implied. See the License for the specific language governing permissions
-; and limitations under the License.
+;;; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
+;;;
+;;; Licensed under the Apache License, Version 2.0 (the "License");;;
+;;; you may not use this file except in compliance with the License.
+;;; You may obtain a copy of the License at
+;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;
+;;; Unless required by applicable law or agreed to in writing, software
+;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+;;; implied. See the License for the specific language governing permissions
+;;; and limitations under the License.
 
 (ns
-  cascade.internal.viewbuilder
+    cascade.internal.viewbuilder
   "Form parser for the markup DSL"
   (:require
-    [clojure.string :as str])
+   [clojure.string :as str])
   (:use
-    [clojure [pprint :only (pprint)]]
-    [clojure.algo monads]
-    [cascade dom fail]
-    [cascade.internal parser]))
+   [clojure.algo monads]
+   [cascade dom fail]
+   [cascade.internal parser]))
 
 (defn convert-render-result
   [any]
   "Checks the result of invoking a rendering function (or evaluating a symbol), to ensure that only
 acceptible values are returned."
   (cond
-    (dom-node? any) any
-    (string? any) (text-node any)
-    (number? any) (raw-node (str any))
-    true (throw (RuntimeException.
-    (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
-      (pr-str any))))))
+   (dom-node? any) any
+   (string? any) (text-node any)
+   (number? any) (raw-node (str any))
+   true (throw (RuntimeException.
+                (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
+                        (pr-str any))))))
 
 (defn explode-element-name
   "Explodes an element name string into a seq of three-element vectors. Each vector
 consists of the portion of the name prior to the match, the match character, and
 the match term. \"div.alpha#beta\" would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
   [^String element-name]
-  ; match sequences of word characters prefixed with '.' or '#' within the overall name
+                                        ; match sequences of word characters prefixed with '.' or '#' within the overall name
   (loop [matcher (re-matcher #"([.#])([\w-]+)" element-name)
          result []]
     (if (.find matcher)
@@ -53,9 +52,9 @@ the match term. \"div.alpha#beta\" would split to [[\"div\" \".\" \"alpha\"] [\"
   (let [matches (map #(nth % 2) (filter #(= match (nth % 1)) exploded))
         c (count matches)]
     (cond
-      (= c 0) attributes
-      (= c 1) (assoc attributes key (keyword (first matches)))
-      :else (assoc attributes key (str/join " " matches)))))
+     (= c 0) attributes
+     (= c 1) (assoc attributes key (keyword (first matches)))
+     :else (assoc attributes key (str/join " " matches)))))
 
 (defn factor-element-name
   "Factors a string representing an element name into a simple element name keyword and a
@@ -84,73 +83,85 @@ which are converted into :text DOM nodes."
     (let [current (first queue)
           remainder (next queue)]
       (cond
-        (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
-        (sequential? current) (recur output (concat current remainder))
-        :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
+       (nil? current) (if (empty? remainder) (persistent! output) (recur output remainder))
+       (sequential? current) (recur output (concat current remainder))
+       :otherwise (recur (conj! output (convert-render-result current)) remainder)))))
 
 (defn split-string
   [^String string split]
   (seq (.split string split)))
 
+(defn- combine-body [forms]
+  (if (empty? forms)
+    nil
+    `(combine ~@forms)))
+
 (with-monad parser-m
-  (declare parse-markup)
+  (declare parse-markup parse-single-form)
 
   (def parse-text
     (domonad [text match-string]
-      ; The encode-string occurs just once, at macro expansion time
-      `(raw-node ~(encode-string text))))
+                                        ; The encode-string occurs just once, at macro expansion time
+             `(raw-node ~(encode-string text))))
 
   (def parse-name
-    ; An attribute or element name is either a keyword or a form that yields a keyword.
+                                        ; An attribute or element name is either a keyword or a form that yields a keyword.
     (match-first match-keyword))
-
-  (def parse-body
-    (domonad [body match-vector]
-      (parse-markup body)))
 
   (def parse-entity
     (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
-      `(raw-node ~(str (name entity-name) ";"))))
+             `(raw-node ~(str (name entity-name) ";"))))
 
-  (def parse-element
+                                        ; Breaks apart the vector represening an element, its attributes,
+                                        ; and its body (nested elements and forms).
+  (def parse-element-interior
     (domonad [element-selector parse-name
               attributes (optional match-map)
-              body (optional parse-body)]
-      (loop [element-names (reverse (split-string (name element-selector) ">"))
-             active-attributes attributes
-             active-body body
-             wrap-body false]
-        (if (nil? element-names)
-          active-body
-          (let [element-name (first element-names)
-                [factored-element-name implicit-attributes] (factor-element-name (name element-name))
-                assembled-attributes (merge implicit-attributes active-attributes)]
-            (recur
-              (next element-names)
-              nil
-              `(element-node ~factored-element-name ~assembled-attributes
-                ~(if wrap-body [active-body] active-body))
-              true))))))
+              body (none-or-more parse-single-form)]
+             (loop [element-names (reverse (split-string (name element-selector) ">"))
+                    active-attributes attributes
+                    active-body  (combine-body body)
+                    wrap-body false]
+               (if (nil? element-names)
+                 active-body
+                 (let [element-name (first element-names)
+                       [factored-element-name implicit-attributes] (factor-element-name (name element-name))
+                       assembled-attributes (merge implicit-attributes active-attributes)
+                       new-body (if wrap-body `[~active-body] active-body)]
+                   (recur
+                    (next element-names)
+                    nil
+                    `(element-node ~factored-element-name ~assembled-attributes ~new-body)
+                    true))))))
 
-  ; Accept a single form that will act as a renderer, returning a render
-  ; result, which will be combined with other render results via the
-  ; parse-forms parser. This form may be a symbol or a list (a function call).
+                                        ; Using the Hiccup syntax, an element is a vector containing a
+                                        ; keyword, then an optional attributes map, then some number of
+                                        ; forms composing the body of the element.
+  (def parse-element
+    (domonad [element-list match-vector]
+             (parse-element-interior element-list)))
+  
+
+  
+                                        ; Accept a single form that will act as a renderer, returning a render
+                                        ; result, which will be combined with other render results via the
+                                        ; parse-forms parser. This form may be a symbol or a list (a function call).
   (def parse-form
     (domonad [form match-form]
-      form))
+             form))
 
   (def parse-single-form
     (match-first parse-text parse-entity parse-element parse-form))
 
   (def parse-forms
     (domonad [forms (none-or-more parse-single-form)]
-      ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
-      ; (because combine is not lazy).
-      ; This may be be relevant in terms of ordering of CSS stylesheets & JavaScript libraries,
-      ; since that information is "collected on the side" (in an atom) and therefore not
-      ; purely functional. Perhaps there's a monadic approach that will allow the construction
-      ; of the DOM tree and the collection of CSS/JS data to occur in a strictly functional way?
-      `(combine ~@forms)))
+                                        ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
+                                        ; (because combine is not lazy).
+                                        ; This may be be relevant in terms of ordering of CSS stylesheets & JavaScript libraries,
+                                        ; since that information is "collected on the side" (in an atom) and therefore not
+                                        ; purely functional. Perhaps there's a monadic approach that will allow the construction
+                                        ; of the DOM tree and the collection of CSS/JS data to occur in a strictly functional way?
+             `(combine ~@forms)))
   ) ; with-monad parser-m
 
 (defn parse-markup

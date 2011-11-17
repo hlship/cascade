@@ -1,16 +1,16 @@
-; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
-;
-; Licensed under the Apache License, Version 2.0 (the "License");
-; you may not use this file except in compliance with the License.
-; You may obtain a copy of the License at
-;
-;   http://www.apache.org/licenses/LICENSE-2.0
-;
-; Unless required by applicable law or agreed to in writing, software
-; distributed under the License is distributed on an "AS IS" BASIS,
-; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-; implied. See the License for the specific language governing permissions
-; and limitations under the License.
+;;; Copyright 2009, 2010, 2011 Howard M. Lewis Ship
+;;;
+;;; Licensed under the Apache License, Version 2.0 (the "License");
+;;; you may not use this file except in compliance with the License.
+;;; You may obtain a copy of the License at
+;;;
+;;;   http://www.apache.org/licenses/LICENSE-2.0
+;;;
+;;; Unless required by applicable law or agreed to in writing, software
+;;; distributed under the License is distributed on an "AS IS" BASIS,
+;;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+;;; implied. See the License for the specific language governing permissions
+;;; and limitations under the License.
 
 (ns
   cascade.dom
@@ -22,9 +22,9 @@
   (:use
     (cascade fail utils)))
 
-; TODO: For testing purposes (i.e., to get consistent results across JVMs, etc.)
-; it may be necessary to sort attributes when rendering (but I'd rather not bother
-; for production).  
+;;; TODO: For testing purposes (i.e., to get consistent results across JVMs, etc.)
+;;; it may be necessary to sort attributes when rendering (but I'd rather not bother
+;;; for production).  
 
 (def char-to-entity-map
   (merge
@@ -115,8 +115,8 @@
           postamble (serialize-content-and-close element-name content strategy)]
       (concat preamble attribute-pairs postamble))))
 
-; Static is used for statically defined portions of the DOM tree, such as literal strings and
-; comments.
+;;; Static is used for statically defined portions of the DOM tree, such as literal strings and
+;;; comments.
 (defrecord Static [strings]
 
   DOMSerializing
@@ -129,7 +129,7 @@
   (serialize [node strategy]
     ["<!--" text "-->"]))
 
-; Most outside code will use these standard constructor functions, rather than using the records' constructors.
+;;; Most outside code will use these standard constructor functions, rather than using the records' constructors.
 
 (defn element-node
   [name attributes content]

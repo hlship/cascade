@@ -1,6 +1,8 @@
 ; This is a temporary file that allows the use of "lein ring server"
 ; to test the framework with a sample app.
 
+(set! *warn-on-reflection* true)
+
 (ns test-app
   (:use compojure.core cascade cascade.asset cascade.import
     [hiccup core page-helpers])
@@ -10,84 +12,85 @@
     [compojure.route :as route]
     [compojure.handler :as handler]))
 
-(set! *warn-on-reflection* true)
-
 (defragment layout [title body]
   (import-stylesheet classpath-asset "cascade/bootstrap.css")
   (import-stylesheet file-asset "app.css")
-  :html [
-  :head>title [title]
-  :body>div.container [
-    :h1 [title]
+  [:html
+   [:head>title title]
+   [:body>div.container
+    [:h1 title]
     body
-    :hr
+    [:hr]
     :&copy " 2011 Howard M. Lewis Ship "
-    :a.btn {:href "https://github.com/hlship/cascade"} ["Cascade at GitHub"]
-    ]])
+    [:a.btn {:href "https://github.com/hlship/cascade"} "Cascade at GitHub"]
+    ]
+   ])
 
 (defn alert-message [level body]
   (javascript-invoke ["cascade/bootstrap-alerts"] ".alert-message" "alert")
   (markup
-    :div {:class [:alert-message level] :data-alert :alert} [
-    :a.close {:href "#"} ["x"]
-    :p [body]
+    [:div {:class [:alert-message level] :data-alert :alert}
+    [:a.close {:href "#"} "x"]
+    [:p body]
     ])
   )
 
 (defview hello-world [req]
   (javascript-invoke ["cascade/bootstrap-twipsy" "cascade/bootstrap-popover"] "#force-failure" "popover")
   (layout "Cascade Hello World"
-    (markup
-      (alert-message :warning
-        (markup
-          :p [
-          "This page rendered at "
-          :strong [(str (java.util.Date.))]
-          "."
-          ]))
-      :div.well [
-      :a.btn.primary.large {:href "/hello"} ["Refresh"] " "
-      :a.btn {:href "/cascade/grid"} ["Cascade Grid Demo"] " "
-      :a.btn {:href "/hiccup/grid"} ["Hiccup Grid Demo"] " "
-      :a.btn.danger#force-failure {:href "/hello/fail"
-                                   :title "Caution!"
-                                   :data-content "We force a divide by zero error to see Cascade's exception report."} ["Force Failure"]
-      ])))
+          (markup
+           (alert-message :warning
+                          (markup
+                           [:p
+                            "This page rendered at "
+                            [:strong (str (java.util.Date.))]
+                            "."
+                            ]))
+           [:div.well
+            [:a.btn.primary.large {:href "/hello"} "Refresh"] " "
+            [:a.btn {:href "/cascade/grid"} "Cascade Grid Demo"] " "
+            [:a.btn {:href "/hiccup/grid"} "Hiccup Grid Demo"] " "
+            [:a.btn.danger#force-failure
+             {:href "/hello/fail"
+              :title "Caution!"
+              :data-content "We force a divide by zero error to see Cascade's exception report."}
+             "Force Failure"]
+            ])))
 
 (defn grid-url
   [width height]
   (format "/cascade/grid/%d/%d" width height))
 
-(defragment add-button [
-  width height]
-  :a.btn {:href (grid-url width height)} ["+"])
+(defragment add-button
+  [width height]
+  [:a.btn {:href (grid-url width height)} "+"])
 
 (defview grid [width height]
   (layout "Grid Demo"
-    (markup
-      :div.well>a.btn.primary.large {:href "/hello"} ["Main"]
-      :h2 [width "x" height " Grid"]
-      :table.bordered-table.zebra-striped [
-      :thead>tr [
-        :th
-        (markup-for [column (range 1 (inc width))]
-          :th ["Column " column])
-        :th [(add-button (inc width) height)]
-        ]
-      :tbody [
-        (markup-for [row (range 1 (inc height))]
-          :tr [
-          :td ["# " row]
-          (markup-for [column (range 1 (inc width))]
-            :td>a {:href (grid-url column row)} ["Cell " column "x" row])
-          :td [:&nbsp]
-          ])
-        ]
-      :tfoot>tr [
-        :td [(add-button width (inc height))]
-        (markup-for [column (range (inc width))] :td [:&nbsp])
-        ]
-      ])))
+          (markup
+           [:div.well>a.btn.primary.large {:href "/hello"} "Main"]
+           [:h2 width "x" height " Grid"]
+           [:table.bordered-table.zebra-striped 
+            [:thead>tr 
+             [:th]
+             (markup-for [column (range 1 (inc width))]
+                         [:th "Column " column])
+             [:th (add-button (inc width) height)]
+             ]
+            [:tbody 
+             (markup-for [row (range 1 (inc height))]
+                         [:tr 
+                          [:td "# " row]
+                          (markup-for [column (range 1 (inc width))]
+                                      [:td>a {:href (grid-url column row)} "Cell " column "x" row])
+                          [:td :&nbsp]
+                          ])
+             ]
+            [:tfoot>tr 
+             [:td (add-button width (inc height))]
+             (markup-for [column (range (inc width))] [:td :&nbsp])
+             ]
+            ])))
 
 (defn hiccup-layout [title & body]
   ; (import-stylesheet classpath-asset "cascade/bootstrap.css")
@@ -147,30 +150,6 @@
            [:td "&nbsp;"])
          ]]
        ])))
-
-;      :div.well>a.btn.primary.large {:href "/hello"} ["Main"]
-;      :h2 [width "x" height " Grid"]
-;      :table.bordered-table.zebra-striped [
-;      :thead>tr [
-;        :th
-;        (markup-for [column (range 1 (inc width))]
-;          :th ["Column " column])
-;        :th [(add-button (inc width) height)]
-;        ]
-;      :tbody [
-;        (markup-for [row (range 1 (inc height))]
-;          :tr [
-;          :td ["# " row]
-;          (markup-for [column (range 1 (inc width))]
-;            :td>a {:href (grid-url column row)} ["Cell " column "x" row])
-;          :td [:&nbsp]
-;          ])
-;        ]
-;      :tfoot>tr [
-;        :td [(add-button width (inc height))]
-;        (markup-for [column (range (inc width))] :td [:&nbsp])
-;        ]
-;      ])))
 
 (defn parse-int [string]
   (Integer/parseInt string))
