@@ -16,24 +16,18 @@
   "A form parser used when building functions, to emulate (defn)'s ability to add documentation
   and other meta-data"
   (:use
-   (clojure.algo monads)
     cascade.internal.parser))
-
-(def fn-def-parser
-  (domonad parser-m
-    [fn-name match-symbol
-     doc-string (optional match-string)
-     fn-meta-data (optional match-map)
-     parameters match-vector
-     fn-forms (one-or-more any-form)]
-    (let [doc-meta (and doc-string {:doc doc-string})
-          full-meta (merge (meta fn-name) fn-meta-data doc-meta)
-          symbol-with-meta (with-meta fn-name full-meta)]
-      [symbol-with-meta parameters fn-forms])))
 
 (defn parse-function-def
   "Parses a flexible set of forms consisting of an optional documention string, an optional meta-data map, a
   required vector of parameters, and a series of additional forms. Returns a vector of the name (with additional meta
   data from the documentation string provided meta-data map), the parameters vector, and a seq of the additional forms."
   [fn-def-forms]
-  (run-parse fn-def-parser fn-def-forms "function definition"))
+  (let [[fn-name remaining] (must-consume symbol? fn-def-forms "symbol to define function name")
+        [doc-string remaining] (maybe-consume string? remaining)
+        [fn-meta-data remaining] (maybe-consume map? remaining)
+        [parameters fn-forms] (must-consume vector? remaining "vector of function parameters")]
+    (let [doc-meta (and doc-string {:doc doc-string})
+          full-meta (merge (meta fn-name) fn-meta-data doc-meta)
+          symbol-with-meta (with-meta fn-name full-meta)]
+      [symbol-with-meta parameters fn-forms])))

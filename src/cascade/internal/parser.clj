@@ -13,89 +13,23 @@
 
 (ns
   cascade.internal.parser
-  "Parser monad used to parse Clojure forms into higher-level structures"
+  "Parser utiliuties Clojure forms into higher-level structures"
   (:use
-   (clojure.algo monads)
     cascade.fail))
-
 
 (defn maybe-consume
   "Evaluates a predicate against the first form. Returns a vector of two values. When the predicate matches, the return value is the first form and the rest of the forms.
-When the predicate does not match, the return value is nil and the forms."
+when the predicate does not match, the return value is nil and the forms."
   [predfn forms]
   (let [first-form (first forms)]
     (if (predfn first-form)
       [first-form (rest forms)]
       [nil forms])))
 
-(def parser-m (state-t maybe-m))
-
-(defn any-form
-  "Fundamental parser action; returns [first, rest] if forms is not empty, nil otherse."
-  [forms]
-  (if (empty? forms)
-    nil
-    ; "Consume" the form
-    (list (first forms) (rest forms))))
-
-(with-monad parser-m
-  (defn optional
-    [parser]
-    (m-plus parser (m-result nil)))
-
-  (declare one-or-more)
-
-  (defn none-or-more [parser]
-    (optional (one-or-more parser)))
-
-  (defn one-or-more [parser]
-    (domonad [a parser
-              as (none-or-more parser)]
-      (cons a as)))
-
-  (def match-first m-plus)
-
-  (defn form-test
-     "Parser factory using a predicate. When a form matches the predicate, it becomes the new result."
-     [pred]
-     (domonad
-       [form any-form :when (pred form)]
-       ; And return the matched form
-       form))
-
-  (def match-keyword
-    (form-test keyword?))
-
-  (def match-string
-    (form-test string?))
-
-  (def match-map
-    (form-test map?))
-
-  (def match-vector
-    (form-test vector?))
-
-  (def match-list
-    (form-test list?))
-
-  (def match-symbol
-    (form-test symbol?))
-
-  (def match-form
-    (match-first match-list match-symbol))
-)  ;  with-monad parser-m
-
-(defn run-parse
-  "Executes a parse given a parser function and a set of forms to parse. The construct-name is used for reporting errors:
-  either a nil monadic result, or an incomplete parse (that leaves some forms unparsed)."
-  [parser forms construct-name]
-  (let [monadic-result (parser forms)]
-    (when (nil? monadic-result)
-      (fail "Parse of %s completed with no result." construct-name))
-    (let [[result remaining-forms] monadic-result]
-      (when-not (empty? remaining-forms)
-        (fail "Incomplete parse of %s, %s forms remain, starting with %s."
-          forms
-          (count remaining-forms)
-          (first remaining-forms)))
-      result)))
+(defn must-consume
+  "Like maybe-consume, but the first form must pass the predicate function, or a failure occurs."
+  [predfn forms description]
+  (let [first-form (first forms)]
+    (if (predfn first-form)
+      [first-form (rest forms)]
+      (fail "Unexpected input form when expecting %s: %s" description (str first-form)))))
