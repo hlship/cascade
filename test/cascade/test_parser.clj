@@ -12,10 +12,10 @@
 ; implied. See the License for the specific language governing permissions
 ; and limitations under the License.
 
-(ns cascade.test-parse-functions
+(ns cascade.test-parser
   (:use
     (clojure test)
-    (cascade.internal parse-functions)))
+    (cascade.internal parser)))
 
 (deftest test-simple-fn
   (let [[n p forms] (parse-function-def '(my-fn [a b] c d))]

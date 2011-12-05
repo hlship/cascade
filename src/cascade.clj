@@ -17,7 +17,7 @@
   "Core functions and macros used when implementing Cascade views"
   (:use
     [cascade dom]
-    [cascade.internal viewbuilder parse-functions]
+    [cascade.internal viewbuilder parser]
     ring.util.response))
 
 (defmacro markup
