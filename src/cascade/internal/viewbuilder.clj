@@ -158,7 +158,7 @@ and attributes. Recursively invokes (parse-forms) to construct the body."
      :else (fail "Unexpected input while parsing template forms: %s" (str first-form)))))
 
 (defn parse-markup
-  "Used as part of (defview) or (template) to convert the forms, the embedded template, into
+  "Used as part of (defview) or (markup) to convert the forms, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
   (parse-forms [] forms))
