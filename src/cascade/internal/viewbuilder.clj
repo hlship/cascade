@@ -28,23 +28,23 @@ acceptible values are returned."
    (dom-node? any) any
    (string? any) (text-node any)
    (number? any) (raw-node (str any))
-   true (throw (RuntimeException.
-                (format "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
-                        (pr-str any))))))
+   :else (fail
+          "A rendering function returned %s. Rendering functions should return nil, a string, a number, a DOM node or a seq of such values."
+          (pr-str any))))
 
 (defn explode-element-name
-  "Explodes an element name string into a seq of three-element vectors. Each vector
+     "Explodes an element name string into a seq of three-element vectors. Each vector
 consists of the portion of the name prior to the match, the match character, and
 the match term. \"div.alpha#beta\" would split to [[\"div\" \".\" \"alpha\"] [\"div.alpha\" \"#\" \"beta\"]]."
-  [^String element-name]
+     [^String element-name]
                                         ; match sequences of word characters prefixed with '.' or '#' within the overall name
-  (loop [matcher (re-matcher #"([.#])([\w-]+)" element-name)
-         result []]
-    (if (.find matcher)
-      (recur matcher (conj result [(.substring element-name 0 (.start matcher))
-                                   (.group matcher 1)
-                                   (.group matcher 2)]))
-      result)))
+     (loop [matcher (re-matcher #"([.#])([\w-]+)" element-name)
+            result []]
+       (if (.find matcher)
+         (recur matcher (conj result [(.substring element-name 0 (.start matcher))
+                                      (.group matcher 1)
+                                      (.group matcher 2)]))
+         result)))
 
 (defn extract-attributes
   [exploded match key attributes]
