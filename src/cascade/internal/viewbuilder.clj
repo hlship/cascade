@@ -17,7 +17,6 @@
   (:require
    [clojure.string :as str])
   (:use
-   [clojure.algo monads]
    [cascade dom fail]
    [cascade.internal parser]))
 
@@ -96,76 +95,70 @@ which are converted into :text DOM nodes."
     nil
     `(combine ~@forms)))
 
-(with-monad parser-m
-  (declare parse-markup parse-single-form)
 
-  (def parse-text
-    (domonad [text match-string]
-                                        ; The encode-string occurs just once, at macro expansion time
-             `(raw-node ~(encode-string text))))
+(defn do-text
+  [text output-forms]
+  ; The encode-string occurs just once, at macro expansion time
+  (conj output-forms `(raw-node ~(encode-string text))))
 
-  (def parse-name
-                                        ; An attribute or element name is either a keyword or a form that yields a keyword.
-    (match-first match-keyword))
 
-  (def parse-entity
-    (domonad [entity-name match-keyword :when (.startsWith (name entity-name) "&")]
-             `(raw-node ~(str (name entity-name) ";"))))
+(defn is-entity? [form]
+  (and (keyword? form) (.startsWith (name form) "&")))
 
-                                        ; Breaks apart the vector represening an element, its attributes,
-                                        ; and its body (nested elements and forms).
-  (def parse-element-interior
-    (domonad [element-selector parse-name
-              attributes (optional match-map)
-              body (none-or-more parse-single-form)]
-             (loop [element-names (reverse (split-string (name element-selector) ">"))
-                    active-attributes attributes
-                    active-body  (combine-body body)
-                    wrap-body false]
-               (if (nil? element-names)
-                 active-body
-                 (let [element-name (first element-names)
-                       [factored-element-name implicit-attributes] (factor-element-name (name element-name))
-                       assembled-attributes (merge implicit-attributes active-attributes)
-                       new-body (if wrap-body `[~active-body] active-body)]
-                   (recur
-                    (next element-names)
-                    nil
-                    `(element-node ~factored-element-name ~assembled-attributes ~new-body)
-                    true))))))
+(defn do-entity [keyword output-forms]
+  (let [entity-name (str (name keyword) ";")]
+    (conj output-forms `(raw-node ~entity-name))))
 
-                                        ; Using the Hiccup syntax, an element is a vector containing a
-                                        ; keyword, then an optional attributes map, then some number of
-                                        ; forms composing the body of the element.
-  (def parse-element
-    (domonad [element-list match-vector]
-             (parse-element-interior element-list)))
-  
+(declare parse-forms)
 
-  
-                                        ; Accept a single form that will act as a renderer, returning a render
-                                        ; result, which will be combined with other render results via the
-                                        ; parse-forms parser. This form may be a symbol or a list (a function call).
-  (def parse-form
-    (domonad [form match-form]
-             form))
+(defn do-element
+  "Processes a vector form, which represents an element (a leading keyword), an optional map of attributes, then
+nested template elements to form the body of the element. The element keyword may be structured, implying implicit structure
+and attributes. Recursively invokes (parse-forms) to construct the body."
+  [form output-forms]
+  (let [element-selector (first form)
+        element-body (rest form)
+        [attributes element-body] (maybe-consume map? element-body)
+        expanded-body (parse-forms [] element-body)]
+    (loop [element-names (reverse (split-string (name element-selector) ">"))
+           active-attributes attributes
+           active-body  (combine-body expanded-body)
+           wrap-body false]
+      (if (nil? element-names)
+        ; Add the fully expanded form to the output forms and done.
+        (conj output-forms active-body)
+        (let [element-name (first element-names)
+              [factored-element-name implicit-attributes] (factor-element-name (name element-name))
+              assembled-attributes (merge implicit-attributes active-attributes)
+              new-body (if wrap-body `[~active-body] active-body)]
+          (recur
+           (next element-names)
+           nil
+           `(element-node ~factored-element-name ~assembled-attributes ~new-body) true))))))
 
-  (def parse-single-form
-    (match-first parse-text parse-entity parse-element parse-form))
+(defn form?
+  "True if the form is a list (e.g., a function call) or a symbol."
+  [form]
+  (or (list? form) (symbol? form)))
 
-  (def parse-forms
-    (domonad [forms (none-or-more parse-single-form)]
-                                        ; Evaluation order means that the DOM tree is effectively constructed bottom-to-top
-                                        ; (because combine is not lazy).
-                                        ; This may be be relevant in terms of ordering of CSS stylesheets & JavaScript libraries,
-                                        ; since that information is "collected on the side" (in an atom) and therefore not
-                                        ; purely functional. Perhaps there's a monadic approach that will allow the construction
-                                        ; of the DOM tree and the collection of CSS/JS data to occur in a strictly functional way?
-             `(combine ~@forms)))
-  ) ; with-monad parser-m
+(defn do-form
+  "Passes a form (a list or a symbol) through unchanged."
+  [form output-forms]
+  (conj output-forms form))
+
+(defn parse-forms  [output-forms input-forms]
+  (let [first-form (first input-forms)
+        remaining-forms (next input-forms)]
+    (cond
+     (empty? input-forms) output-forms
+     (string? first-form) (recur (do-text first-form output-forms) remaining-forms)
+     (is-entity? first-form) (recur (do-entity first-form output-forms) remaining-forms)
+     (vector? first-form) (recur (do-element first-form output-forms) remaining-forms)
+     (form? first-form) (recur (do-form first-form output-forms) remaining-forms)
+     :else (fail "Unexpected input while parsing template forms: %s" (str first-form)))))
 
 (defn parse-markup
-  "Used as part of (defview) or (markup) to convert the a form, the embedded template, into
+  "Used as part of (defview) or (template) to convert the forms, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
-  (run-parse parse-forms forms "markup forms"))
+  (parse-forms [] forms))

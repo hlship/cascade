@@ -16,7 +16,7 @@
   "A form parser used when building functions, to emulate (defn)'s ability to add documentation
   and other meta-data"
   (:use
-    clojure.algo.monads
+   (clojure.algo monads)
     cascade.internal.parser))
 
 (def fn-def-parser

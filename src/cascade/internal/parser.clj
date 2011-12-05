@@ -15,8 +15,18 @@
   cascade.internal.parser
   "Parser monad used to parse Clojure forms into higher-level structures"
   (:use
-    clojure.algo.monads
+   (clojure.algo monads)
     cascade.fail))
+
+
+(defn maybe-consume
+  "Evaluates a predicate against the first form. Returns a vector of two values. When the predicate matches, the return value is the first form and the rest of the forms.
+When the predicate does not match, the return value is nil and the forms."
+  [predfn forms]
+  (let [first-form (first forms)]
+    (if (predfn first-form)
+      [first-form (rest forms)]
+      [nil forms])))
 
 (def parser-m (state-t maybe-m))
 
