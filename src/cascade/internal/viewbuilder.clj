@@ -161,4 +161,4 @@ and attributes. Recursively invokes (parse-forms) to construct the body."
   "Used as part of (defview) or (markup) to convert the forms, the embedded template, into
 a new list of forms that constructs the structure layed out by the template."
   [forms]
-  (parse-forms [] forms))
+  `(combine ~(parse-forms [] forms)))
